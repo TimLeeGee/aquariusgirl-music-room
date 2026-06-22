@@ -1,9 +1,28 @@
 # QA 驗收報告
 
 產品：Aquariusgirl Music Room / 水瓶罐子的音樂小水池  
-版本：0.1.14  
-日期：2026-06-21  
+版本：0.1.15  
+日期：2026-06-22  
 驗收角色：PM / QA / Electron 發行工程師
+
+## 2026-06-22 17:44 歌詞／LRC 殘留清理 0.1.15
+
+- 範圍：同步歌詞 UI、LRC 匯入與自動配對先前已移除；本輪只刪 README、新手引導及未使用的歌詞型別、IndexedDB 讀寫、設定匯入匯出欄位，未改播放、歌單、Mini 或外觀邏輯。
+- 資料保護：不升 IndexedDB 版本、不刪既有退役 store；舊資料保留在使用者本機但不再建立、讀取、寫入或匯出。
+- `rg` 掃描 `src`、`electron`、`scripts`、`dist`、`dist-electron`、README：PASS，無 LRC／歌詞／字幕功能殘留。
+- `playlist-logic-check`、Mini opacity、FLAC metadata、custom image、theme color、`npm run build`、`npm run electron:compile`：PASS。
+- `npm run dist:all`：PASS；三個 0.1.15 installer 已同步到唯一交付位置，`release/` 不存在。
+- 兩個 DMG `hdiutil verify`：VALID；`CFBundleShortVersionString`／`CFBundleVersion` 均為 0.1.15，執行檔分別為 arm64／x86_64。
+- arm64 packaged `file://`：PASS；URL 指向 DMG App 的 `app.asar/dist/index.html`，JS／CSS 使用相對路徑；隔離 userData 新手引導第 3 步只顯示收藏、歌單與睡前定時，主畫面無 LRC／歌詞入口。
+- EXE static check：PASS，辨識為 Windows x64 目標 NSIS installer；未在 Windows 真機執行。
+
+最新 installer：
+
+- EXE：134,367,515 bytes，SHA-256 `df47559e42f427183a37afd6a0a9cf964654496efa21ea6526a5939c84b9ce16`
+- arm64 DMG：149,348,842 bytes，SHA-256 `bb7f6b6bbaf2d0533b281536ef3aa3da2cdbb287153561a6473bb506e42c1907`
+- x64 DMG：151,297,405 bytes，SHA-256 `969ba94c1b06b80730684d94b8b7fe100dae1b4c92763ffda49886dc76b38fed`
+
+限制：Windows EXE 尚未真機執行；installer 未做 Apple Developer ID、notarization 或 Windows code signing。
 
 ## 2026-06-21 23:54 目前播放卡加入歌單修正 0.1.14
 

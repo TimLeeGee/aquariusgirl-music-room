@@ -1,4 +1,3 @@
-import type { TrackLyrics } from "../types/lyrics";
 import type { Playlist } from "../types/playlist";
 
 export type ImportedTrackMetadata = {
@@ -16,7 +15,6 @@ export type ImportedSettings = {
   exportedAt?: string;
   playlists?: Playlist[];
   trackMetadata?: ImportedTrackMetadata[];
-  lyrics?: TrackLyrics[];
   preferences?: Record<string, unknown>;
 };
 
@@ -43,7 +41,6 @@ export function parseImportedSettings(raw: string): ImportedSettings {
 
   assertArray(parsed.playlists, "playlists");
   assertArray(parsed.trackMetadata, "trackMetadata");
-  assertArray(parsed.lyrics, "lyrics");
 
   return parsed;
 }
@@ -52,7 +49,6 @@ export function summarizeImportedSettings(settings: ImportedSettings) {
   return {
     playlists: settings.playlists?.length ?? 0,
     tracks: settings.trackMetadata?.length ?? 0,
-    lyrics: settings.lyrics?.length ?? 0,
     version: settings.appVersion ?? "unknown",
   };
 }

@@ -1,13 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
-import type { TrackLyrics } from "../types/lyrics";
 import type { Playlist } from "../types/playlist";
 import type { Track } from "../types/track";
 import {
   clearTrackMetadata,
-  getLyrics,
-  getPlaylists,
   getTrackMetadata,
-  saveLyrics,
   savePlaylists,
   saveTrackMetadata,
   toStoredTrackMetadata,
@@ -16,17 +12,11 @@ import {
 
 export function useMusicLibraryDb(tracks: Track[], playlists: Playlist[]) {
   const [storedTracks, setStoredTracks] = useState<StoredTrackMetadata[]>([]);
-  const [storedLyrics, setStoredLyrics] = useState<Record<string, TrackLyrics>>({});
   const [dbError, setDbError] = useState<string | null>(null);
 
   useEffect(() => {
-    void Promise.all([getTrackMetadata(), getLyrics(), getPlaylists()])
-      .then(([trackMetadata, lyrics]) => {
-        setStoredTracks(trackMetadata);
-        setStoredLyrics(
-          Object.fromEntries(lyrics.map((item) => [item.trackId, item])),
-        );
-      })
+    void getTrackMetadata()
+      .then(setStoredTracks)
       .catch((error) => {
         setDbError(error instanceof Error ? error.message : "IndexedDB read failed");
       });
@@ -49,13 +39,6 @@ export function useMusicLibraryDb(tracks: Track[], playlists: Playlist[]) {
     });
   }, [playlists]);
 
-  const persistLyrics = useCallback((lyrics: TrackLyrics) => {
-    setStoredLyrics((current) => ({ ...current, [lyrics.trackId]: lyrics }));
-    void saveLyrics(lyrics).catch((error) => {
-      setDbError(error instanceof Error ? error.message : "IndexedDB lyrics save failed");
-    });
-  }, []);
-
   const clearStoredTracks = useCallback(() => {
     setStoredTracks([]);
     void clearTrackMetadata().catch((error) => {
@@ -65,8 +48,6 @@ export function useMusicLibraryDb(tracks: Track[], playlists: Playlist[]) {
 
   return {
     storedTracks,
-    storedLyrics,
-    persistLyrics,
     clearStoredTracks,
     dbError,
   };

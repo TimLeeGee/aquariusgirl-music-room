@@ -1,5 +1,13 @@
 # Aquariusgirl Music Room Continue Work
 
+## 2026-06-22 17:44 歌詞／LRC 殘留清理 0.1.15 發行完成
+
+- 確認同步歌詞 UI、LRC 匯入入口與同名 `.lrc` 自動配對早已移除；本輪只刪除 README、新手引導與未使用的 IndexedDB／匯入匯出歌詞資料管線。
+- 未新增套件或替代功能；舊版 IndexedDB 若已有退役資料 store，會保留在本機但不再建立、讀取、寫入或匯出，避免破壞使用者資料。
+- `src`、`electron`、`scripts`、`dist`、`dist-electron`、README 精準掃描無 LRC／歌詞／字幕殘留；build、Electron compile 與全部既有檢查通過。
+- 0.1.15 EXE／arm64 DMG／x64 DMG 已位於 `release-delivery/installers/`；兩個 DMG verify、封裝版本／架構、EXE NSIS static check 與 arm64 packaged `file://` 新手引導均通過，測試 DMG 已卸載。
+- Windows EXE 尚未在 Windows 真機執行；installer 未簽章／notarize。
+
 ## 2026-06-21 23:54 加入歌單修正 0.1.14 發行完成
 
 - recovery-candidate-5 已一致恢復正式 IndexedDB／Local Storage；0.1.13 與 0.1.14 packaged 重開後均確認 14 首、re0 2 首、米津玄師 4 首，原始音樂檔未改動。
@@ -100,7 +108,7 @@
 ## 1. 專案目前狀態
 
 - Electron + Vite + React + TypeScript 桌面音樂播放器。
-- 已有主播放器、Mini 播放器、播放列表、智慧型播放清單、ID3 tag、專輯封面、歌詞同步、音樂律動條、macOS/Windows 打包流程。
+- 已有主播放器、Mini 播放器、播放列表、智慧型播放清單、ID3 tag、專輯封面、音樂律動條、macOS/Windows 打包流程。
 - 目前資料夾不是 Git repository，本輪不初始化 Git，改用本文件追蹤接續狀態。
 
 ## 2. 本輪任務目標
@@ -163,8 +171,8 @@
 - 已用 source/CSS/build 驗證確認 Mini 無捲軸設定殘留、控制框常駐 visible、紅圈兩顆按鈕已刪除，並確認 `src/dist` 無 EmptyState/EMPTY STATE/小魚乾大卡文字。
 - 已再次執行 `npm run dist:all`，上一輪 DMG/EXE 已於 2026-06-16 16:32 同步到 `release-delivery/installers/`。
 - 已修正目前播放歌曲列的點擊行為：目前歌曲按下會切換播放/暫停，非目前歌曲才選歌播放。
-- 已補齊設定保存/匯入匯出：Visualizer 設定、Mini 設定、歌詞、播放清單與播放偏好可保存，不保存音樂檔本體。
-- 已在 Electron 原生選檔/選資料夾流程自動讀取同資料夾、同檔名 `.lrc` 歌詞，解析成功後寫入 IndexedDB。
+- 已補齊設定保存/匯入匯出：Visualizer 設定、Mini 設定、播放清單與播放偏好可保存，不保存音樂檔本體。
+- 同步歌詞 UI、LRC 匯入入口、同名 `.lrc` 自動配對及未使用資料管線已於後續版本完整移除。
 - 已修正 Windows Mini 黑畫面風險：Windows Mini 視窗 opacity 強制 1、背景色固定，renderer 會 clamp 舊版 Mini opacity 設定。
 - 已再次執行升權版 `npm run dist:all`，最新 DMG/EXE 已於 2026-06-16 20:24:03 同步到 `release-delivery/installers/`。
 
@@ -277,7 +285,7 @@
 - 2026-06-16 16:32 最新 `npm run dist:all`：通過，最新三個安裝檔保留在 `release-delivery/installers/`，暫存 `release/` 已移除。
 - 目前歌曲列播放/暫停切換 source/build 驗證：通過。
 - Visualizer / Mini 設定匯出匯入 source/build 驗證：通過。
-- 同資料夾同名 `.lrc` 自動配對 source/build 驗證：通過。
+- LRC／歌詞／字幕 source/build 殘留掃描：通過，無功能入口或資料管線殘留。
 - Windows Mini 防黑畫面 source/build 驗證：通過。
 - 2026-06-16 20:24:03 最新升權版 `npm run dist:all`：通過，最新三個安裝檔保留在 `release-delivery/installers/`，暫存 `release/` 已移除。
 
@@ -304,7 +312,7 @@
 - mini alwaysOnTop 實際置頂。
 - Visualizer 設定入口可調強度等設定。
 - 目前歌曲列播放中按下會暫停，再按會播放。
-- Electron 選擇歌曲後，若同資料夾有同名 `.lrc`，會自動載入歌詞。
+- Electron 與 Web 介面不顯示 LRC／歌詞／字幕入口或說明。
 - Windows 實機 Mini 按下一首不再出現黑畫面。
 
 ## 17. 下一步建議執行順序

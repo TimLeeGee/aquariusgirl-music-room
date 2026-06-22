@@ -1,11 +1,23 @@
 # 版本資訊
 
 產品：Aquariusgirl Music Room / 水瓶罐子的音樂小水池  
-版本：0.1.14  
-日期：2026-06-21  
+版本：0.1.15  
+日期：2026-06-22  
 平台目標：Windows x64、macOS arm64、macOS x64
 
-## 2026-06-21 23:54 最新發行狀態
+## 2026-06-22 17:44 最新發行狀態
+
+0.1.15 移除 README、新手引導與未使用資料管線中的歌詞／LRC 殘留，不新增替代功能或套件。舊 IndexedDB 退役資料不主動刪除，只停止使用，避免破壞使用者資料。
+
+全部既有檢查、build、Electron compile、精準殘留掃描、`dist:all`、DMG verify、版本／架構與 EXE static check 均通過；arm64 packaged `file://` 與隔離新手引導驗收通過。Windows 真機仍需驗收。
+
+SHA-256：
+
+- EXE：`df47559e42f427183a37afd6a0a9cf964654496efa21ea6526a5939c84b9ce16`
+- arm64 DMG：`bb7f6b6bbaf2d0533b281536ef3aa3da2cdbb287153561a6473bb506e42c1907`
+- x64 DMG：`969ba94c1b06b80730684d94b8b7fe100dae1b4c92763ffda49886dc76b38fed`
+
+## 2026-06-21 23:54 歷史發行狀態
 
 0.1.14 將目前播放卡「加入歌單」原生欄位固定為 `w-36 shrink-0`，並以 renderer `PlaylistDuplicateDialog` 取代重複加入時的 `window.confirm()`。保留既有重複確認語意，未新增套件或改歌單資料結構。
 

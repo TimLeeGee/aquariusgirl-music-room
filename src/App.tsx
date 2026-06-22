@@ -920,7 +920,6 @@ export default function App() {
     const payload = createExportPayload({
       tracks,
       playlists: playlistsState.playlists,
-      lyricsByTrackId: {},
       volume: player.volume,
       repeatMode: player.repeatMode,
       shuffle: player.shuffle,

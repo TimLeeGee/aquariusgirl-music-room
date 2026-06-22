@@ -1,4 +1,3 @@
-import type { TrackLyrics } from "../types/lyrics";
 import type { Playlist } from "../types/playlist";
 import type {
   AudioVisualizerSettings,
@@ -11,7 +10,6 @@ import { toStoredTrackMetadata } from "../storage/indexedDb";
 export type ExportSettingsInput = {
   tracks: Track[];
   playlists: Playlist[];
-  lyricsByTrackId: Record<string, TrackLyrics>;
   volume: number;
   repeatMode: RepeatMode;
   shuffle: boolean;
@@ -24,11 +22,10 @@ export type ExportSettingsInput = {
 export function createExportPayload(input: ExportSettingsInput) {
   return {
     app: "Aquariusgirl Music Room",
-    appVersion: "0.1.8",
+    appVersion: "0.1.15",
     exportedAt: new Date().toISOString(),
     playlists: input.playlists,
     trackMetadata: input.tracks.map(toStoredTrackMetadata),
-    lyrics: Object.values(input.lyricsByTrackId),
     preferences: {
       volume: input.volume,
       repeatMode: input.repeatMode,

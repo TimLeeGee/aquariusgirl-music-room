@@ -1,6 +1,16 @@
 # Installer 狀態
 
-## 2026-06-21 23:54 最新狀態（0.1.14）
+## 2026-06-22 17:44 最新狀態（0.1.15）
+
+README、新手引導與未使用的歌詞資料管線已完成殘留清理；未新增套件或替代功能，舊 IndexedDB 退役資料保留在本機但不再使用。
+
+- `Aquariusgirl Music Room Setup 0.1.15.exe`：134,367,515 bytes，SHA-256 `df47559e42f427183a37afd6a0a9cf964654496efa21ea6526a5939c84b9ce16`
+- `Aquariusgirl Music Room-0.1.15-arm64.dmg`：149,348,842 bytes，SHA-256 `bb7f6b6bbaf2d0533b281536ef3aa3da2cdbb287153561a6473bb506e42c1907`
+- `Aquariusgirl Music Room-0.1.15.dmg`：151,297,405 bytes，SHA-256 `969ba94c1b06b80730684d94b8b7fe100dae1b4c92763ffda49886dc76b38fed`
+
+修改時間：2026-06-22 17:39:56–17:39:57 CST。兩個 DMG checksum 均為 VALID，封裝版本均為 0.1.15，架構分別為 arm64／x86_64；EXE 為 NSIS installer。唯一交付位置為 `release-delivery/installers/`，`release/` 不存在；arm64 packaged `file://` 與隔離新手引導驗收通過，測試 DMG 已卸載。Windows 真機與正式簽章仍未完成。
+
+## 2026-06-21 23:54 歷史狀態（0.1.14）
 
 目前播放卡「加入歌單」欄位已固定為 `w-36 shrink-0`；重複加入由 Windows 可能鎖焦點的 `window.confirm()` 改為 renderer dialog。未新增套件或改歌單結構。
 

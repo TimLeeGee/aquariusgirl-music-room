@@ -1,9 +1,9 @@
-import type { TrackLyrics } from "../types/lyrics";
 import type { Playlist } from "../types/playlist";
 import type { Track } from "../types/track";
 
 const DB_NAME = "aquariusgirl-music-room";
 const DB_VERSION = 1;
+// ponytail: 不升版清除已退役的資料 store，避免破壞使用者資料；只有明確要求清理儲存空間時才加 migration。
 
 export type StoredTrackMetadata = Omit<
   Track,
@@ -12,7 +12,7 @@ export type StoredTrackMetadata = Omit<
   fileName: string;
 };
 
-type StoreName = "tracks" | "lyrics" | "playlists" | "settings" | "handles";
+type StoreName = "tracks" | "playlists" | "settings" | "handles";
 
 function openLibraryDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -27,9 +27,6 @@ function openLibraryDb(): Promise<IDBDatabase> {
       const db = request.result;
       if (!db.objectStoreNames.contains("tracks")) {
         db.createObjectStore("tracks", { keyPath: "id" });
-      }
-      if (!db.objectStoreNames.contains("lyrics")) {
-        db.createObjectStore("lyrics", { keyPath: "trackId" });
       }
       if (!db.objectStoreNames.contains("playlists")) {
         db.createObjectStore("playlists", { keyPath: "id" });
@@ -105,14 +102,6 @@ export async function clearTrackMetadata() {
   });
 }
 
-export async function saveLyrics(lyrics: TrackLyrics) {
-  await withStore("lyrics", "readwrite", (store) => store.put(lyrics));
-}
-
-export async function getLyrics() {
-  return (await withStore<TrackLyrics[]>("lyrics", "readonly", (store) => store.getAll())) ?? [];
-}
-
 export async function savePlaylists(playlists: Playlist[]) {
   await withStore("playlists", "readwrite", (store) => {
     // Keep IndexedDB in sync with the current playlist store, including migrations
@@ -120,10 +109,6 @@ export async function savePlaylists(playlists: Playlist[]) {
     store.clear();
     playlists.forEach((playlist) => store.put(playlist));
   });
-}
-
-export async function getPlaylists() {
-  return (await withStore<Playlist[]>("playlists", "readonly", (store) => store.getAll())) ?? [];
 }
 
 export async function saveSetting<T>(key: string, value: T) {

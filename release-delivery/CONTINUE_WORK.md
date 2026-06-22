@@ -1,6 +1,14 @@
 # 接續工作狀態
 
-最後更新：2026-06-21 CST
+最後更新：2026-06-22 CST
+
+## 0.1.15 歌詞／LRC 殘留清理發行完成
+
+- README 與新手引導已移除歌詞／LRC 支援宣稱；未使用的型別、IndexedDB 讀寫與設定匯入匯出欄位已刪除。
+- 舊版 IndexedDB 的退役 store 不主動刪除，只停止使用；未新增 migration、套件或替代功能。
+- 精準殘留掃描、全部既有 source checks、build、Electron compile、`dist:all`、DMG verify、版本／架構與 EXE static check 均通過。
+- arm64 packaged App 以隔離 userData 從 `file://.../app.asar/dist/index.html` 啟動；新手引導與主畫面均無歌詞／LRC 入口或文案。
+- 最新三個 installer 只在 `release-delivery/installers/`，`release/` 不存在，測試 DMG 均已卸載。Windows 真機與正式簽章仍未完成。
 
 ## 0.1.14 發行驗收完成
 
@@ -139,25 +147,26 @@
 ## 最新 installer
 
 ```text
-release-delivery/installers/Aquariusgirl Music Room Setup 0.1.14.exe
-release-delivery/installers/Aquariusgirl Music Room-0.1.14-arm64.dmg
-release-delivery/installers/Aquariusgirl Music Room-0.1.14.dmg
+release-delivery/installers/Aquariusgirl Music Room Setup 0.1.15.exe
+release-delivery/installers/Aquariusgirl Music Room-0.1.15-arm64.dmg
+release-delivery/installers/Aquariusgirl Music Room-0.1.15.dmg
 ```
 
-修改時間：2026-06-21 23:48:53–23:48:54 CST
+修改時間：2026-06-22 17:39:56–17:39:57 CST
 
 ## SHA-256
 
-- EXE：`a9c88a5183a01e889aaead12731dbe597a010eaf0b084c9001edff8fddba2dc2`
-- arm64 DMG：`562b4d248100dfda1e36432b5cbdc78dfcdadf6c449689ab4f42a1ebf7bf5436`
-- x64 DMG：`f94da4f1074d1b7b089993a27e0aae8ada10c401fde012be28ca3d41ef757687`
+- EXE：`df47559e42f427183a37afd6a0a9cf964654496efa21ea6526a5939c84b9ce16`
+- arm64 DMG：`bb7f6b6bbaf2d0533b281536ef3aa3da2cdbb287153561a6473bb506e42c1907`
+- x64 DMG：`969ba94c1b06b80730684d94b8b7fe100dae1b4c92763ffda49886dc76b38fed`
 
 ## 仍需人工驗收
 
-- 在 Windows 安裝 0.1.14 EXE，從目前播放卡將同一首歌依序加入兩個歌單，確認欄位不放大；再選「已在…」，確認 renderer dialog 可取消／仍然加入，整個 App 不鎖死。
-- 在 Windows 安裝 0.1.14 EXE，將完整播放器最大化後切換 MINI，確認欄位不跑版，再由頂部拖曳到不同位置並返回完整播放器。
-- 在 Windows 安裝 0.1.14 EXE，確認長短歌名與不同歌單狀態下，每列「加入歌單」欄位同寬，收藏／刪除按鈕垂直對齊。
-- 在 Windows 安裝 0.1.14 EXE，進入 MINI 後確認視窗維持 `260×288`、原生最小化／關閉按鈕未壓住標題卡，播放／進度／音量／底部控制四列無堆疊且間距一致。
+- 在 Windows 安裝 0.1.15 EXE，確認新手引導與主畫面沒有歌詞／LRC 文案或入口。
+- 在 Windows 安裝 0.1.15 EXE，從目前播放卡將同一首歌依序加入兩個歌單，確認欄位不放大；再選「已在…」，確認 renderer dialog 可取消／仍然加入，整個 App 不鎖死。
+- 在 Windows 安裝 0.1.15 EXE，將完整播放器最大化後切換 MINI，確認欄位不跑版，再由頂部拖曳到不同位置並返回完整播放器。
+- 在 Windows 安裝 0.1.15 EXE，確認長短歌名與不同歌單狀態下，每列「加入歌單」欄位同寬，收藏／刪除按鈕垂直對齊。
+- 在 Windows 安裝 0.1.15 EXE，進入 MINI 後確認視窗維持 `260×288`、原生最小化／關閉按鈕未壓住標題卡，播放／進度／音量／底部控制四列無堆疊且間距一致。
 - 在 Windows 安裝 0.1.5 EXE，確認主背景細節清楚且卡片文字可讀。
 - 在 Windows 安裝 0.1.5 EXE，確認主背景與左右兩張裝飾圖顯示，且按鈕仍可操作。
 - 在 Windows 安裝 0.1.5 EXE，匯入截圖中的真實 FLAC，確認顯示內嵌封面。
@@ -170,4 +179,4 @@ release-delivery/installers/Aquariusgirl Music Room-0.1.14.dmg
 
 ## 下次接續提示詞
 
-請接續 Aquariusgirl Music Room 0.1.14 的 Windows 真機驗收。最新版 installer 時間為 2026-06-21 23:48:53–23:48:54 CST，位於 `release-delivery/installers/`。先讀 `QA_REPORT.md` 與 `INSTALLER_STATUS.md`；安裝 0.1.14 EXE 後，從目前播放卡將同一首歌依序加入兩個歌單，確認欄位不放大，再選「已在…」確認 renderer dialog 可取消／仍然加入且 App 不鎖死；接著重跑最大化→MINI、頂部拖曳與返回完整播放器。若仍異常，附新截圖與 Windows 顯示縮放比例；不要改其他 UI。
+請接續 Aquariusgirl Music Room 0.1.15 的 Windows 真機驗收。最新版 installer 時間為 2026-06-22 17:39:56–17:39:57 CST，位於 `release-delivery/installers/`。先讀 `QA_REPORT.md` 與 `INSTALLER_STATUS.md`；安裝 0.1.15 EXE 後，先確認新手引導與主畫面沒有歌詞／LRC 文案或入口，再從目前播放卡將同一首歌依序加入兩個歌單，確認欄位不放大；接著重跑最大化→MINI、頂部拖曳與返回完整播放器。若仍異常，附新截圖與 Windows 顯示縮放比例；不要改其他 UI。
