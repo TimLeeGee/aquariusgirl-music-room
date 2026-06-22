@@ -1,0 +1,279 @@
+@import "./tokens.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    min-height: 100%;
+    background: var(--color-deep-navy);
+  }
+
+  body {
+    min-height: 100%;
+    margin: 0;
+    overflow-x: hidden;
+    background: var(--color-deep-navy);
+    color: var(--text-primary);
+    font-family:
+      Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+      "Noto Sans TC", sans-serif;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  button,
+  input,
+  select {
+    font: inherit;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    /* ponytail: 只讓底色透明，內容保持可讀；需要逐面板設定時再拆 token。 */
+    background: hsl(var(--theme-panel-hue) 59% 8% / var(--theme-panel-opacity));
+    box-shadow: var(--shadow-glass);
+    backdrop-filter: blur(22px);
+  }
+
+  .theme-background-image {
+    opacity: var(--theme-background-opacity);
+  }
+
+  .theme-stage-overlay {
+    background: linear-gradient(
+      180deg,
+      hsl(var(--color-deep-navy-hsl) / calc(var(--theme-stage-opacity) * 0.7)),
+      hsl(var(--color-deep-navy-hsl) / var(--theme-stage-opacity))
+    );
+  }
+
+  .theme-decoration-image {
+    opacity: var(--theme-decoration-opacity);
+  }
+
+  /* ponytail: MINI 共用一個 hue token；需要分區配色時再拆外框、資訊列與控制列。 */
+  .mini-player-surface,
+  .mini-assistant-controls {
+    background: hsl(var(--theme-mini-hue) 59% 8% / 0.82);
+  }
+
+  .mini-assistant-card {
+    background: hsl(var(--theme-mini-hue) 59% 8% / 0.76);
+  }
+
+  .mini-assistant-header {
+    background: hsl(var(--theme-mini-hue) 59% 8% / 0.58);
+  }
+
+  .aqua-range {
+    height: 0.38rem;
+    cursor: pointer;
+    appearance: none;
+    border-radius: 999px;
+    background:
+      linear-gradient(90deg, hsl(var(--color-aquarius-blue-hsl) / 0.88), hsl(var(--color-soft-pink-hsl) / 0.82)),
+      rgba(255, 255, 255, 0.13);
+    accent-color: var(--color-aquarius-blue);
+  }
+
+  .aqua-range:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+  }
+
+  .aqua-range::-webkit-slider-thumb {
+    width: 1rem;
+    height: 1rem;
+    appearance: none;
+    border: 2px solid white;
+    border-radius: 999px;
+    background: var(--color-aquarius-blue);
+    box-shadow: 0 0 18px hsl(var(--color-aquarius-blue-hsl) / 0.55);
+  }
+
+  .aqua-range::-moz-range-thumb {
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid white;
+    border-radius: 999px;
+    background: var(--color-aquarius-blue);
+    box-shadow: 0 0 18px hsl(var(--color-aquarius-blue-hsl) / 0.55);
+  }
+
+  .rainbow-range {
+    height: 0.72rem;
+    cursor: pointer;
+    appearance: none;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 999px;
+    background: linear-gradient(90deg, #ff4d4d, #ffd84d, #55df70, #4ddcff, #7272ff, #d05cff, #ff4d9d, #ff4d4d);
+  }
+
+  .rainbow-range::-webkit-slider-thumb {
+    width: 1.3rem;
+    height: 1.3rem;
+    appearance: none;
+    border: 3px solid white;
+    border-radius: 999px;
+    background: hsl(var(--range-hue) 88% 60%);
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.34);
+  }
+
+  .rainbow-range::-moz-range-thumb {
+    width: 1.3rem;
+    height: 1.3rem;
+    border: 3px solid white;
+    border-radius: 999px;
+    background: hsl(var(--range-hue) 88% 60%);
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.34);
+  }
+
+  .star-field {
+    background-image:
+      radial-gradient(circle at 12% 22%, hsl(var(--color-star-gold-hsl) / 0.9) 0 1px, transparent 2px),
+      radial-gradient(circle at 35% 12%, rgba(255, 255, 255, 0.78) 0 1px, transparent 2px),
+      radial-gradient(circle at 68% 24%, hsl(var(--color-aquarius-blue-hsl) / 0.86) 0 1px, transparent 2px),
+      radial-gradient(circle at 84% 42%, hsl(var(--color-soft-pink-hsl) / 0.76) 0 1px, transparent 2px),
+      radial-gradient(circle at 22% 72%, rgba(255, 255, 255, 0.68) 0 1px, transparent 2px),
+      radial-gradient(circle at 76% 76%, hsl(var(--color-star-gold-hsl) / 0.82) 0 1px, transparent 2px);
+  }
+
+  .wave-field {
+    background:
+      linear-gradient(180deg, transparent 0%, hsl(var(--color-aquarius-blue-hsl) / 0.08) 45%, hsl(var(--color-aquarius-blue-hsl) / 0.16) 100%),
+      repeating-radial-gradient(ellipse at 50% 110%, hsl(var(--color-aquarius-blue-hsl) / 0.18) 0 2px, transparent 3px 22px);
+  }
+
+  .stage-water {
+    background:
+      linear-gradient(180deg, transparent, hsl(var(--color-aquarius-blue-hsl) / 0.22)),
+      repeating-radial-gradient(ellipse at 50% 110%, rgba(255, 255, 255, 0.16) 0 2px, transparent 3px 24px);
+  }
+
+  .bubble-field {
+    background-image:
+      radial-gradient(circle at 16% 80%, hsl(var(--color-aquarius-blue-hsl) / 0.24) 0 5px, transparent 6px),
+      radial-gradient(circle at 82% 72%, hsl(var(--color-soft-pink-hsl) / 0.22) 0 6px, transparent 7px),
+      radial-gradient(circle at 74% 28%, rgba(255, 255, 255, 0.2) 0 4px, transparent 5px),
+      radial-gradient(circle at 28% 36%, hsl(var(--color-star-gold-hsl) / 0.18) 0 3px, transparent 4px);
+    animation: float-up 8s ease-in-out infinite alternate;
+  }
+
+  .app-drag-region {
+    -webkit-app-region: drag;
+  }
+
+  .app-no-drag,
+  button,
+  input,
+  select,
+  textarea {
+    -webkit-app-region: no-drag;
+  }
+
+  .mini-assistant-controls {
+    opacity: 1;
+    pointer-events: auto;
+    visibility: visible;
+    transform: none;
+  }
+
+  .mini-opacity-number {
+    appearance: textfield;
+  }
+
+  .mini-opacity-number::-webkit-inner-spin-button,
+  .mini-opacity-number::-webkit-outer-spin-button {
+    margin: 0;
+    appearance: none;
+  }
+
+  .background-aura-gradient {
+    /* ponytail: 半透明色調已能保留可讀性；只有背景干擾文字時才加亮度控制。 */
+    background:
+      radial-gradient(circle at 18% 14%, hsl(var(--color-aquarius-blue-hsl) / 0.12), transparent 28%),
+      radial-gradient(circle at 78% 12%, hsl(var(--color-soft-pink-hsl) / 0.1), transparent 26%),
+      linear-gradient(135deg, hsl(var(--color-deep-navy-hsl) / 0.34) 0%, hsl(var(--color-night-violet-hsl) / 0.28) 45%, hsl(var(--color-deep-navy-hsl) / 0.42) 100%);
+  }
+
+  .background-aura-glow {
+    background: linear-gradient(90deg, transparent, hsl(var(--color-aquarius-blue-hsl) / 0.16), hsl(var(--color-soft-pink-hsl) / 0.12), transparent);
+  }
+}
+
+@layer utilities {
+  .text-white {
+    color: var(--text-primary);
+  }
+}
+
+@keyframes aqua-drift {
+  0% {
+    transform: translate3d(-6%, 0, 0) scale(1);
+  }
+  100% {
+    transform: translate3d(6%, -4%, 0) scale(1.08);
+  }
+}
+
+@keyframes wave-flow {
+  0% {
+    background-position: 0 0, 0 0;
+  }
+  100% {
+    background-position: 240px 0, 160px 0;
+  }
+}
+
+@keyframes soft-pulse {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-5px) scale(1.015);
+  }
+}
+
+@keyframes track-in {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float-up {
+  0% {
+    transform: translateY(4px);
+  }
+  100% {
+    transform: translateY(-12px);
+  }
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--color-aquarius-blue-hsl) / 0.34);
+  border-radius: 999px;
+}

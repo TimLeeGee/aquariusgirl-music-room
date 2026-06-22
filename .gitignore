@@ -1,0 +1,14 @@
+.DS_Store
+node_modules/
+dist/
+dist-electron/
+release/
+release-delivery/installers/
+public/**/*.png
+public/**/*.jpg
+public/**/*.jpeg
+public/**/*.gif
+public/**/*.webp
+public/**/*.avif
+public/**/*.svg
+*.log

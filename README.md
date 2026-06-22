@@ -1,0 +1,425 @@
+# Aquariusgirl Music Room
+
+水瓶罐子的音樂小水池是一款本地音樂播放器。Web 版可用瀏覽器啟動，Electron 版可打包成桌面安裝檔。播放器只讀取使用者明確選擇的本機音樂，不使用 YouTube、不串接線上音樂、不下載音樂、不生成圖片。
+
+## 授權
+
+本專案採用 [MIT License](LICENSE)。
+
+## 目前功能
+
+- 本地音樂檔與資料夾載入
+- 拖曳音樂檔加入歌單
+- HTMLAudioElement 播放、暫停、切歌、音量、靜音、進度拖曳
+- ID3v2 metadata 與專輯封面讀取，失敗時 fallback 檔名解析
+- LRC 歌詞匯入與播放時間同步高亮
+- 睡前定時停止，支援 15/30/60 分鐘、自訂分鐘、播完本首
+- Web Audio API 音樂頻譜，可關閉
+- IndexedDB 保存歌曲 metadata、歌詞與歌單資料，不保存音樂檔本體
+- File System Access API 資料夾授權，瀏覽器不支援時 fallback 到 `webkitdirectory`
+- 多播放清單基礎管理
+- JSON 匯入 / 匯出歌單設定，不包含音樂檔本體
+- OBS Browser Source 模式：`?mode=obs`
+- Electron main/preload，安全暴露必要檔案選擇 API
+- macOS Apple Silicon `.dmg` 與 Windows `.exe` 打包設定
+- 第一次啟動新手引導
+
+## 使用技術
+
+- Vite
+- React
+- TypeScript
+- Tailwind CSS
+- HTMLAudioElement
+- Web Audio API
+- localStorage
+- IndexedDB
+- Electron
+- electron-builder
+
+## 安裝
+
+```bash
+npm install
+```
+
+如果 Electron binary 沒有下載完整，可執行：
+
+```bash
+npx install-electron --no
+```
+
+## Web 版啟動
+
+```bash
+npm run dev
+```
+
+打開 Vite 顯示的 localhost，例如：
+
+```text
+http://127.0.0.1:5173/
+```
+
+Web production build：
+
+```bash
+npm run build
+```
+
+## Electron 開發版
+
+```bash
+npm run electron
+```
+
+等同於：
+
+```bash
+npm run electron:dev
+```
+
+這會先編譯 `electron/main.ts` 與 `electron/preload.ts`，再啟動 Vite dev server，最後開啟 Electron 視窗。
+
+## Electron 打包
+
+一般打包：
+
+```bash
+npm run dist
+```
+
+macOS `.dmg`，目前腳本會嘗試產出 Apple Silicon arm64 與 Intel x64：
+
+```bash
+npm run dist:mac
+```
+
+Windows 10 / Windows 11 `.exe`：
+
+```bash
+npm run dist:win
+```
+
+依目前環境嘗試產出可支援的所有平台：
+
+```bash
+npm run dist:all
+```
+
+`dist:all` 會透過 `scripts/dist-all.mjs` 依作業系統選擇可支援的打包目標；若缺少網路、Wine 或系統映像工具，錯誤會直接顯示在終端機。
+
+最新可安裝檔只會保留在：
+
+```text
+release-delivery/installers/
+```
+
+`release/` 是 electron-builder 的暫存輸出，打包腳本會在同步最新版 DMG/EXE 後自動清掉，避免同時出現兩個看起來像交付資料夾的位置。
+
+打包設定在 `package.json` 的 `build` 欄位：
+
+- `appId`: `com.aquariusgirl.musicroom`
+- `productName`: `Aquariusgirl Music Room`
+- mac target: `dmg`
+- mac arch: `arm64`, `x64`
+- win target: `nsis`
+- desktop shortcut: enabled
+- start menu shortcut: enabled
+
+舊指令仍保留為 alias：
+
+```bash
+npm run electron:build
+npm run electron:build:mac
+npm run electron:build:win
+```
+
+## GitHub Actions 打包
+
+已新增：
+
+```text
+.github/workflows/release.yml
+```
+
+推送 tag，例如：
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+workflow 會在 GitHub hosted runner 上產出：
+
+- Windows x64 NSIS installer
+- macOS arm64 DMG
+- macOS x64 DMG
+
+目前未設定 Apple Developer ID、notarization 或 Windows code signing。測試版 artifacts 可安裝測試，但正式公開發行前建議補簽章。
+
+## 桌面版使用流程
+
+macOS：
+
+1. 下載 `.dmg`
+2. 打開 `.dmg`
+3. 把 Aquariusgirl Music Room 拖到 Applications
+4. 開啟 App
+5. 第一次啟動看新手引導
+6. 選擇音樂資料夾
+
+Windows：
+
+1. 下載 `.exe`
+2. 雙擊安裝
+3. 依照安裝精靈下一步
+4. 從桌面捷徑或開始選單開啟
+5. 第一次啟動看新手引導
+6. 選擇音樂資料夾
+
+使用者不需要安裝 Node.js，也不需要開終端機。
+
+## 本地音樂載入
+
+支援三種方式：
+
+1. 選擇多個音樂檔
+2. 選擇音樂資料夾
+3. 拖曳音樂檔到播放器
+
+支援格式：
+
+- `.mp3`
+- `.wav`
+- `.ogg`
+- `.m4a`
+- `.flac`
+
+Web 版不會自動掃描硬碟，只能讀取使用者手動選擇的檔案或資料夾。Electron 版也只會讀取使用者明確選擇的資料夾。
+
+## ID3 Tag 與專輯封面
+
+加入音樂時會嘗試讀取：
+
+- title
+- artist
+- album
+- year
+- genre
+- track number
+- duration
+- album artwork
+
+目前主要支援 MP3 ID3v2。讀不到 metadata 時會 fallback 到檔名解析，例如 `Artist - Title.mp3`。讀不到封面時會使用 `brandAssets.coverPlaceholder`，再沒有就使用漸層 placeholder。
+
+專輯封面顯示在：
+
+- PlayerCore
+- TrackItem
+- MiniPlayer
+- CharacterStage 播放中資訊區
+
+Blob URL 會在移除歌曲、清空歌單、離開頁面時釋放。
+
+## LRC 歌詞
+
+選擇一首歌後點「匯入 LRC」，可匯入 `.lrc` 檔案。
+
+支援格式：
+
+```text
+[00:12.00]第一句歌詞
+[00:18.50]第二句歌詞
+```
+
+也支援：
+
+- `[mm:ss]`
+- `[mm:ss.xx]`
+- `[hh:mm:ss.xx]`
+
+歌詞會綁定 track id，並保存到 IndexedDB。
+
+## 睡前定時停止
+
+支援：
+
+- 15 分鐘後停止
+- 30 分鐘後停止
+- 60 分鐘後停止
+- 自訂分鐘數
+- 播完目前歌曲後停止
+
+分鐘模式會在時間到前淡出音量，然後暫停播放。定時可取消。
+
+## 音樂視覺化
+
+使用 Web Audio API 與目前的 `HTMLAudioElement` 建立同一組 analyser，顯示即時 bars。使用者可以在 mini player 的「音樂條設定」調整開關、靈敏度、平滑度、音樂條數量、最小高度、最大高度、低音增益與反應速度。瀏覽器不支援 AudioContext 時，播放器仍可正常播放。
+
+## 多播放清單
+
+內建系統歌單：
+
+- 全部歌曲
+- 我喜歡的歌曲
+- 最近播放
+- 最常播放
+
+使用者可以建立一般播放清單與智慧型播放清單。一般播放清單保存固定歌曲 id；智慧型播放清單保存 rules，會依目前歌曲 metadata 動態篩選。
+
+一般播放清單的歌曲加入方式：
+
+- 在歌曲列表右側使用「加入歌單」選單，把指定歌曲加入指定播放清單。
+- 進入一般播放清單後，可用「加入目前歌曲」把目前歌曲加入該歌單。
+- 已經在某歌單中的歌曲會顯示「已在 ...」，避免重複加入。
+- 空白名稱與重複名稱會被阻擋並顯示提示。
+
+舊版曾內建的「睡前小水波」、「罐子閃亮 Cover」、「狐狸女孩元氣歌」以及已退場的舊歌單型別會在播放器啟動時清理，不會刪除其他使用者自行建立的一般歌單與智慧型歌單。
+
+## Mini Player
+
+主播放器右上角可切換 mini 模式。Electron 桌面版 full mode 保留作業系統原生視窗框：macOS DMG 會有紅黃綠控制鈕，Windows EXE 會有原生最小化、最大化、關閉按鈕。
+
+Mini 模式使用同一個 `BrowserWindow`，不建立第二個 audio element，因此切換時會保留目前歌曲、進度、播放狀態與音量。mini 控制列預設隱藏，滑鼠移入播放器小卡時才浮現；支援回完整播放器、always on top、透明度與音樂條設定。
+
+## 匯入 / 匯出
+
+匯出格式是 JSON，包含：
+
+- playlists
+- track metadata
+- liked 狀態
+- sortMode
+- volume
+- repeatMode
+- shuffle
+- lyrics
+- theme settings
+- app version
+- exportedAt
+
+不會匯出：
+
+- 音樂檔本體
+- File 物件
+- localUrl
+- 使用者系統絕對路徑
+
+匯出檔名格式：
+
+```text
+aquariusgirl-music-room-backup-YYYY-MM-DD.json
+```
+
+匯入時會先檢查 JSON 來源、版本與主要資料格式，並顯示摘要讓使用者確認。確認後會以合併方式加入使用者歌單、歌詞與偏好設定，不會直接覆蓋既有資料；若目前已重新選擇音樂檔，播放器會嘗試用檔名配對舊備份中的 track id。
+
+匯入後仍可能需要重新選擇音樂資料夾，才能重新取得實際音樂檔。
+
+## OBS Browser Source 模式
+
+用 query string 啟用：
+
+```text
+http://127.0.0.1:5173/?mode=obs
+```
+
+OBS 模式會顯示簡化 overlay：
+
+- 目前歌曲
+- 歌手
+- 進度條
+- 時間
+- avatar / character
+- 簡化頻譜
+
+OBS 可能重新載入頁面；若沒有音樂授權，會顯示待機畫面。播放器已預留 BroadcastChannel / localStorage event 架構給未來跨視窗同步。
+
+## 本地圖片素材
+
+素材設定在：
+
+```text
+src/config/brandAssets.ts
+```
+
+素材資料夾：
+
+```text
+public/assets/brand/
+public/assets/backgrounds/
+public/assets/characters/
+public/assets/covers/
+public/assets/decorations/
+```
+
+規則：
+
+- 不生成圖片
+- 不下載圖片
+- 不抓 YouTube 圖片
+- 圖片由使用者本地提供
+- 圖片路徑空白時不顯示破圖
+- 圖片載入失敗時使用 placeholder
+- Electron 打包後 public assets 會跟著進入應用程式資源
+
+## App Icon
+
+目前預留：
+
+```text
+build/icon.png
+build/icon.icns
+build/icon.ico
+```
+
+之後替換正式 icon 時，覆蓋這三個檔案即可。
+
+## 瀏覽器安全限制
+
+Web 版重新整理後可能需要重新選擇音樂檔或資料夾。原因是瀏覽器不允許網站永久保存完整 `File` 物件或任意讀取硬碟。
+
+支援 File System Access API 的瀏覽器會嘗試保存資料夾 handle 到 IndexedDB；如果權限失效，仍需重新授權。
+
+## macOS 未簽章提醒
+
+開發版若未使用 Apple Developer ID 簽章與 notarization，macOS 可能顯示「無法確認開發者」。
+
+可暫時這樣開啟：
+
+1. 打開「系統設定」
+2. 前往「隱私權與安全性」
+3. 在安全性區塊允許開啟 Aquariusgirl Music Room
+4. 再次開啟 App
+
+正式發行版建議使用程式碼簽章與 notarization。不要把憑證或私鑰寫進專案。
+
+## Windows SmartScreen
+
+未簽章開發版可能出現 SmartScreen 提醒。
+
+可暫時這樣開啟：
+
+1. 點擊「其他資訊」
+2. 點擊「仍要執行」
+
+正式發行版建議使用程式碼簽章。
+
+## 自動更新規劃
+
+目前只預留更新檢查 API 與 UI 位置，不硬寫不存在的更新網址。未來可加入 `electron-updater`：
+
+- 檢查更新
+- 目前版本
+- 更新說明
+
+## 明確不包含
+
+- 不使用 Tauri
+- 目前不包含 Live2D
+- 不使用 YouTube API
+- 不嵌入 YouTube iframe
+- 不串接外部音樂服務
+- 不下載音樂
+- 不生成圖片
+- 不加入 AI 產圖
