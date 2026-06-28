@@ -1,9 +1,11 @@
 import {
+  Bot,
   ListMusic,
   ListPlus,
   Sparkles,
   WandSparkles,
 } from "lucide-react";
+import { useState, type ReactNode } from "react";
 import type { Playlist } from "../types/playlist";
 
 type PlaylistSidebarProps = {
@@ -13,6 +15,7 @@ type PlaylistSidebarProps = {
   onSelect: (playlistId: string) => void;
   onCreateNormal: () => void;
   onCreateSmart: () => void;
+  assistant: ReactNode;
 };
 
 function getPlaylistIcon(playlist: Playlist) {
@@ -32,7 +35,10 @@ export function PlaylistSidebar({
   onSelect,
   onCreateNormal,
   onCreateSmart,
+  assistant,
 }: PlaylistSidebarProps) {
+  const [activeTab, setActiveTab] = useState<"playlists" | "ai">("playlists");
+
   return (
     <section className="glass-panel p-4">
       <div className="mb-3 flex items-center justify-between gap-3">
@@ -44,48 +50,83 @@ export function PlaylistSidebar({
         </div>
       </div>
 
-      <div className="mb-3 grid grid-cols-1 gap-2">
+      <div className="mb-4 grid grid-cols-2 gap-2 rounded-lg border border-white/10 bg-white/[0.06] p-1">
         <button
           type="button"
-          className="inline-flex items-center justify-center gap-2 rounded-lg border border-aquarius-blue/[0.34] bg-aquarius-blue/[0.12] px-3 py-2 text-sm font-bold text-white transition hover:border-aquarius-blue/60"
-          onClick={onCreateNormal}
+          className={[
+            "inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-bold transition",
+            activeTab === "playlists"
+              ? "bg-aquarius-blue/20 text-white shadow-[inset_0_0_0_1px_rgba(125,225,255,0.42)]"
+              : "text-aquarius-mist hover:text-white",
+          ].join(" ")}
+          onClick={() => setActiveTab("playlists")}
         >
-          <ListPlus className="h-4 w-4" />
-          新增播放清單
+          <ListMusic className="h-4 w-4" />
+          歌單
         </button>
         <button
           type="button"
-          className="inline-flex items-center justify-center gap-2 rounded-lg border border-aquarius-pink/[0.32] bg-aquarius-pink/[0.12] px-3 py-2 text-sm font-bold text-white transition hover:border-aquarius-pink/[0.55]"
-          onClick={onCreateSmart}
+          className={[
+            "inline-flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-bold transition",
+            activeTab === "ai"
+              ? "bg-aquarius-blue/20 text-white shadow-[inset_0_0_0_1px_rgba(125,225,255,0.42)]"
+              : "text-aquarius-mist hover:text-white",
+          ].join(" ")}
+          onClick={() => setActiveTab("ai")}
         >
-          <WandSparkles className="h-4 w-4" />
-          新增智慧型播放清單
+          <Bot className="h-4 w-4" />
+          AI 助手
         </button>
       </div>
 
-      <div className="flex max-h-64 flex-col gap-2 overflow-y-auto">
-        {playlists.map((playlist) => {
-          const count = playlistTrackIdsById[playlist.id]?.length ?? 0;
-
-          return (
+      {activeTab === "playlists" ? (
+        <>
+          <div className="mb-3 grid grid-cols-1 gap-2">
             <button
-              key={playlist.id}
               type="button"
-              className={[
-                "grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition",
-                playlist.id === activePlaylistId
-                  ? "border-aquarius-blue/[0.55] bg-aquarius-blue/[0.14] text-white"
-                  : "border-white/[0.08] bg-white/[0.06] text-aquarius-mist hover:text-white",
-              ].join(" ")}
-              onClick={() => onSelect(playlist.id)}
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-aquarius-blue/[0.34] bg-aquarius-blue/[0.12] px-3 py-2 text-sm font-bold text-white transition hover:border-aquarius-blue/60"
+              onClick={onCreateNormal}
             >
-              {getPlaylistIcon(playlist)}
-              <span className="truncate font-bold">{playlist.name}</span>
-              <span className="shrink-0 text-xs">{getPlaylistMeta(playlist, count)}</span>
+              <ListPlus className="h-4 w-4" />
+              新增播放清單
             </button>
-          );
-        })}
-      </div>
+            <button
+              type="button"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-aquarius-pink/[0.32] bg-aquarius-pink/[0.12] px-3 py-2 text-sm font-bold text-white transition hover:border-aquarius-pink/[0.55]"
+              onClick={onCreateSmart}
+            >
+              <WandSparkles className="h-4 w-4" />
+              新增智慧型播放清單
+            </button>
+          </div>
+
+          <div className="flex max-h-64 flex-col gap-2 overflow-y-auto">
+            {playlists.map((playlist) => {
+              const count = playlistTrackIdsById[playlist.id]?.length ?? 0;
+
+              return (
+                <button
+                  key={playlist.id}
+                  type="button"
+                  className={[
+                    "grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition",
+                    playlist.id === activePlaylistId
+                      ? "border-aquarius-blue/[0.55] bg-aquarius-blue/[0.14] text-white"
+                      : "border-white/[0.08] bg-white/[0.06] text-aquarius-mist hover:text-white",
+                  ].join(" ")}
+                  onClick={() => onSelect(playlist.id)}
+                >
+                  {getPlaylistIcon(playlist)}
+                  <span className="truncate font-bold">{playlist.name}</span>
+                  <span className="shrink-0 text-xs">{getPlaylistMeta(playlist, count)}</span>
+                </button>
+              );
+            })}
+          </div>
+        </>
+      ) : (
+        assistant
+      )}
     </section>
   );
 }

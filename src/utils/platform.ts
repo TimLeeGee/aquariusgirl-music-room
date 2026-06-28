@@ -18,6 +18,32 @@ type CustomImageResult = {
   error?: string;
 };
 
+export type AIStatus = {
+  available: boolean;
+  isModelLoading: boolean;
+  isModelReady: boolean;
+  isGenerating: boolean;
+  runtime: "llama.cpp sidecar";
+  error?: string;
+};
+
+export type AIChatMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
+
+export type AIChatResult =
+  | { ok: true; text: string }
+  | { ok: false; error: string; canceled?: boolean };
+
+export type AIMusicIntentResult =
+  | { ok: true; intent: unknown }
+  | { ok: false; error: string };
+
+export type AIReplyResult =
+  | { ok: true; text: string }
+  | { ok: false; error: string };
+
 export type AquariusgirlElectronAPI = {
   selectMusicFiles: () => Promise<ElectronSelectedFile[]>;
   selectMusicFolder: () => Promise<ElectronSelectedFile[]>;
@@ -31,6 +57,11 @@ export type AquariusgirlElectronAPI = {
   selectCustomImage: (slot: CustomImageSlot) => Promise<CustomImageResult>;
   removeCustomImage: (slot: CustomImageSlot) => Promise<CustomImageResult>;
   checkForUpdates: () => Promise<{ available: false; message: string }>;
+  appendAIPlaylistActionLog?: (entry: string) => Promise<{
+    ok: boolean;
+    path?: string;
+    error?: string;
+  }>;
   setMiniPlayerMode: (settings: {
     enabled: boolean;
     alwaysOnTop: boolean;
@@ -58,6 +89,23 @@ export type AquariusgirlElectronAPI = {
     width: number;
     height: number;
   } | null>;
+  ai?: {
+    getAIStatus: () => Promise<AIStatus>;
+    initAI: () => Promise<AIStatus>;
+    sendAIMessage: (
+      messages: AIChatMessage[],
+      onToken?: (token: string) => void,
+    ) => Promise<AIChatResult>;
+    cancelAI: () => Promise<{ ok: boolean; canceled: boolean }>;
+    parseMusicSearchIntent: (
+      userText: string,
+      librarySummary: unknown,
+    ) => Promise<AIMusicIntentResult>;
+    composeAIReply: (
+      toolResult: unknown,
+      fallbackText: string,
+    ) => Promise<AIReplyResult>;
+  };
 };
 
 export type ElectronSelectedFile = {

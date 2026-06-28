@@ -11,4 +11,6 @@ public/**/*.gif
 public/**/*.webp
 public/**/*.avif
 public/**/*.svg
+resources/ai/models/*.gguf
+resources/ai/bin/darwin-x64/
 *.log

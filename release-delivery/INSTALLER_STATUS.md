@@ -1,5 +1,40 @@
 # Installer 狀態
 
+## 2026-06-28 0.1.17 最新狀態（AI harness、開源 prompt、雙平台發行）
+
+本輪把版本更新為 0.1.17，AI 助手改成小模型 router + 本機工具執行：模型只輸出 intent JSON 或根據真實工具結果潤飾短回覆；搜尋本機音樂、隨機挑歌、建立歌單、加入歌單與移除安全提示都由程式負責。Prompt 改為 `private/prompts/` 三份開源 `.txt`，不再使用加密 bundle。
+
+- `Aquariusgirl Music Room Setup 0.1.17.exe`：667,081,163 bytes，SHA-256 `b20c7522f79de137b0534c23f66632cdb21cdeb2623714c37c9576a1b1c142de`
+- `Aquariusgirl Music Room-0.1.17-arm64.dmg`：683,782,606 bytes，SHA-256 `c6fd6831e480c9ff2c40c1849357e7cb0e0f2134ded80722afe4a993f872b7b4`
+
+模型：`resources/ai/models/qwen3.5-0.8b.gguf`，532,517,120 bytes，SHA-256 `bd258782e35f7f458f8aced1adc053e6e92e89bc735ba3be89d38a06121dc517`。Prompt：`character_prompt.txt`、`ai_router_prompt.txt`、`ai_reply_prompt.txt` 以明文打包到 `Contents/Resources/prompts/`，未偵測到 prompt `.bin`。
+
+驗收：`check:prompts`、AI track search、playlist logic、Mini opacity、FLAC metadata、custom images、theme colors、all-target `check:ai-assets`、`npm run build`、`npm run electron:compile`、升權 `npm run dist:release` 均通過。一般沙盒的 `hdiutil create` 仍失敗，升權重跑成功。DMG `hdiutil verify` VALID；唯讀掛載後 `CFBundleShortVersionString` / `CFBundleVersion` 均為 0.1.17，執行檔為 arm64，runtime 只保留 `darwin-arm64/llama-server`。EXE static check 為 Windows NSIS installer；未在 Windows 真機執行，macOS notarization、Apple Developer ID 與 Windows code signing 尚未設定。
+
+## 2026-06-28 0.1.16 歷史狀態（AI 播放清單真實歌曲與歌單區分頁）
+
+本輪把版本更新為 0.1.16，AI 建立播放清單改為只能從目前已載入/已索引的本機歌曲 metadata 挑選，不再讓模型憑空猜歌。右側歌單卡改為 `歌單 / AI 助手` 分頁，AI 欄位成為歌單區的輔助入口；不新增 embedding 模型，先用 metadata 關鍵字、別名與 mood scoring 做最小可行搜尋。
+
+- `Aquariusgirl Music Room Setup 0.1.16.exe`：667,076,153 bytes，SHA-256 `38a37f0d4cbab4237439fccb5d24baf1b6319e8dadaee5fa325159f8907f4af7`
+- `Aquariusgirl Music Room-0.1.16-arm64.dmg`：683,788,448 bytes，SHA-256 `04e348006c00df084a7d08ad3c8ec8b564bc998bb9be6ac6cf21627501b1131c`
+- `Aquariusgirl Music Room-0.1.16.dmg`：686,083,848 bytes，SHA-256 `a90098927ffcc360f42b4624e7fc26357625710040be857c659acd22dcb223d3`
+
+模型：`resources/ai/models/qwen3.5-0.8b.gguf`，532,517,120 bytes，SHA-256 `bd258782e35f7f458f8aced1adc053e6e92e89bc735ba3be89d38a06121dc517`。Prompt bundle：`resources/ai/prompts/aquariusgirl_prompt.bundle.bin`，227 bytes，SHA-256 `4b31df90da9ba6af851a851cdba9d32bbed6529ff8a3330fc124296af34f278d`。
+
+驗收：AI track search、playlist logic、Mini opacity、FLAC metadata、custom images、theme colors、secure prompts、all-target AI assets、`npm run build`、`npm run electron:compile`、`dist:mac`、`dist:win` 均通過。兩個 DMG 唯讀掛載 CRC 通過，封裝版本均為 0.1.16，架構分別為 arm64／x86_64；各 DMG 均包含模型與加密 prompt bundle。EXE 為 Windows NSIS installer；未在 Windows 真機執行，macOS notarization、Apple Developer ID 與 Windows code signing 尚未設定。
+
+## 2026-06-28 14:32 最新狀態（0.1.15 + 聊天整合 AI 播放清單）
+
+本輪把 AI 建立播放清單整合進聊天流程：使用者聊到音樂時先詢問是否整理，取得同意或直接要求建立播放清單後才產生候選歌單；聊天保留極短本機上下文記憶，首次開啟 AI 面板載入模型時會提示「請稍等」。`private/prompts/` 已支援短 prompt 包，加密時只打包現有 `.txt` prompt。模型與 runtime 已包進安裝檔；prompt 明文未包進 resources，renderer 不提供讀取 system prompt 的 API。
+
+- `Aquariusgirl Music Room Setup 0.1.15.exe`：667,074,540 bytes，SHA-256 `e2feba0e6a9fd466f4a339bd0bdb57031ff7a4631f3247ccd91856e2a4e34921`
+- `Aquariusgirl Music Room-0.1.15-arm64.dmg`：683,827,707 bytes，SHA-256 `717eb5d5edda12552d85407fb3309f9a3842c13e2940e521c0c72af827bb0680`
+- `Aquariusgirl Music Room-0.1.15.dmg`：686,010,422 bytes，SHA-256 `0416418659b2439f09450180062b7572984c3d8cb672593dbdf975b7bcf090e4`
+
+模型：`resources/ai/models/qwen3.5-0.8b.gguf`，532,517,120 bytes，SHA-256 `bd258782e35f7f458f8aced1adc053e6e92e89bc735ba3be89d38a06121dc517`。Prompt bundle：`resources/ai/prompts/aquariusgirl_prompt.bundle.bin`，227 bytes，SHA-256 `4b31df90da9ba6af851a851cdba9d32bbed6529ff8a3330fc124296af34f278d`。
+
+驗收：`encrypt:prompts`、`check:secure-prompts`、all-target `check:ai-assets`、AI track search check、`npm run build`、`npm run electron:compile`、`dist:mac`、`dist:win` 均通過。兩個 DMG 唯讀掛載 CRC 通過，封裝版本均為 0.1.15，架構分別為 arm64／x86_64；各 DMG 只保留對應 mac runtime，並包含模型與加密 prompt bundle。EXE 為 Windows NSIS installer；未在 Windows 真機執行，macOS notarization、Apple Developer ID 與 Windows code signing 尚未設定。
+
 ## 2026-06-22 17:44 最新狀態（0.1.15）
 
 README、新手引導與未使用的歌詞資料管線已完成殘留清理；未新增套件或替代功能，舊 IndexedDB 退役資料保留在本機但不再使用。

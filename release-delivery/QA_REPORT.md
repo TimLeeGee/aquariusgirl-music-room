@@ -1,9 +1,66 @@
 # QA 驗收報告
 
-產品：Aquariusgirl Music Room / 水瓶罐子的音樂小水池  
-版本：0.1.15  
-日期：2026-06-22  
+產品：Aquariusgirl Music Room / 水瓶罐子的音樂小水池
+版本：0.1.17
+日期：2026-06-28
 驗收角色：PM / QA / Electron 發行工程師
+
+## 2026-06-28 AI harness、開源 prompt 與雙平台發行 0.1.17
+
+- 範圍：版本更新至 0.1.17；新增薄層 AI harness、intent router、skill registry 與 deterministic response composer。小模型只判斷 intent 與潤飾工具結果；本機歌曲搜尋、隨機歌單、建立歌單、加入歌單與移除安全提示仍由播放器程式執行。
+- Prompt：`private/prompts/character_prompt.txt`、`private/prompts/ai_router_prompt.txt`、`private/prompts/ai_reply_prompt.txt` 為開源明文 prompt；移除 secure prompt service、prompt key、encrypt/check secure prompt 腳本與 `.bin` bundle。`npm run check:prompts` PASS，並會擋掉舊的 prompt `.bin`。
+- 打包目標：只產 `Aquariusgirl Music Room-0.1.17-arm64.dmg` 與 `Aquariusgirl Music Room Setup 0.1.17.exe`；不再產 macOS x64 DMG、universal 或 Linux installer。`release-delivery/installers/` 只有兩個檔案，`release/` 不存在。
+- 檢查：`npm run check:prompts`、`npm run check:ai-track-search`、`node scripts/playlist-logic-check.mjs`、`node scripts/mini-opacity-check.mjs`、`npm run check:flac-metadata`、`npm run check:custom-images`、`npm run check:theme-colors`、all-target `check:ai-assets`、`npm run build`、`npm run electron:compile` 均 PASS。
+- 打包：一般沙盒 `npm run dist:release` 在 macOS `hdiutil create` 失敗；升級權限重跑 `npm run dist:release` PASS，產出兩個 installer 並同步至唯一交付位置。
+- DMG 驗證：`hdiutil verify` VALID；唯讀掛載後 `CFBundleShortVersionString` / `CFBundleVersion` 均為 0.1.17，執行檔為 Mach-O arm64。包內 `Contents/Resources/prompts/` 只有三份 `.txt` prompt，未偵測到 prompt `.bin`；AI runtime 只保留 `ai/bin/darwin-arm64/llama-server`，模型為 `qwen3.5-0.8b.gguf`。
+- EXE static check：PASS，辨識為 Windows NSIS installer；builder log 顯示 Windows x64 target。未在 Windows 真機執行，無法宣稱 Windows fresh install 與離線 AI 實機通過。
+
+最新 installer：
+
+- EXE：667,081,163 bytes，SHA-256 `b20c7522f79de137b0534c23f66632cdb21cdeb2623714c37c9576a1b1c142de`
+- arm64 DMG：683,782,606 bytes，SHA-256 `c6fd6831e480c9ff2c40c1849357e7cb0e0f2134ded80722afe4a993f872b7b4`
+
+限制：Windows 真機安裝與 AI 操作尚未驗收；macOS DMG 未做 Apple Developer ID 簽章或 notarization；Windows EXE 未做 code signing。未用使用者真實本機音樂資料重跑完整人工點擊流程。
+
+## 2026-06-28 AI 播放清單真實歌曲與歌單區分頁 0.1.16
+
+- 範圍：版本更新至 0.1.16；AI 建立播放清單只允許使用目前已載入/已索引的真實 `tracks`，隨機歌單從真實歌曲抽樣，關鍵字歌單走 metadata/別名/mood scoring，找不到時回覆找不到並不建立假歌。移除模型聊天上下文記憶，只送本次提示。
+- UI：AI 助手從獨立右側面板移入 `PlaylistSidebar`，以 `歌單 / AI 助手` segmented tabs 切換。左側播放器、Mini、Visualizer、SleepTimer、外觀設定未改。
+- Audit 文件：`docs/AI_PLAYLIST_AUDIT_0.1.16.md`、`docs/UI_REVIEW_0.1.16.md`、`docs/QA_CHECKLIST_0.1.16.md` 已建立；AI 建歌單 action log 開發版 append 到 `docs/AI_PLAYLIST_ACTION_LOG.md`，打包版寫入 userData。
+- 最小搜尋方案：未新增 embedding/向量模型；現況沒有 vector DB。依 Ponytail 原則先用標準字串正規化、別名擴展與 metadata scoring，避免新增大型依賴與啟動成本。
+- 檢查：`npm run check:ai-track-search`、`node scripts/playlist-logic-check.mjs`、`node scripts/mini-opacity-check.mjs`、`npm run check:flac-metadata`、`npm run check:custom-images`、`npm run check:theme-colors`、`npm run check:secure-prompts`、all-target `check:ai-assets`、`npm run build`、`npm run electron:compile` 均 PASS。
+- UI 驗證：瀏覽器預覽確認右側 `Playlists` 卡有 `歌單 / AI 助手` 分頁，獨立 AI panel 數量為 0；切到 AI 助手後可看到內嵌 AI 內容。
+- 打包：`npm run dist:mac`、`npm run dist:win` 均 PASS；唯一交付位置有三個 0.1.16 installer，`release/` 不存在。
+- DMG 驗證：兩個 DMG `hdiutil verify` 均 VALID；唯讀掛載後 `CFBundleShortVersionString`／`CFBundleVersion` 均為 0.1.16，執行檔分別為 x86_64／arm64。兩者均包含模型與加密 prompt bundle。
+- EXE static check：PASS，辨識為 Windows NSIS installer；builder log 顯示 Windows x64 target。未在 Windows 真機執行，無法宣稱 Windows fresh install 與 AI 建歌單真機通過。
+
+最新 installer：
+
+- EXE：667,076,153 bytes，SHA-256 `38a37f0d4cbab4237439fccb5d24baf1b6319e8dadaee5fa325159f8907f4af7`
+- arm64 DMG：683,788,448 bytes，SHA-256 `04e348006c00df084a7d08ad3c8ec8b564bc998bb9be6ac6cf21627501b1131c`
+- x64 DMG：686,083,848 bytes，SHA-256 `a90098927ffcc360f42b4624e7fc26357625710040be857c659acd22dcb223d3`
+
+限制：Windows 真機安裝與 AI 操作尚未驗收；macOS DMG 未做 Apple Developer ID 簽章或 notarization；Windows EXE 未做 code signing。未用使用者真實本機音樂資料重跑完整人工點擊流程。
+
+## 2026-06-28 14:32 聊天整合 AI 播放清單 0.1.15
+
+- 範圍：把 AI 建立播放清單整合進聊天；音樂相關對話先詢問是否整理，取得同意或直接要求建立播放清單後才產生候選歌單。新增極短本機上下文記憶與首次載入模型提示；未新增套件或第二套歌單流程。
+- Prompt 保護：`npm run encrypt:prompts` PASS；短 prompt 包明文 193 bytes，產物為 `resources/ai/prompts/aquariusgirl_prompt.bundle.bin`，227 bytes，SHA-256 `4b31df90da9ba6af851a851cdba9d32bbed6529ff8a3330fc124296af34f278d`。`private/prompts/*.txt` 已被 `.gitignore` 排除；`check:secure-prompts` 在 build 後 PASS。
+- AI assets：`resources/ai/models/qwen3.5-0.8b.gguf` 為 Qwen3.5 0.8B Q4_K_M GGUF，532,517,120 bytes，SHA-256 `bd258782e35f7f458f8aced1adc053e6e92e89bc735ba3be89d38a06121dc517`；all-target `check:ai-assets` PASS，涵蓋 darwin-arm64、darwin-x64、win32-x64。
+- 安全邊界：新增 IPC 只使用 `aquariusgirl:` 前綴；沒有 `getSystemPrompt`、`dumpPrompt`、`readPrompt`、`exportPrompt`。Renderer 沒有 Node `fs/path` import；AI 歌曲搜尋摘要不包含 `sourcePath`、`localUrl`、`File`、`Blob`、`ArrayBuffer` 或封面 URL。
+- `npm run check:ai-track-search`：PASS，驗證 AI 搜尋摘要不含本機路徑，本機 deterministic scoring 可依 artist、likedOnly、mood 與時間上限找歌，也涵蓋「建立播放清單」、音樂相關提問、同意語句與聊天上下文摘要。
+- `npm run build`、`npm run electron:compile`：PASS。
+- `npm run dist:mac`、`npm run dist:win`：PASS；唯一交付位置有三個 0.1.15 installer，`release/` 不存在。
+- DMG 驗證：兩個 DMG 唯讀掛載 CRC 通過；`CFBundleShortVersionString`／`CFBundleVersion` 均為 0.1.15，執行檔分別為 x86_64／arm64。x64 DMG 只保留 `ai/bin/darwin-x64/llama-server`；arm64 DMG 只保留 `ai/bin/darwin-arm64/llama-server`；兩者均只在 prompt 目錄看到 `.bin`。
+- EXE static check：PASS，辨識為 Windows NSIS installer；builder log 顯示 win-unpacked 使用 `resources/ai/bin/win32-x64`。本機 `bsdtar` 無法列出 NSIS 內容；未在 Windows 真機執行，無法宣稱 Windows fresh install、離線聊天與 AI 建歌單已真機通過。
+
+最新 installer：
+
+- EXE：667,074,540 bytes，SHA-256 `e2feba0e6a9fd466f4a339bd0bdb57031ff7a4631f3247ccd91856e2a4e34921`
+- arm64 DMG：683,827,707 bytes，SHA-256 `717eb5d5edda12552d85407fb3309f9a3842c13e2940e521c0c72af827bb0680`
+- x64 DMG：686,010,422 bytes，SHA-256 `0416418659b2439f09450180062b7572984c3d8cb672593dbdf975b7bcf090e4`
+
+限制：Windows 真機安裝與 AI 操作尚未驗收；macOS DMG 未做 Apple Developer ID 簽章或 notarization；Windows EXE 未做 code signing。完整播放器互動回歸本輪未重跑 GUI，只完成 build、source checks、packaged static 與 DMG mount。
 
 ## 2026-06-22 17:44 歌詞／LRC 殘留清理 0.1.15
 

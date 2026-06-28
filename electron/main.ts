@@ -1,7 +1,8 @@
 import { app, BrowserWindow, dialog, ipcMain, screen, type Rectangle } from "electron";
-import { readFile, readdir, stat } from "node:fs/promises";
+import { appendFile, mkdir, readFile, readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { LocalAIService } from "./ai/aiService.js";
 import {
   isCustomImageSlot,
   loadCustomImages,
@@ -13,6 +14,7 @@ import {
 const supportedExtensions = new Set([".mp3", ".wav", ".ogg", ".m4a", ".flac"]);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const localAIService = new LocalAIService();
 let mainWindow: BrowserWindow | null = null;
 let isMiniMode = false;
 const windowBoundsState: {
@@ -169,6 +171,16 @@ function getCustomImagesRoot() {
   return path.join(app.getPath("userData"), "custom-images");
 }
 
+function getAIPlaylistActionLogPath() {
+  return app.isPackaged
+    ? path.join(app.getPath("userData"), "AI_PLAYLIST_ACTION_LOG.md")
+    : path.join(app.getAppPath(), "docs", "AI_PLAYLIST_ACTION_LOG.md");
+}
+
+function safeLogEntry(value: unknown) {
+  return typeof value === "string" ? value.slice(0, 24_000).trim() : "";
+}
+
 async function toSelectedFile(filePath: string, basePath?: string) {
   const fileStat = await stat(filePath);
   const buffer = await readFile(filePath);
@@ -250,6 +262,10 @@ app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     app.quit();
   }
+});
+
+app.on("before-quit", () => {
+  localAIService.shutdown();
 });
 
 ipcMain.handle("aquariusgirl:select-music-files", async () => {
@@ -378,6 +394,19 @@ ipcMain.handle("aquariusgirl:check-for-updates", () => ({
   available: false,
   message: "Auto update is reserved for a future electron-updater integration.",
 }));
+
+ipcMain.handle("aquariusgirl:append-ai-playlist-action-log", async (_event, entry: unknown) => {
+  const text = safeLogEntry(entry);
+  if (!text) {
+    return { ok: false, error: "action log is empty" };
+  }
+
+  const logPath = getAIPlaylistActionLogPath();
+  // ponytail: dev writes to docs for QA; packaged writes userData because app resources are read-only.
+  await mkdir(path.dirname(logPath), { recursive: true });
+  await appendFile(logPath, `${text}\n`, "utf8");
+  return { ok: true, path: logPath };
+});
 
 ipcMain.handle(
   "aquariusgirl:set-mini-player-mode",
@@ -538,4 +567,43 @@ ipcMain.handle("aquariusgirl:window-control", (event, action: string) => {
 ipcMain.handle("aquariusgirl:get-window-bounds", (event) => {
   const window = BrowserWindow.fromWebContents(event.sender) ?? mainWindow;
   return window?.getBounds() ?? null;
+});
+
+ipcMain.handle("aquariusgirl:ai-status", () => localAIService.getStatus());
+
+ipcMain.handle("aquariusgirl:ai-init", () => localAIService.init());
+
+ipcMain.handle("aquariusgirl:ai-chat", async (event, payload: unknown) => {
+  const requestId =
+    payload && typeof payload === "object" && typeof (payload as { requestId?: unknown }).requestId === "string"
+      ? (payload as { requestId: string }).requestId
+      : "";
+  const messages =
+    payload && typeof payload === "object" ? (payload as { messages?: unknown }).messages : [];
+
+  return localAIService.chat(messages, {
+    onToken: (token) => {
+      event.sender.send("aquariusgirl:ai-chat-token", { requestId, token });
+    },
+  });
+});
+
+ipcMain.handle("aquariusgirl:ai-cancel", () => localAIService.cancel());
+
+ipcMain.handle("aquariusgirl:ai-search-intent", (_event, payload: unknown) => {
+  const userText =
+    payload && typeof payload === "object" ? (payload as { userText?: unknown }).userText : "";
+  const librarySummary =
+    payload && typeof payload === "object" ? (payload as { librarySummary?: unknown }).librarySummary : {};
+
+  return localAIService.parseMusicSearchIntent(userText, librarySummary);
+});
+
+ipcMain.handle("aquariusgirl:ai-compose-reply", (_event, payload: unknown) => {
+  const toolResult =
+    payload && typeof payload === "object" ? (payload as { toolResult?: unknown }).toolResult : {};
+  const fallbackText =
+    payload && typeof payload === "object" ? (payload as { fallbackText?: unknown }).fallbackText : "";
+
+  return localAIService.composeToolReply(toolResult, fallbackText);
 });

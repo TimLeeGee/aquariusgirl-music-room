@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AppLayout } from "./components/AppLayout";
+import {
+  AIAssistantPanel,
+  type AIPlaylistAddResult,
+  type AIPlaylistCreateDetails,
+  type AIPlaylistCreateResult,
+} from "./components/AIAssistantPanel";
 import { BackgroundAura } from "./components/BackgroundAura";
 import { CharacterStage } from "./components/CharacterStage";
 import { DropZone } from "./components/DropZone";
@@ -212,6 +218,22 @@ function playlistNameExists(
   );
 }
 
+function createUniquePlaylistName(playlists: Playlist[], name: string) {
+  const baseName = name.trim() || "水瓶罐子 AI 歌單";
+  if (!playlistNameExists(playlists, baseName)) {
+    return baseName;
+  }
+
+  for (let index = 2; index < 100; index += 1) {
+    const candidate = `${baseName} ${index}`;
+    if (!playlistNameExists(playlists, candidate)) {
+      return candidate;
+    }
+  }
+
+  return `${baseName} ${Date.now()}`;
+}
+
 function createImportablePlaylists(
   settings: ImportedSettings,
   idMap: Map<string, string>,
@@ -283,6 +305,42 @@ type PlaylistNameDialogState =
   | null
   | { kind: "normal" }
   | { kind: "rename"; playlistId: string; defaultName: string };
+
+function logText(value: unknown) {
+  return String(value ?? "").replace(/\r?\n/g, " ").trim() || "-";
+}
+
+function createAIPlaylistActionLogEntry(args: {
+  details: AIPlaylistCreateDetails;
+  playlistName: string;
+  trackIds: string[];
+  tracks: Track[];
+}) {
+  const trackById = new Map(args.tracks.map((track) => [track.id, track]));
+  const rows = args.trackIds.map((trackId, index) => {
+    const track = trackById.get(trackId);
+    return [
+      `${index + 1}.`,
+      `songId=${logText(trackId)}`,
+      `title=${logText(track?.title)}`,
+      `artist=${logText(track?.artist)}`,
+      `filePath=${logText(track?.sourcePath ?? track?.name)}`,
+    ].join(" ");
+  });
+
+  return [
+    "",
+    `## ${new Date().toISOString()}`,
+    `- 使用者原始指令：${logText(args.details.requestText)}`,
+    `- AI 判斷的意圖：${logText(args.details.intent)}`,
+    `- 使用的搜尋方式：${args.details.searchMethod}`,
+    `- 建立的播放清單名稱：${logText(args.playlistName)}`,
+    `- 加入歌曲數量：${args.trackIds.length}`,
+    "- 是否有找不到歌曲的情況：否",
+    "- 歌曲：",
+    ...rows.map((row) => `  ${row}`),
+  ].join("\n");
+}
 
 function getLikedNamesFromImportedTracks(trackMetadata: ImportedTrackMetadata[] = []) {
   return trackMetadata
@@ -870,6 +928,75 @@ export default function App() {
     [normalPlaylists, playlistsState, showError, showInfo, tracks],
   );
 
+  const handleCreateAIPlaylist = useCallback(
+    (
+      name: string,
+      trackIds: string[],
+      details: AIPlaylistCreateDetails,
+    ): AIPlaylistCreateResult => {
+      const validTrackIds = new Set(tracks.map((track) => track.id));
+      const uniqueTrackIds = Array.from(new Set(trackIds)).filter((trackId) =>
+        validTrackIds.has(trackId),
+      );
+
+      if (uniqueTrackIds.length === 0) {
+        return { ok: false, error: "目前載入的歌曲裡找不到符合條件的歌曲。" };
+      }
+
+      const playlistName = createUniquePlaylistName(playlistsState.userPlaylists, name);
+      const playlist = playlistsState.createPlaylist(playlistName);
+      uniqueTrackIds.forEach((trackId) => {
+        playlistsState.addTrackToPlaylist(playlist.id, trackId);
+      });
+      playlistsState.setActivePlaylistId(playlist.id);
+      showInfo(`已建立播放清單「${playlistName}」，加入 ${uniqueTrackIds.length} 首。`);
+      void window.aquariusgirlAPI?.appendAIPlaylistActionLog?.(
+        createAIPlaylistActionLogEntry({
+          details,
+          playlistName,
+          trackIds: uniqueTrackIds,
+          tracks,
+        }),
+      ).catch(() => undefined);
+      return { ok: true, name: playlistName, count: uniqueTrackIds.length };
+    },
+    [playlistsState, showInfo, tracks],
+  );
+
+  const handleAddAITracksToPlaylist = useCallback((
+    playlistName: string,
+    trackIds: string[],
+  ): AIPlaylistAddResult => {
+    const normalizedName = playlistName.trim().toLocaleLowerCase();
+    const playlist =
+      normalPlaylists.find((item) => item.name.trim().toLocaleLowerCase() === normalizedName) ??
+      normalPlaylists.find((item) => {
+        const itemName = item.name.trim().toLocaleLowerCase();
+        return Boolean(normalizedName) &&
+          (itemName.includes(normalizedName) || normalizedName.includes(itemName));
+      });
+
+    if (!playlist) {
+      return { ok: false, error: `找不到「${playlistName || "指定"}」歌單，請先建立或改用現有歌單名稱。` };
+    }
+
+    const validTrackIds = new Set(tracks.map((track) => track.id));
+    const existingTrackIds = new Set(playlist.trackIds);
+    const nextTrackIds = Array.from(new Set(trackIds)).filter((trackId) =>
+      validTrackIds.has(trackId) && !existingTrackIds.has(trackId),
+    );
+
+    if (nextTrackIds.length === 0) {
+      return { ok: false, error: `「${playlist.name}」沒有可新增的本機歌曲。` };
+    }
+
+    nextTrackIds.forEach((trackId) => {
+      playlistsState.addTrackToPlaylist(playlist.id, trackId);
+    });
+    showInfo(`已加入「${playlist.name}」，共 ${nextTrackIds.length} 首。`);
+    return { ok: true, name: playlist.name, count: nextTrackIds.length };
+  }, [normalPlaylists, playlistsState, showInfo, tracks]);
+
   const handleReorderVisibleTracks = useCallback(
     (fromIndex: number, toIndex: number) => {
       if (playlistsState.activePlaylist?.type === "normal") {
@@ -1323,6 +1450,15 @@ export default function App() {
               onSelect={playlistsState.setActivePlaylistId}
               onCreateNormal={() => setPlaylistNameDialog({ kind: "normal" })}
               onCreateSmart={() => setSmartDialogOpen(true)}
+              assistant={
+                <AIAssistantPanel
+                  embedded
+                  tracks={tracks}
+                  playlists={normalPlaylists}
+                  onCreatePlaylist={handleCreateAIPlaylist}
+                  onAddTracksToPlaylist={handleAddAITracksToPlaylist}
+                />
+              }
             />
             <PlaylistManager
               activePlaylist={playlistsState.activePlaylist}

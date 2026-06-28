@@ -17,6 +17,7 @@
 - IndexedDB 保存歌曲 metadata 與歌單資料，不保存音樂檔本體
 - File System Access API 資料夾授權，瀏覽器不支援時 fallback 到 `webkitdirectory`
 - 多播放清單基礎管理
+- 內建離線 AI 聊天與本機歌曲 metadata 搜尋歌單
 - JSON 匯入 / 匯出歌單設定，不包含音樂檔本體
 - OBS Browser Source 模式：`?mode=obs`
 - Electron main/preload，安全暴露必要檔案選擇 API
@@ -35,6 +36,8 @@
 - IndexedDB
 - Electron
 - electron-builder
+- llama.cpp sidecar runtime
+- 開源 AI prompt pack
 
 ## 安裝
 
@@ -82,13 +85,31 @@ npm run electron:dev
 
 ## Electron 打包
 
-一般打包：
+AI prompt 以明文開源維護，打包前先檢查三份 prompt：
+
+```bash
+npm run check:prompts
+```
+
+打包前檢查內建 AI 模型與 sidecar runtime：
+
+```bash
+npm run check:ai-assets
+```
+
+正式發行打包，產出 macOS Apple Silicon DMG 與 Windows x64 NSIS EXE：
+
+```bash
+npm run dist:release
+```
+
+一般 `dist` 也是同一條正式發行流程：
 
 ```bash
 npm run dist
 ```
 
-macOS `.dmg`，目前腳本會嘗試產出 Apple Silicon arm64 與 Intel x64：
+macOS `.dmg`，只產 Apple Silicon arm64：
 
 ```bash
 npm run dist:mac
@@ -106,7 +127,7 @@ npm run dist:win
 npm run dist:all
 ```
 
-`dist:all` 會透過 `scripts/dist-all.mjs` 依作業系統選擇可支援的打包目標；若缺少網路、Wine 或系統映像工具，錯誤會直接顯示在終端機。
+`dist:all` 會透過 `scripts/dist-all.mjs` 依作業系統選擇可支援的打包目標；在 macOS 上會產出 arm64 DMG 與 Windows x64 EXE。若缺少 Wine 或系統映像工具，錯誤會直接顯示在終端機。
 
 最新可安裝檔只會保留在：
 
@@ -121,10 +142,22 @@ release-delivery/installers/
 - `appId`: `com.aquariusgirl.musicroom`
 - `productName`: `Aquariusgirl Music Room`
 - mac target: `dmg`
-- mac arch: `arm64`, `x64`
+- mac arch: `arm64`
 - win target: `nsis`
 - desktop shortcut: enabled
 - start menu shortcut: enabled
+
+內建 AI 打包資源會放在：
+
+```text
+resources/ai/models/qwen3.5-0.8b.gguf
+private/prompts/character_prompt.txt
+private/prompts/ai_router_prompt.txt
+private/prompts/ai_reply_prompt.txt
+resources/ai/bin/<platform-arch>/llama-server
+```
+
+安裝後 main process 會從 `process.resourcesPath/ai/` 載入模型與 runtime，並從 `process.resourcesPath/prompts/` 載入三份 prompt。
 
 舊指令仍保留為 alias：
 
@@ -153,9 +186,32 @@ workflow 會在 GitHub hosted runner 上產出：
 
 - Windows x64 NSIS installer
 - macOS arm64 DMG
-- macOS x64 DMG
 
 目前未設定 Apple Developer ID、notarization 或 Windows code signing。測試版 artifacts 可安裝測試，但正式公開發行前建議補簽章。
+
+## 內建離線 AI
+
+Aquariusgirl Music Room 的 AI 會隨 EXE / DMG 內建。使用者不需要安裝 Ollama、不需要下載模型、不需要 Node.js，也不需要開終端機。
+
+AI 完全在本機執行，不串接雲端 API。聊天與 AI 搜尋只使用目前載入歌曲的安全 metadata 摘要，不會上傳音樂檔、不會上傳使用者路徑，也不會把封面圖片、Blob、File 或 ArrayBuffer 傳給模型。
+
+預設模型為 `qwen3.5 0.8B GGUF`，檔案放在：
+
+```text
+resources/ai/models/qwen3.5-0.8b.gguf
+```
+
+因為模型與 llama.cpp runtime 會包進安裝檔，EXE / DMG 會比純播放器版本大。模型啟動後會保持常駐，不會因為閒置自動卸載；關閉播放器時才釋放。
+
+## 內建 AI prompt 與工具分工
+
+水瓶罐子 AI 的 prompt 以開源文字檔維護，不再加密或混淆。三份 prompt 的用途固定：
+
+- `character_prompt.txt`：一般聊天角色。
+- `ai_router_prompt.txt`：只把使用者輸入轉成 intent JSON。
+- `ai_reply_prompt.txt`：根據程式真實執行結果產生短回覆。
+
+小模型只負責理解意圖與潤飾回覆；搜尋本機音樂、建立歌單、隨機歌單、加入歌單、避免刪除原始音樂檔等行為都由播放器程式執行。模型 JSON 解析失敗時會走 deterministic fallback，不會把原始模型雜訊直接顯示給使用者。
 
 ## 桌面版使用流程
 
