@@ -1,5 +1,7 @@
 # Aquariusgirl Music Room
 
+English version: see [English Version](#english-version).
+
 水瓶罐子的音樂小水池是一款本地音樂播放器。Web 版可用瀏覽器啟動，Electron 版可打包成桌面安裝檔。播放器只讀取使用者明確選擇的本機音樂，不使用 YouTube、不串接線上音樂、不下載音樂、不生成圖片。
 
 ## 授權
@@ -400,3 +402,250 @@ Web 版重新整理後可能需要重新選擇音樂檔或資料夾。原因是�
 - 不下載音樂
 - 不生成圖片
 - 不加入 AI 產圖
+
+---
+
+## English Version
+
+Aquariusgirl Music Room is a local-first music player. It can run as a Vite web app or be packaged as an Electron desktop app. It only reads music files that the user explicitly selects. It does not use YouTube, online music services, music downloads, or image generation.
+
+## License
+
+This project is released under the [MIT License](LICENSE).
+
+## Features
+
+- Load local music files and folders.
+- Drag music files into the player.
+- Play, pause, seek, mute, adjust volume, and switch tracks with `HTMLAudioElement`.
+- Read ID3v2 metadata and album artwork, with filename fallback.
+- Sleep timer: 15, 30, 60 minutes, custom minutes, or stop after the current track.
+- Web Audio API visualizer.
+- IndexedDB stores track metadata and playlists, not music files.
+- File System Access API folder permission, with `webkitdirectory` fallback.
+- Basic multi-playlist management.
+- JSON import/export for settings and playlists, without music files.
+- OBS Browser Source mode: `?mode=obs`.
+- Electron main/preload bridge for safe file selection.
+- macOS DMG and Windows EXE packaging.
+- First-run onboarding.
+
+## Tech Stack
+
+- Vite
+- React
+- TypeScript
+- Tailwind CSS
+- HTMLAudioElement
+- Web Audio API
+- localStorage
+- IndexedDB
+- Electron
+- electron-builder
+
+## Install
+
+```bash
+npm install
+```
+
+If the Electron binary is incomplete, run:
+
+```bash
+npx install-electron --no
+```
+
+## Web Development
+
+```bash
+npm run dev
+```
+
+Open the Vite localhost URL, usually:
+
+```text
+http://127.0.0.1:5173/
+```
+
+Production web build:
+
+```bash
+npm run build
+```
+
+## Electron Development
+
+```bash
+npm run electron
+```
+
+This compiles `electron/main.ts` and `electron/preload.ts`, starts the Vite dev server, and opens the Electron window.
+
+## Packaging
+
+General packaging:
+
+```bash
+npm run dist
+```
+
+macOS DMG:
+
+```bash
+npm run dist:mac
+```
+
+Windows 10 / Windows 11 EXE:
+
+```bash
+npm run dist:win
+```
+
+Build every target supported by the current environment:
+
+```bash
+npm run dist:all
+```
+
+Release installers are synced to:
+
+```text
+release-delivery/installers/
+```
+
+The temporary `release/` folder is removed after syncing installers.
+
+## GitHub Actions
+
+`.github/workflows/release.yml` can build:
+
+- Windows x64 NSIS installer
+- macOS arm64 DMG
+- macOS x64 DMG
+
+Developer ID notarization and Windows code signing are not configured yet. Test artifacts can be installed for testing, but public releases should be signed.
+
+## Desktop Use
+
+macOS:
+
+1. Download the `.dmg`.
+2. Open the `.dmg`.
+3. Drag Aquariusgirl Music Room into Applications.
+4. Open the app.
+5. Follow first-run onboarding.
+6. Select a music folder.
+
+Windows:
+
+1. Download the `.exe`.
+2. Run the installer.
+3. Follow the setup wizard.
+4. Open the app from the desktop shortcut or Start menu.
+5. Follow first-run onboarding.
+6. Select a music folder.
+
+Users do not need Node.js or a terminal.
+
+## Local Music Loading
+
+Supported loading methods:
+
+1. Select music files.
+2. Select a music folder.
+3. Drag music files into the player.
+
+Supported formats:
+
+- `.mp3`
+- `.wav`
+- `.ogg`
+- `.m4a`
+- `.flac`
+
+The web version cannot scan the disk automatically. It only reads files or folders selected by the user. The Electron version also only reads folders explicitly selected by the user.
+
+## ID3 Tags and Album Artwork
+
+The player tries to read title, artist, album, year, genre, track number, duration, and album artwork. If metadata is unavailable, it falls back to filename parsing such as `Artist - Title.mp3`.
+
+Blob URLs are released when tracks are removed, playlists are cleared, or the page unloads.
+
+## Sleep Timer
+
+Supported options:
+
+- Stop after 15 minutes.
+- Stop after 30 minutes.
+- Stop after 60 minutes.
+- Stop after custom minutes.
+- Stop after the current track.
+
+Minute-based timers fade out the volume before pausing playback.
+
+## Visualizer
+
+The visualizer uses Web Audio API with the current `HTMLAudioElement`. If `AudioContext` is unavailable, playback still works.
+
+## Playlists
+
+Built-in system playlists:
+
+- All Songs
+- Liked Songs
+
+Users can create normal playlists and smart playlists. Normal playlists store track IDs. Smart playlists store rules and filter the current metadata dynamically.
+
+## Mini Player
+
+The Mini player uses the same `BrowserWindow` and does not create a second audio element. Switching modes preserves the current track, playback position, play state, and volume.
+
+## Import and Export
+
+Backups are JSON files that include playlists, track metadata, liked state, sort mode, volume, repeat mode, shuffle, theme settings, app version, and export time.
+
+Backups do not include music files, `File` objects, local object URLs, or absolute system paths.
+
+## OBS Browser Source Mode
+
+Enable it with:
+
+```text
+http://127.0.0.1:5173/?mode=obs
+```
+
+OBS mode shows a simplified overlay for the current track, artist, progress, time, avatar or character, and visualizer.
+
+## Local Image Assets
+
+Asset paths are configured in:
+
+```text
+src/config/brandAssets.ts
+```
+
+Rules:
+
+- No image generation.
+- No image downloads.
+- No YouTube images.
+- Images are provided locally by the user.
+- Empty image paths do not show broken images.
+- Failed image loads use placeholders.
+
+## Security Notes
+
+Unsigned development builds may trigger macOS Gatekeeper or Windows SmartScreen warnings. Public releases should use Apple Developer ID notarization and Windows code signing.
+
+Do not commit certificates, private keys, local music files, generated installers, build output, or `node_modules`.
+
+## Not Included
+
+- No Tauri.
+- No Live2D for now.
+- No YouTube API.
+- No YouTube iframe.
+- No external music service integration.
+- No music downloads.
+- No image generation.
+- No AI image generation.
