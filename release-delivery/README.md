@@ -20,6 +20,20 @@ release-delivery/installers/
 
 `release/` 是 electron-builder 暫存輸出；正式整理後不應存在，避免同時出現兩個像最新版的資料夾。
 
+## 交付檔案索引
+
+| 英文檔名 | 中文意思 |
+| --- | --- |
+| `release-delivery` | 發佈交付 / 版本交付 |
+| `INSTALL_UNINSTALL.md` | 安裝與解除安裝說明 |
+| `INSTALLER_STATUS.md` | 安裝程式狀態 |
+| `installers` | 安裝程式資料夾 |
+| `KNOWN_ISSUES.md` | 已知問題 |
+| `QA_REPORT.md` | 品質測試報告 / QA 報告 |
+| `README.md` | 說明文件 / 專案介紹 |
+| `VERSION.md` | 版本資訊 |
+| `CONTINUE_WORK.md` | 後續工作 / 接續開發事項 |
+
 ## 這是什麼軟體
 
 Aquariusgirl Music Room 是本地優先音樂播放器。它只播放使用者明確選擇的本機音樂檔，不使用 YouTube、不串流、不下載音樂，也不會自動掃描整台硬碟。
@@ -95,6 +109,20 @@ release-delivery/installers/
 - `Aquariusgirl Music Room-0.1.17-arm64.dmg`
 
 The temporary `release/` folder should not remain after packaging.
+
+## Delivery File Index
+
+| File or folder | Meaning |
+| --- | --- |
+| `release-delivery` | Release delivery package |
+| `INSTALL_UNINSTALL.md` | Install and uninstall guide |
+| `INSTALLER_STATUS.md` | Installer status |
+| `installers` | Installer folder |
+| `KNOWN_ISSUES.md` | Known issues |
+| `QA_REPORT.md` | Quality assurance / QA report |
+| `README.md` | Documentation / project introduction |
+| `VERSION.md` | Version information |
+| `CONTINUE_WORK.md` | Follow-up work / continuation notes |
 
 ## Product Summary
 
