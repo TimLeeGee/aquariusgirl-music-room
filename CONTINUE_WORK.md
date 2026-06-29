@@ -1,5 +1,23 @@
 # Aquariusgirl Music Room Continue Work
 
+## 2026-06-29 09:35 GitHub 內容盤點與 main 分支狀態
+
+- 已檢查 GitHub `main` 對應的追蹤檔案清單、根 `README.md`、根 `CONTINUE_WORK.md`、`release-delivery/*.md`、`package.json`、`package-lock.json` 與 `.github/workflows/release.yml`。
+- 根 `README.md` 與 `release-delivery/README.md` 已有中英交付檔案索引；`release-delivery` 文件已更新 0.1.16 / 0.1.17 AI、QA、installer 與人工缺口。
+- 發現差異：`main` 的程式碼與 `package.json` 仍停在 0.1.15；0.1.17 AI harness、open prompts、runtime 檢查腳本、GitHub workflow 與 `package.json` 0.1.17 位於已存在分支 `codex/ai-harness-0.1.17`。
+- 要讓 GitHub `main` 完整成為 0.1.17，需要明確合併 `codex/ai-harness-0.1.17` 到 `main`，並保留目前 `main` 較新的 README / release-delivery 文件。
+- 安全邊界：`resources/ai/models/*.gguf` 與 `resources/ai/bin/darwin-x64/` 不應進 Git；GitHub 只追蹤必要 runtime、prompt 文字、檢查腳本與 `.gitkeep`。
+- 本次只做 GitHub 內容盤點與文件修正，未改播放器 source、資源、版本或打包設定，因此不重打 installer。
+
+## 2026-06-29 09:35 GitHub Content Audit and main Branch Status
+
+- Checked the tracked GitHub `main` file list, root `README.md`, root `CONTINUE_WORK.md`, `release-delivery/*.md`, `package.json`, `package-lock.json`, and `.github/workflows/release.yml`.
+- Root `README.md` and `release-delivery/README.md` now include the bilingual delivery file index. `release-delivery` docs cover the 0.1.16 / 0.1.17 AI, QA, installer, and manual-gap status.
+- Finding: `main` source code and `package.json` are still at 0.1.15. The 0.1.17 AI harness, open prompts, runtime checks, GitHub workflow, and `package.json` 0.1.17 are on the existing `codex/ai-harness-0.1.17` branch.
+- To make GitHub `main` fully 0.1.17, explicitly merge `codex/ai-harness-0.1.17` into `main` while keeping the newer README / release-delivery docs from `main`.
+- Safety boundary: `resources/ai/models/*.gguf` and `resources/ai/bin/darwin-x64/` should stay out of Git. GitHub should only track the needed runtime files, prompt text, check scripts, and `.gitkeep`.
+- This pass only audits GitHub content and updates docs. It does not change app source, resources, version, or packaging settings, so installers were not rebuilt.
+
 ## 2026-06-22 17:44 歌詞／LRC 殘留清理 0.1.15 發行完成
 
 - 確認同步歌詞 UI、LRC 匯入入口與同名 `.lrc` 自動配對早已移除；本輪只刪除 README、新手引導與未使用的 IndexedDB／匯入匯出歌詞資料管線。

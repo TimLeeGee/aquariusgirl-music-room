@@ -2,6 +2,18 @@
 
 最後更新：2026-06-29 CST
 
+## 2026-06-29 GitHub main 內容盤點
+
+- 根 `CONTINUE_WORK.md` 已補上 2026-06-29 GitHub 內容盤點，標明 `main` 程式碼仍是 0.1.15，而 0.1.17 程式變更位於 `codex/ai-harness-0.1.17`。
+- 下一次若要讓 GitHub `main` source 與 0.1.17 installer / 文件一致，需明確合併 `codex/ai-harness-0.1.17` 到 `main`，並保留目前 `main` 較新的 README / release-delivery 文件。
+- 本次只更新文件，不重打 installer；若合併後 source、資源、版本或打包設定與既有 installer 不一致，才重新驗收與打包。
+
+## 2026-06-29 GitHub main Content Audit
+
+- Root `CONTINUE_WORK.md` now records the 2026-06-29 GitHub content audit: `main` source is still at 0.1.15, while 0.1.17 source changes are on `codex/ai-harness-0.1.17`.
+- To make GitHub `main` source match the 0.1.17 installers and docs, explicitly merge `codex/ai-harness-0.1.17` into `main` while keeping the newer README / release-delivery docs from `main`.
+- This pass only updates docs and does not rebuild installers. Rebuild only if the later source/resource/version/packaging merge makes the existing installers stale.
+
 ## 0.1.17 AI harness、開源 prompt 與雙平台發行完成
 
 - 版本更新為 0.1.17；小模型只做 intent JSON 與短回覆潤飾，本機搜尋、隨機歌單、建立歌單、加入歌單與移除安全提示由播放器程式執行。
