@@ -19,6 +19,7 @@ English version: see [English Version](#english-version).
 - IndexedDB 保存歌曲 metadata 與歌單資料，不保存音樂檔本體
 - File System Access API 資料夾授權，瀏覽器不支援時 fallback 到 `webkitdirectory`
 - 多播放清單基礎管理
+- 內建離線 AI 聊天與本機歌曲 metadata 搜尋歌單
 - JSON 匯入 / 匯出歌單設定，不包含音樂檔本體
 - OBS Browser Source 模式：`?mode=obs`
 - Electron main/preload，安全暴露必要檔案選擇 API
@@ -37,6 +38,8 @@ English version: see [English Version](#english-version).
 - IndexedDB
 - Electron
 - electron-builder
+- llama.cpp sidecar runtime
+- 開源 AI prompt pack
 
 ## 安裝
 
@@ -158,6 +161,20 @@ workflow 會在 GitHub hosted runner 上產出：
 - macOS x64 DMG
 
 目前未設定 Apple Developer ID、notarization 或 Windows code signing。測試版 artifacts 可安裝測試，但正式公開發行前建議補簽章。
+
+## 內建離線 AI
+
+Aquariusgirl Music Room 的桌面版可隨 EXE / DMG 內建本機 AI。使用者不需要安裝 Ollama、不需要下載模型、不需要 Node.js，也不需要開終端機。
+
+AI 完全在本機執行，不串接雲端 API。聊天與 AI 搜尋只使用目前載入歌曲的安全 metadata 摘要，不會上傳音樂檔、不會上傳使用者路徑，也不會把封面圖片、Blob、File 或 ArrayBuffer 傳給模型。
+
+AI 版本使用 `qwen3.5 0.8B GGUF` 與 llama.cpp sidecar runtime。因為模型與 runtime 會包進安裝檔，EXE / DMG 會比純播放器版本大。模型啟動後會保持常駐，不會因為閒置自動卸載；關閉播放器時才釋放。
+
+## 內建 AI prompt 與工具分工
+
+水瓶罐子 AI 的 prompt 以開源文字檔維護，不加密或混淆。小模型只負責理解意圖與潤飾回覆；搜尋本機音樂、建立歌單、隨機歌單、加入歌單、避免刪除原始音樂檔等行為都由播放器程式執行。
+
+模型 JSON 解析失敗時會走 deterministic fallback，不會把原始模型雜訊直接顯示給使用者。
 
 ## 桌面版使用流程
 
@@ -424,6 +441,7 @@ This project is released under the [MIT License](LICENSE).
 - IndexedDB stores track metadata and playlists, not music files.
 - File System Access API folder permission, with `webkitdirectory` fallback.
 - Basic multi-playlist management.
+- Offline local AI chat and local metadata-based playlist tools.
 - JSON import/export for settings and playlists, without music files.
 - OBS Browser Source mode: `?mode=obs`.
 - Electron main/preload bridge for safe file selection.
@@ -442,6 +460,8 @@ This project is released under the [MIT License](LICENSE).
 - IndexedDB
 - Electron
 - electron-builder
+- llama.cpp sidecar runtime
+- Open-source AI prompt pack
 
 ## Install
 
@@ -524,6 +544,20 @@ The temporary `release/` folder is removed after syncing installers.
 - macOS x64 DMG
 
 Developer ID notarization and Windows code signing are not configured yet. Test artifacts can be installed for testing, but public releases should be signed.
+
+## Offline AI
+
+The desktop app can bundle local AI inside the EXE / DMG. Users do not need Ollama, a separate model download, Node.js, or a terminal.
+
+The AI runs locally and does not call cloud APIs. Chat and AI search only receive a safe metadata summary of the currently loaded music library. The app does not upload music files, local paths, artwork blobs, `File` objects, or `ArrayBuffer` data to the model.
+
+The AI build uses `qwen3.5 0.8B GGUF` with a llama.cpp sidecar runtime. Because the model and runtime are bundled into the installers, the EXE / DMG is larger than a player-only build. After the model starts, it stays loaded until the app closes.
+
+## AI Prompts and Tool Split
+
+Aquariusgirl AI prompts are maintained as open text files, without encryption or obfuscation. The small model only routes intent and polishes replies. The app code performs local music search, playlist creation, random playlist creation, playlist insertion, and safe playlist removal behavior.
+
+If model JSON parsing fails, the app falls back to deterministic rules instead of showing raw model output.
 
 ## Desktop Use
 
@@ -637,7 +671,7 @@ Rules:
 
 Unsigned development builds may trigger macOS Gatekeeper or Windows SmartScreen warnings. Public releases should use Apple Developer ID notarization and Windows code signing.
 
-Do not commit certificates, private keys, local music files, generated installers, build output, or `node_modules`.
+Do not commit certificates, private keys, local music files, generated installers, build output, `node_modules`, or large local AI model files.
 
 ## Not Included
 
