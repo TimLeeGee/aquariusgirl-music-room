@@ -3,13 +3,20 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { NormalPlaylist } from "../types/playlist";
 import type { Track } from "../types/track";
 import { routeAiIntent } from "../ai/intentRouter";
-import { composeSearchingMessage, composeSkillResult } from "../ai/responseComposer";
+import {
+  composeSearchingMessage,
+  composeSkillResult,
+  safePlaylistNotFoundReply,
+  sanitizeSkillReply,
+  toSafeSkillReplyInput,
+} from "../ai/responseComposer";
 import { createSkillPlan, type SkillResult } from "../ai/skillRegistry";
 import { useLocalAI } from "../hooks/useLocalAI";
 import {
   buildLibrarySummary,
   buildPlaylistRequestText,
   isMusicRelatedRequest,
+  isPlaylistTrackListRequest,
   isPlaylistConsent,
   isRandomPlaylistRequest,
   pickRandomTracksForAIPlaylist,
@@ -80,9 +87,9 @@ export function AIAssistantPanel({
     setPlaylistResult(fallback);
     if (!ai.isModelReady) return;
 
-    const reply = await ai.composeToolReply(result, fallback);
+    const reply = await ai.composeToolReply(toSafeSkillReplyInput(result), fallback);
     if (reply.ok && reply.text.trim()) {
-      setPlaylistResult(reply.text.trim().slice(0, 500));
+      setPlaylistResult(sanitizeSkillReply(reply.text, result, fallback));
     }
   }, [ai]);
 
@@ -131,14 +138,23 @@ export function AIAssistantPanel({
 
   const createPlaylistFromDraft = async (nextDraft: PlaylistDraft) => {
     if (nextDraft.candidates.length === 0) return;
+    const validTrackIds = new Set(tracks.map((track) => track.id));
+    const candidates = nextDraft.candidates.filter((candidate) =>
+      validTrackIds.has(candidate.track.id),
+    );
+    if (candidates.length === 0) {
+      setPlaylistError("目前載入的歌曲裡找不到符合條件的歌曲。");
+      return;
+    }
+
     const result = onCreatePlaylist(
       nextDraft.name,
-      nextDraft.candidates.map((candidate) => candidate.track.id),
+      candidates.map((candidate) => candidate.track.id),
       {
         requestText: nextDraft.requestText,
         searchMethod: nextDraft.searchMethod,
         intent: nextDraft.intent,
-        candidates: nextDraft.candidates,
+        candidates,
       },
     );
     if (!result.ok) {
@@ -147,11 +163,13 @@ export function AIAssistantPanel({
     }
     await publishSkillResult({
       ok: true,
-      skill: "createPlaylist",
+      skill: "createPlaylistFromSearch",
       message: "",
-      tracks: nextDraft.candidates,
+      tracks: candidates,
       playlist: { name: result.name, trackCount: result.count },
       error: null,
+      reply_level: "summary_only",
+      allow_track_list_output: false,
     });
     setPlaylistDraft(null);
     setPendingPlaylistText("");
@@ -180,7 +198,7 @@ export function AIAssistantPanel({
         ? routeAiIntent(requestText, { intent: "random_playlist", playlist_name: "隨機播放清單" })
         : await resolveMusicIntent(requestText);
       const plan = createSkillPlan(intent);
-      const random = plan.skill === "randomPlaylist";
+      const random = plan.skill === "createRandomPlaylist";
       const searchMethod = random ? "隨機" : "關鍵字 / metadata";
 
       ai.appendLocalMessages([{
@@ -196,9 +214,7 @@ export function AIAssistantPanel({
 
       if (candidates.length === 0) {
         setPendingPlaylistText("");
-        setPlaylistError(
-          `找不到符合「${requestText}」的本機歌曲。請確認音樂資料夾內是否有相關歌曲，或先重新掃描資料夾。`,
-        );
+        setPlaylistError(safePlaylistNotFoundReply({ query: requestText }));
         return;
       }
 
@@ -210,27 +226,31 @@ export function AIAssistantPanel({
         intent: random ? "random_playlist" : `${plan.skill}: ${plan.search_keywords.join(", ")}`,
       };
 
-      if (plan.skill === "removeFromPlaylist") {
+      if (plan.skill === "removeTracksFromPlaylist") {
         await publishSkillResult({
           ok: true,
-          skill: "removeFromPlaylist",
+          skill: "removeTracksFromPlaylist",
           message: "為避免誤移除，請在目標歌單中逐首移除；這只會移出播放清單，不會刪除本機音樂檔。",
           tracks: candidates,
           playlist: null,
           error: null,
+          reply_level: "summary_only",
+          allow_track_list_output: false,
         });
         return;
       }
 
-      if (plan.skill === "addToPlaylist") {
+      if (plan.skill === "addTracksToPlaylist") {
         if (!onAddTracksToPlaylist || !intent.targetPlaylistName) {
           await publishSkillResult({
             ok: true,
-            skill: "addToPlaylist",
+            skill: "addTracksToPlaylist",
             message: "請指定要加入的既有歌單名稱。",
             tracks: candidates,
             playlist: null,
             error: null,
+            reply_level: "summary_only",
+            allow_track_list_output: false,
           });
           return;
         }
@@ -245,16 +265,22 @@ export function AIAssistantPanel({
         }
         await publishSkillResult({
           ok: true,
-          skill: "addToPlaylist",
+          skill: "addTracksToPlaylist",
           message: `已加入「${result.name}」，共 ${result.count} 首。`,
           tracks: candidates,
           playlist: { name: result.name, trackCount: result.count },
           error: null,
+          reply_level: "summary_only",
+          allow_track_list_output: false,
         });
         return;
       }
 
-      if (options.autoCreate || plan.skill === "createPlaylist" || plan.skill === "randomPlaylist") {
+      if (
+        options.autoCreate ||
+        plan.skill === "createPlaylistFromSearch" ||
+        plan.skill === "createRandomPlaylist"
+      ) {
         await createPlaylistFromDraft(nextDraft);
         return;
       }
@@ -272,6 +298,8 @@ export function AIAssistantPanel({
         tracks: candidates,
         playlist: null,
         error: null,
+        reply_level: "summary_only",
+        allow_track_list_output: false,
       });
     } finally {
       setPlaylistBusy(false);
@@ -284,6 +312,17 @@ export function AIAssistantPanel({
     setDraft("");
     setPlaylistError("");
     setPlaylistResult("");
+
+    if (isPlaylistTrackListRequest(text)) {
+      ai.appendLocalMessages([
+        { role: "user", content: text },
+        {
+          role: "assistant",
+          content: "歌曲清單請看播放清單區塊，會依本機 playlist.trackIds 顯示。",
+        },
+      ]);
+      return;
+    }
 
     if (pendingPlaylistText && isPlaylistConsent(text)) {
       ai.appendLocalMessages([{ role: "user", content: text }]);
@@ -387,19 +426,6 @@ export function AIAssistantPanel({
             <p className="mb-2 text-xs text-aquarius-mist">
               {playlistDraft.candidates.length} 首候選 · {playlistDraft.searchMethod}
             </p>
-            <div className="max-h-36 overflow-y-auto pr-1">
-              {playlistDraft.candidates.slice(0, 10).map(({ track }) => (
-                <div
-                  key={track.id}
-                  className="flex items-center justify-between gap-3 border-b border-white/[0.06] py-2"
-                >
-                  <span className="min-w-0 truncate font-semibold text-white">{track.title}</span>
-                  <span className="max-w-[42%] truncate text-xs text-aquarius-mist">
-                    {track.artist || track.album || track.genre || "本機歌曲"}
-                  </span>
-                </div>
-              ))}
-            </div>
           </div>
         )}
         {playlistResult && (

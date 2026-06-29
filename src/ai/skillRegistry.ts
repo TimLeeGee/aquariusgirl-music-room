@@ -3,15 +3,16 @@ import type {
   MusicSearchField,
   MusicSearchIntent,
   MusicToolIntent,
+  ReplyLevel,
 } from "../utils/aiTrackSearch";
 
 export type AiSkillId =
   | "normalChat"
   | "searchMusicLibrary"
-  | "createPlaylist"
-  | "randomPlaylist"
-  | "addToPlaylist"
-  | "removeFromPlaylist"
+  | "createPlaylistFromSearch"
+  | "createRandomPlaylist"
+  | "addTracksToPlaylist"
+  | "removeTracksFromPlaylist"
   | "explainUi"
   | "unknown";
 
@@ -23,6 +24,9 @@ export type SkillPlan = {
   search_keywords: string[];
   search_fields: MusicSearchField[];
   need_music_library_search: boolean;
+  reply_level: ReplyLevel;
+  allow_track_list_output: boolean;
+  reply: string;
 };
 
 export type SkillResult = {
@@ -30,8 +34,12 @@ export type SkillResult = {
   skill: AiSkillId;
   message: string;
   tracks: AITrackCandidate[];
+  trackCount?: number;
   playlist: { name: string; trackCount: number } | null;
   error: string | null;
+  query?: string;
+  reply_level?: ReplyLevel;
+  allow_track_list_output?: boolean;
 };
 
 export type AiSkill = {
@@ -55,25 +63,25 @@ export const aiSkills: AiSkill[] = [
     needsMusicLibrary: true,
   },
   {
-    id: "createPlaylist",
+    id: "createPlaylistFromSearch",
     description: "用本機搜尋結果建立一般播放清單。",
     intents: ["create_playlist"],
     needsMusicLibrary: true,
   },
   {
-    id: "randomPlaylist",
+    id: "createRandomPlaylist",
     description: "從目前 tracks 隨機抽樣建立播放清單。",
     intents: ["random_playlist"],
     needsMusicLibrary: true,
   },
   {
-    id: "addToPlaylist",
+    id: "addTracksToPlaylist",
     description: "把本機搜尋結果加入既有一般播放清單。",
     intents: ["add_to_playlist"],
     needsMusicLibrary: true,
   },
   {
-    id: "removeFromPlaylist",
+    id: "removeTracksFromPlaylist",
     description: "只從播放清單移除項目，不刪除本機音樂檔。",
     intents: ["remove_from_playlist"],
     needsMusicLibrary: true,
@@ -81,7 +89,7 @@ export const aiSkills: AiSkill[] = [
   {
     id: "explainUi",
     description: "解釋播放器 UI 或功能。",
-    intents: ["explain_ui"],
+    intents: ["explain"],
     needsMusicLibrary: false,
   },
 ];
@@ -106,5 +114,8 @@ export function createSkillPlan(intent: MusicSearchIntent): SkillPlan {
     search_keywords: intent.keywords,
     search_fields: intent.searchFields,
     need_music_library_search: intent.needMusicLibrarySearch || skill.needsMusicLibrary,
+    reply_level: intent.replyLevel,
+    allow_track_list_output: intent.allowTrackListOutput,
+    reply: intent.reply,
   };
 }

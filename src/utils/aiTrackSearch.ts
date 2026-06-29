@@ -8,8 +8,10 @@ export type MusicToolIntent =
   | "random_playlist"
   | "add_to_playlist"
   | "remove_from_playlist"
-  | "explain_ui"
+  | "explain"
   | "unknown";
+
+export type ReplyLevel = "summary_only" | "playlist_overview" | "error" | "none";
 
 export type MusicSearchField =
   | "title"
@@ -21,11 +23,15 @@ export type MusicSearchField =
 
 export type MusicSearchIntent = {
   intent: MusicToolIntent;
+  skill: string;
   playlistName: string;
   targetPlaylistName: string;
   keywords: string[];
   searchFields: MusicSearchField[];
   needMusicLibrarySearch: boolean;
+  replyLevel: ReplyLevel;
+  allowTrackListOutput: boolean;
+  reply: string;
   artistIncludes: string[];
   albumIncludes: string[];
   genreIncludes: string[];
@@ -79,6 +85,7 @@ const musicWords = ["歌", "音樂", "artist", "album", "專輯", "歌手", "曲
 const searchWords = ["找", "搜尋", "查", "有沒有", "看看", "search"];
 const consentWords = ["好", "可以", "要", "幫我", "建立", "整理", "同意", "ok", "yes"];
 const randomWords = ["隨意", "隨機", "隨便", "random", "shuffle", "資料夾裡", "挑一些", "今天隨便"];
+const playlistTrackListWords = ["列出", "有哪些歌", "有什麼歌", "曲目", "歌曲清單", "剛剛建立", "剛才建立"];
 const requestStopWords = [
   "播放清單",
   "歌單",
@@ -196,6 +203,7 @@ function includesAny(text: string, words: string[]) {
 
 function inferIntent(text: string): MusicToolIntent {
   if (!text.trim()) return "unknown";
+  if (isPlaylistTrackListRequest(text)) return "explain";
   if (includesAny(text, removeWords)) return "remove_from_playlist";
   if (includesAny(text, addWords)) return "add_to_playlist";
   if (isRandomPlaylistRequest(text)) return "random_playlist";
@@ -213,13 +221,44 @@ function normalizeIntent(value: unknown, fallbackText: string): MusicToolIntent 
     normalized === "random_playlist" ||
     normalized === "add_to_playlist" ||
     normalized === "remove_from_playlist" ||
-    normalized === "explain_ui" ||
+    normalized === "explain" ||
     normalized === "unknown"
   ) {
     return normalized;
   }
-  if (normalized === "explain") return "explain_ui";
+  if (normalized === "explain_ui") return "explain";
   return inferIntent(fallbackText);
+}
+
+function normalizeReplyLevel(value: unknown): ReplyLevel {
+  if (
+    value === "summary_only" ||
+    value === "playlist_overview" ||
+    value === "error" ||
+    value === "none"
+  ) {
+    return value;
+  }
+  return "none";
+}
+
+function isToolIntent(intent: MusicToolIntent) {
+  return intent === "search_music" ||
+    intent === "create_playlist" ||
+    intent === "random_playlist" ||
+    intent === "add_to_playlist" ||
+    intent === "remove_from_playlist";
+}
+
+function defaultSkillForIntent(intent: MusicToolIntent) {
+  if (intent === "search_music") return "searchMusicLibrary";
+  if (intent === "create_playlist") return "createPlaylistFromSearch";
+  if (intent === "random_playlist") return "createRandomPlaylist";
+  if (intent === "add_to_playlist") return "addTracksToPlaylist";
+  if (intent === "remove_from_playlist") return "removeTracksFromPlaylist";
+  if (intent === "chat") return "normalChat";
+  if (intent === "explain") return "explainUi";
+  return "";
 }
 
 function normalizeSearchFields(value: unknown): MusicSearchField[] {
@@ -273,6 +312,11 @@ export function isRandomPlaylistRequest(text: string) {
     (includesAny(text, createWords) && extractFallbackKeywords(text).length === 0);
 }
 
+export function isPlaylistTrackListRequest(text: string) {
+  return includesAny(text, ["播放清單", "歌單", "playlist"]) &&
+    includesAny(text, playlistTrackListWords);
+}
+
 export function buildPlaylistRequestText(latestText = "") {
   return latestText.trim().slice(-600);
 }
@@ -297,19 +341,32 @@ export function normalizeMusicSearchIntent(raw: unknown, fallbackText = ""): Mus
     inferTargetPlaylistName(fallbackText);
   const explicitNeedSearch =
     record.needMusicLibrarySearch ?? record.need_music_library_search;
+  const toolIntent = isToolIntent(intent);
+  const replyLevel = toolIntent
+    ? "summary_only"
+    : normalizeReplyLevel(record.replyLevel ?? record.reply_level);
+  const reply = toolIntent || !["chat", "explain", "unknown"].includes(intent)
+    ? ""
+    : displayText(record.reply).slice(0, 300);
+  const skill = toolIntent
+    ? defaultSkillForIntent(intent)
+    : displayText(record.skill) || defaultSkillForIntent(intent);
 
   return {
     intent,
+    skill,
     playlistName: playlistName.slice(0, 36),
     targetPlaylistName: targetPlaylistName.slice(0, 36),
     keywords,
     searchFields: normalizeSearchFields(record.searchFields ?? record.search_fields),
-    needMusicLibrarySearch: typeof explicitNeedSearch === "boolean"
-      ? explicitNeedSearch
-      : intent === "search_music" ||
-        intent === "create_playlist" ||
-        intent === "random_playlist" ||
-        intent === "add_to_playlist",
+    needMusicLibrarySearch: toolIntent
+      ? true
+      : typeof explicitNeedSearch === "boolean"
+        ? explicitNeedSearch
+        : false,
+    replyLevel,
+    allowTrackListOutput: false,
+    reply,
     artistIncludes: expandAliases(normalizeArray(record.artistIncludes ?? record.artist_includes)),
     albumIncludes: expandAliases(normalizeArray(record.albumIncludes ?? record.album_includes)),
     genreIncludes: expandAliases(normalizeArray(record.genreIncludes ?? record.genre_includes)),
@@ -342,16 +399,6 @@ export function buildLibrarySummary(tracks: Track[], playlists: Playlist[]) {
       .sort((a, b) => b[1] - a[1])
       .slice(0, 12)
       .map(([genre]) => genre),
-    examples: tracks.slice(0, 16).map((track) => ({
-      title: track.title,
-      artist: track.artist,
-      album: track.album,
-      genre: track.genre,
-      year: track.year,
-      filename: track.name,
-      liked: track.liked,
-      duration: track.duration,
-    })),
   };
 }
 

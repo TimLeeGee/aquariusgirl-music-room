@@ -1,5 +1,25 @@
 # Installer 狀態
 
+## 2026-06-29 0.1.18 最新狀態（AI schema、Result Guard、Safe Reply）
+
+本輪把版本更新為 0.1.18，重點是讓 AI playlist 穩定性靠程式層保證：router schema 會補預設值並強制工具任務 summary-only；result guard 會攔截模型歌曲清單、候選 track title 與不可信回覆；safe reply 只回覆歌單名稱、歌曲數量與狀態。歌曲列表仍只能由播放器 UI 依 `playlist.trackIds` 顯示。
+
+- `Aquariusgirl Music Room Setup 0.1.18.exe`：667,082,736 bytes，SHA-256 `e107ca91dcc2eb802be7c9e523b58f842da044f857df6baf4bc2c257663c7f1c`
+- `Aquariusgirl Music Room-0.1.18-arm64.dmg`：683,806,607 bytes，SHA-256 `0104c49602331bf613cb8bb6dccd451930390c1ac376efcc82444a2935af93d4`
+
+模型：`resources/ai/models/qwen3.5-0.8b.gguf`，532,517,120 bytes，SHA-256 `bd258782e35f7f458f8aced1adc053e6e92e89bc735ba3be89d38a06121dc517`。Prompt：`character_prompt.txt`、`ai_router_prompt.txt`、`ai_reply_prompt.txt` 以明文打包到 `Contents/Resources/prompts/`，未偵測到 prompt `.bin`。
+
+驗收：`check:prompts`、AI track search/schema check、playlist logic、Mini opacity、FLAC metadata、custom images、theme colors、all-target `check:ai-assets`、`npm run build`、`npm run electron:compile`、升權 `npm run dist:release` 均通過。DMG `hdiutil verify` VALID；唯讀掛載後版本為 0.1.18，執行檔為 arm64，runtime 只保留 `darwin-arm64/llama-server`。EXE static check 為 Windows NSIS installer；未在 Windows 真機執行，macOS notarization、Apple Developer ID 與 Windows code signing 尚未設定。
+
+### English Status
+
+0.1.18 moves playlist reliability into code-level schema validation, result guards, and safe replies. Tool tasks are summary-only, model-generated track lists are rejected, and the playlist UI remains the only place that renders songs from `playlist.trackIds`.
+
+- `Aquariusgirl Music Room Setup 0.1.18.exe`: 667,082,736 bytes, SHA-256 `e107ca91dcc2eb802be7c9e523b58f842da044f857df6baf4bc2c257663c7f1c`
+- `Aquariusgirl Music Room-0.1.18-arm64.dmg`: 683,806,607 bytes, SHA-256 `0104c49602331bf613cb8bb6dccd451930390c1ac376efcc82444a2935af93d4`
+
+Passed: prompt checks, AI track search/schema checks, playlist logic, Mini opacity, FLAC metadata, custom images, theme colors, all-target AI assets, build, Electron compile, elevated `npm run dist:release`, DMG verify, and Windows NSIS static check. Real Windows QA and signing remain open.
+
 ## 2026-06-28 0.1.17 最新狀態（AI harness、開源 prompt、雙平台發行）
 
 本輪把版本更新為 0.1.17，AI 助手改成小模型 router + 本機工具執行：模型只輸出 intent JSON 或根據真實工具結果潤飾短回覆；搜尋本機音樂、隨機挑歌、建立歌單、加入歌單與移除安全提示都由程式負責。Prompt 改為 `private/prompts/` 三份開源 `.txt`，不再使用加密 bundle。

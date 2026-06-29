@@ -2,6 +2,24 @@
 
 最後更新：2026-06-29 CST
 
+## 2026-06-29 AI schema / Result Guard 0.1.18 完成
+
+- 已從 0.1.17 main 接續升版到 0.1.18。
+- 已補強三份 prompt、router JSON schema、工具任務 summary-only、Result Guard、safe reply fallback、本次 candidates trackId 驗證與「模型不得列歌」顯示前 sanitize。
+- AI 聊天室不再顯示候選歌曲 title；歌曲清單仍由播放清單 UI 根據 `playlist.trackIds` 顯示。
+- 模型設定仍集中於 `electron/ai/aiModelConfig.ts`；`check-ai-assets` 已改讀同一份設定。
+- 已完成驗收：prompt / AI assets / all-target AI assets / AI track search schema / playlist / Mini / FLAC / custom images / theme colors / build / Electron compile / `dist:release` / DMG verify / packaged version-architecture-prompt-runtime static checks。
+- 最新 installer 已同步到 `release-delivery/installers/`，暫存 `release/` 不存在。
+
+## 2026-06-29 AI schema / Result Guard 0.1.18 Complete
+
+- Continued from 0.1.17 main and bumped the app to 0.1.18.
+- Strengthened the three prompts, router JSON schema, summary-only tool tasks, Result Guard, safe reply fallback, candidate trackId validation, and display-time sanitization so the model cannot list songs.
+- The AI chat no longer shows candidate track titles; song lists remain rendered by the playlist UI from `playlist.trackIds`.
+- Model settings remain centralized in `electron/ai/aiModelConfig.ts`; `check-ai-assets` now reads that same config.
+- Passed prompt, AI assets, all-target AI assets, AI track search schema, playlist, Mini, FLAC, custom images, theme colors, build, Electron compile, `dist:release`, DMG verify, and packaged static checks.
+- Latest installers are synced to `release-delivery/installers/`; temporary `release/` does not exist.
+
 ## 2026-06-29 GitHub main 合併 0.1.17 完成
 
 - 已合併 `codex/ai-harness-0.1.17` 到 `main`，使 GitHub main source、`package.json`、AI harness、prompt、runtime checks 與 workflow 更新到 0.1.17。
@@ -49,27 +67,27 @@
 ## 最新 installer
 
 ```text
-release-delivery/installers/Aquariusgirl Music Room Setup 0.1.17.exe
-release-delivery/installers/Aquariusgirl Music Room-0.1.17-arm64.dmg
+release-delivery/installers/Aquariusgirl Music Room Setup 0.1.18.exe
+release-delivery/installers/Aquariusgirl Music Room-0.1.18-arm64.dmg
 ```
 
-修改時間：2026-06-28 23:44:38 CST
+修改時間：2026-06-29 15:10:08-15:10:09 CST
 
 ## SHA-256
 
-- EXE：`b20c7522f79de137b0534c23f66632cdb21cdeb2623714c37c9576a1b1c142de`
-- arm64 DMG：`c6fd6831e480c9ff2c40c1849357e7cb0e0f2134ded80722afe4a993f872b7b4`
+- EXE：`e107ca91dcc2eb802be7c9e523b58f842da044f857df6baf4bc2c257663c7f1c`
+- arm64 DMG：`0104c49602331bf613cb8bb6dccd451930390c1ac376efcc82444a2935af93d4`
 
 ## 仍需人工驗收
 
-- 在 Windows 真機安裝 0.1.17 EXE，確認 fresh install、啟動、選擇本機音樂資料夾、AI 聊天與 AI 建歌單。
+- 在 Windows 真機安裝 0.1.18 EXE，確認 fresh install、啟動、選擇本機音樂資料夾、AI 聊天與 AI 建歌單。
 - 在 Windows 真機確認歌單 / AI 助手分頁、Mini、dialog focus、播放清單新增 / 加入 / 移除流程。
 - 正式公開前補 Apple Developer ID、notarization 與 Windows code signing。
-- 若 0.1.17 source / resource / version / packaging 之後再改，必須重跑 `npm run dist:release` 並重算 SHA。
+- 若 0.1.18 source / resource / version / packaging 之後再改，必須重跑 `npm run dist:release` 並重算 SHA。
 
 ## 下次接續提示詞
 
-請接續 Aquariusgirl Music Room 0.1.17 的 Windows 真機驗收。最新版 installer 位於 `release-delivery/installers/`，包含 `Aquariusgirl Music Room Setup 0.1.17.exe` 與 `Aquariusgirl Music Room-0.1.17-arm64.dmg`。先讀 `release-delivery/QA_REPORT.md`、`release-delivery/INSTALLER_STATUS.md` 與 `release-delivery/KNOWN_ISSUES.md`；Windows 先安裝 EXE，確認 fresh install、選擇音樂資料夾、AI 聊天、AI 隨機歌單、關鍵字歌單、找不到不補歌、歌單 / AI 助手分頁、Mini 與 dialog focus。不要修改 installers，除非 source、資源、版本或打包設定真的改變。
+請接續 Aquariusgirl Music Room 0.1.18 的 Windows 真機驗收。最新版 installer 位於 `release-delivery/installers/`，包含 `Aquariusgirl Music Room Setup 0.1.18.exe` 與 `Aquariusgirl Music Room-0.1.18-arm64.dmg`。先讀 `release-delivery/QA_REPORT.md`、`release-delivery/INSTALLER_STATUS.md` 與 `release-delivery/KNOWN_ISSUES.md`；Windows 先安裝 EXE，確認 fresh install、選擇音樂資料夾、AI 聊天、AI 隨機歌單、關鍵字歌單、找不到不補歌、模型不得列歌、歌單 / AI 助手分頁、Mini 與 dialog focus。不要修改 installers，除非 source、資源、版本或打包設定真的改變。
 
 ---
 
@@ -98,24 +116,24 @@ Last updated: 2026-06-29 CST
 ## Latest Installers
 
 ```text
-release-delivery/installers/Aquariusgirl Music Room Setup 0.1.17.exe
-release-delivery/installers/Aquariusgirl Music Room-0.1.17-arm64.dmg
+release-delivery/installers/Aquariusgirl Music Room Setup 0.1.18.exe
+release-delivery/installers/Aquariusgirl Music Room-0.1.18-arm64.dmg
 ```
 
-Modified: 2026-06-28 23:44:38 CST
+Modified: 2026-06-29 15:10:08-15:10:09 CST
 
 ## SHA-256
 
-- EXE: `b20c7522f79de137b0534c23f66632cdb21cdeb2623714c37c9576a1b1c142de`
-- arm64 DMG: `c6fd6831e480c9ff2c40c1849357e7cb0e0f2134ded80722afe4a993f872b7b4`
+- EXE: `e107ca91dcc2eb802be7c9e523b58f842da044f857df6baf4bc2c257663c7f1c`
+- arm64 DMG: `0104c49602331bf613cb8bb6dccd451930390c1ac376efcc82444a2935af93d4`
 
 ## Manual QA Still Needed
 
-- Install the 0.1.17 EXE on a real Windows machine and verify fresh install, launch, local music folder selection, AI chat, and AI playlist creation.
+- Install the 0.1.18 EXE on a real Windows machine and verify fresh install, launch, local music folder selection, AI chat, and AI playlist creation.
 - On Windows, verify playlist / AI Assistant tabs, Mini, dialog focus, playlist creation, playlist insertion, and playlist removal.
 - Add Apple Developer ID, notarization, and Windows code signing before public release.
-- If 0.1.17 source, resources, version, or packaging settings change again, rerun `npm run dist:release` and recalculate SHA hashes.
+- If 0.1.18 source, resources, version, or packaging settings change again, rerun `npm run dist:release` and recalculate SHA hashes.
 
 ## Next Continuation Prompt
 
-Continue Windows real-machine QA for Aquariusgirl Music Room 0.1.17. The latest installers are in `release-delivery/installers/`: `Aquariusgirl Music Room Setup 0.1.17.exe` and `Aquariusgirl Music Room-0.1.17-arm64.dmg`. First read `release-delivery/QA_REPORT.md`, `release-delivery/INSTALLER_STATUS.md`, and `release-delivery/KNOWN_ISSUES.md`. On Windows, install the EXE and verify fresh install, music folder selection, AI chat, AI random playlist, keyword playlist, no fake songs on no match, playlist / AI Assistant tabs, Mini, and dialog focus. Do not modify installers unless source, resources, version, or packaging settings actually change.
+Continue Windows real-machine QA for Aquariusgirl Music Room 0.1.18. The latest installers are in `release-delivery/installers/`: `Aquariusgirl Music Room Setup 0.1.18.exe` and `Aquariusgirl Music Room-0.1.18-arm64.dmg`. First read `release-delivery/QA_REPORT.md`, `release-delivery/INSTALLER_STATUS.md`, and `release-delivery/KNOWN_ISSUES.md`. On Windows, install the EXE and verify fresh install, music folder selection, AI chat, AI random playlist, keyword playlist, no fake songs on no match, no model-generated song lists, playlist / AI Assistant tabs, Mini, and dialog focus. Do not modify installers unless source, resources, version, or packaging settings actually change.

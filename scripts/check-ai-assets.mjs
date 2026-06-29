@@ -2,7 +2,14 @@ import { createHash } from "node:crypto";
 import { existsSync, statSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-const modelPath = join("resources", "ai", "models", "qwen3.5-0.8b.gguf");
+const aiModelConfigText = readFileSync(join("electron", "ai", "aiModelConfig.ts"), "utf8");
+const modelFileName = aiModelConfigText.match(/modelFileName:\s*"([^"]+)"/)?.[1];
+if (!modelFileName) {
+  console.error("讀不到 AI 模型設定，請檢查 electron/ai/aiModelConfig.ts。");
+  process.exit(1);
+}
+
+const modelPath = join("resources", "ai", "models", modelFileName);
 const minimumModelBytes = 300 * 1024 * 1024;
 
 function fail(message) {
@@ -11,12 +18,12 @@ function fail(message) {
 }
 
 if (!existsSync(modelPath)) {
-  fail("缺少內建 AI 模型，請把 qwen3.5-0.8b.gguf 放到 resources/ai/models/ 再重新打包。");
+  fail(`缺少內建 AI 模型，請把 ${modelFileName} 放到 resources/ai/models/ 再重新打包。`);
 }
 
 const modelSize = statSync(modelPath).size;
 if (modelSize < minimumModelBytes) {
-  fail(`內建 AI 模型檔案太小：${modelSize} bytes，請確認 qwen3.5-0.8b.gguf 大於 300MB。`);
+  fail(`內建 AI 模型檔案太小：${modelSize} bytes，請確認 ${modelFileName} 大於 300MB。`);
 }
 
 if (process.env.AI_MODEL_SHA256) {

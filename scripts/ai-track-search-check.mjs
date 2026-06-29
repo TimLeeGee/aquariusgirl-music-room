@@ -4,6 +4,7 @@ import {
   buildLibrarySummary,
   isDirectPlaylistRequest,
   isMusicRelatedRequest,
+  isPlaylistTrackListRequest,
   isPlaylistConsent,
   isRandomPlaylistRequest,
   normalizeMusicSearchIntent,
@@ -61,8 +62,10 @@ assert.equal(summaryJson.includes("sourcePath"), false);
 assert.equal(summaryJson.includes("localUrl"), false);
 assert.equal(summaryJson.includes("artworkUrl"), false);
 assert.equal(summaryJson.includes("/Users/example"), false);
+assert.equal(summaryJson.includes("Quiet Night"), false);
 assert.equal(isDirectPlaylistRequest("建立46播放清單"), true);
 assert.equal(isMusicRelatedRequest("想聽睡前安靜的歌"), true);
+assert.equal(isPlaylistTrackListRequest("幫我列出剛剛建立的播放清單有哪些歌"), true);
 assert.equal(isPlaylistConsent("好，可以幫我整理"), true);
 assert.equal(isRandomPlaylistRequest("隨意建立播放清單"), true);
 assert.equal(buildPlaylistRequestText("好"), "好");
@@ -73,7 +76,20 @@ assert.equal(randomIntent.intent, "random_playlist");
 assert.equal(randomIntent.needMusicLibrarySearch, true);
 
 const explainIntent = normalizeMusicSearchIntent({ intent: "explain" }, "這個按鈕怎麼用");
-assert.equal(explainIntent.intent, "explain_ui");
+assert.equal(explainIntent.intent, "explain");
+
+const guardedToolIntent = normalizeMusicSearchIntent({
+  intent: "create_playlist",
+  need_music_library_search: false,
+  reply_level: "playlist_overview",
+  allow_track_list_output: true,
+  reply: "我幫你加入以下歌曲：A、B",
+}, "建立櫻花46播放清單");
+assert.equal(guardedToolIntent.needMusicLibrarySearch, true);
+assert.equal(guardedToolIntent.skill, "createPlaylistFromSearch");
+assert.equal(guardedToolIntent.replyLevel, "summary_only");
+assert.equal(guardedToolIntent.allowTrackListOutput, false);
+assert.equal(guardedToolIntent.reply, "");
 
 const qwenJsonIntent = normalizeMusicSearchIntent({
   intent: "create_playlist",

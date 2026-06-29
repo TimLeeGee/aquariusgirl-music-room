@@ -1,5 +1,25 @@
 # Aquariusgirl Music Room Continue Work
 
+## 2026-06-29 15:10 AI schema / Result Guard 0.1.18 完成
+
+- 已從 0.1.17 main 接續升版至 0.1.18。
+- 已補強三份 prompt、router JSON schema、工具任務 summary-only、Result Guard、safe reply fallback、本次 candidates trackId 驗證，以及 AI 聊天室禁止模型列歌。
+- AI 聊天室不再顯示候選歌曲 title；歌曲清單仍由播放清單 UI 根據 `playlist.trackIds` 顯示。
+- 已通過 prompt / AI assets / all-target AI assets / AI track search schema / playlist / Mini / FLAC / custom images / theme colors / build / Electron compile / 升權 `npm run dist:release` / DMG verify / packaged static checks。
+- 最新 installer：`release-delivery/installers/Aquariusgirl Music Room Setup 0.1.18.exe`、`release-delivery/installers/Aquariusgirl Music Room-0.1.18-arm64.dmg`。
+- SHA-256：EXE `e107ca91dcc2eb802be7c9e523b58f842da044f857df6baf4bc2c257663c7f1c`；DMG `0104c49602331bf613cb8bb6dccd451930390c1ac376efcc82444a2935af93d4`。
+- 仍需 Windows 真機驗收、Apple Developer ID / notarization 與 Windows code signing。
+
+## 2026-06-29 15:10 AI schema / Result Guard 0.1.18 Complete
+
+- Continued from 0.1.17 main and bumped to 0.1.18.
+- Strengthened the three prompts, router JSON schema, summary-only tool tasks, Result Guard, safe reply fallback, candidate trackId validation, and no-model-song-list chat behavior.
+- The AI chat no longer shows candidate track titles; song lists remain rendered by the playlist UI from `playlist.trackIds`.
+- Passed prompt, AI assets, all-target AI assets, AI track search schema, playlist, Mini, FLAC, custom images, theme colors, build, Electron compile, elevated `npm run dist:release`, DMG verify, and packaged static checks.
+- Latest installers: `release-delivery/installers/Aquariusgirl Music Room Setup 0.1.18.exe`, `release-delivery/installers/Aquariusgirl Music Room-0.1.18-arm64.dmg`.
+- SHA-256: EXE `e107ca91dcc2eb802be7c9e523b58f842da044f857df6baf4bc2c257663c7f1c`; DMG `0104c49602331bf613cb8bb6dccd451930390c1ac376efcc82444a2935af93d4`.
+- Real Windows QA, Apple Developer ID/notarization, and Windows code signing remain open.
+
 ## 2026-06-29 10:00 GitHub main 合併 0.1.17 完成
 
 - 已依使用者同意合併 `codex/ai-harness-0.1.17` 到 `main`。

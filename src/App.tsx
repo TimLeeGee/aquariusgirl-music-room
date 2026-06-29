@@ -935,8 +935,13 @@ export default function App() {
       details: AIPlaylistCreateDetails,
     ): AIPlaylistCreateResult => {
       const validTrackIds = new Set(tracks.map((track) => track.id));
+      const candidateTrackIds = new Set(
+        details.candidates
+          .map((candidate) => candidate.track.id)
+          .filter((trackId) => validTrackIds.has(trackId)),
+      );
       const uniqueTrackIds = Array.from(new Set(trackIds)).filter((trackId) =>
-        validTrackIds.has(trackId),
+        validTrackIds.has(trackId) && candidateTrackIds.has(trackId),
       );
 
       if (uniqueTrackIds.length === 0) {

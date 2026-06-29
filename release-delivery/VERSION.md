@@ -1,9 +1,26 @@
 # 版本資訊
 
 產品：Aquariusgirl Music Room / 水瓶罐子的音樂小水池
-版本：0.1.17
-日期：2026-06-28
+版本：0.1.18
+日期：2026-06-29
 平台目標：Windows x64、macOS arm64
+
+## 2026-06-29 0.1.18 最新發行狀態
+
+0.1.18 補強 AI playlist 的 schema、result guard 與 safe reply：工具任務一律 summary-only，不允許模型列出歌曲清單或 track title；播放清單內容仍只由播放器資料庫與 `playlist.trackIds` 決定。三份 prompt 維持開源文字檔，未新增 prompt 檔；模型設定維持集中在 `electron/ai/aiModelConfig.ts`。
+
+`npm run check:prompts`、AI track search/schema check、AI assets、all-target AI assets、playlist logic、Mini opacity、FLAC metadata、custom images、theme colors、build、Electron compile、升權 `npm run dist:release` 均通過。DMG verify VALID；唯讀掛載後封裝版本為 0.1.18，執行檔為 arm64，包內只有三份 prompt `.txt`，無 prompt `.bin`，runtime 只保留 `darwin-arm64/llama-server`。EXE 為 Windows NSIS installer；Windows 真機與正式簽章仍需驗收。
+
+SHA-256：
+
+- EXE：`e107ca91dcc2eb802be7c9e523b58f842da044f857df6baf4bc2c257663c7f1c`
+- arm64 DMG：`0104c49602331bf613cb8bb6dccd451930390c1ac376efcc82444a2935af93d4`
+
+### English Summary
+
+0.1.18 strengthens AI playlist schema validation, result guards, and safe replies. Tool tasks are summary-only, the model may not output track lists or track titles, and playlist contents remain determined only by the local database and `playlist.trackIds`. The project still uses only the three open prompt text files.
+
+Passed: prompt checks, AI track search/schema checks, AI assets, all-target AI assets, playlist logic, Mini opacity, FLAC metadata, custom images, theme colors, build, Electron compile, elevated `npm run dist:release`, DMG verify, packaged version/architecture/prompt/runtime checks, and Windows NSIS static check. Real Windows QA and signing remain open.
 
 ## 2026-06-28 0.1.17 最新發行狀態
 

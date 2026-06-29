@@ -347,9 +347,9 @@ export class LocalAIService {
     const body = {
       messages: [{ role: "system", content: systemPrompt }, ...messages],
       stream: options.stream,
-      temperature: options.temperature ?? 0.1,
-      top_p: options.topP ?? 0.8,
-      repeat_penalty: options.repeatPenalty ?? 1.1,
+      temperature: options.temperature ?? aiModelConfig.chat.temperature,
+      top_p: options.topP ?? aiModelConfig.chat.topP,
+      repeat_penalty: options.repeatPenalty ?? aiModelConfig.chat.repeatPenalty,
       max_tokens: options.maxTokens,
       num_predict: options.maxTokens,
       response_format: options.json ? { type: "json_object" } : undefined,

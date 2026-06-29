@@ -1,9 +1,36 @@
 # QA 驗收報告
 
 產品：Aquariusgirl Music Room / 水瓶罐子的音樂小水池
-版本：0.1.17
-日期：2026-06-28
+版本：0.1.18
+日期：2026-06-29
 驗收角色：PM / QA / Electron 發行工程師
+
+## 2026-06-29 AI playlist schema / result guard 發行 0.1.18
+
+- 範圍：延續 0.1.17 main，補強三份 prompt、router schema 正規化、summary-only result guard、safe reply fallback、本次候選 trackId 驗證，以及 AI 聊天室禁止模型列歌曲清單。
+- Prompt：仍只保留 `private/prompts/character_prompt.txt`、`private/prompts/ai_router_prompt.txt`、`private/prompts/ai_reply_prompt.txt` 三份開源文字檔，未新增 prompt 檔。
+- Harness：工具 intent 會強制 `reply_level = summary_only`、`allow_track_list_output = false`、`reply = ""`；模型回覆若疑似歌曲清單或提到候選 track title，顯示前改用程式 safe reply。
+- UI：AI 聊天室不再顯示候選歌曲 title；「列出剛剛建立的播放清單有哪些歌」會提示查看播放清單區塊，歌曲列表仍由 UI 依 `playlist.trackIds` 渲染。
+- 檢查：`npm run check:prompts`、`npm run check:ai-track-search`、`npm run check:ai-assets`、all-target `check:ai-assets`、`npm run build`、`npm run electron:compile`、playlist logic、Mini opacity、FLAC metadata、custom images、theme colors 均 PASS。
+- 打包：升權 `npm run dist:release` PASS；只同步兩個 installer 到 `release-delivery/installers/`，暫存 `release/` 已移除。
+- DMG 驗證：`hdiutil verify` VALID；唯讀掛載後 `CFBundleShortVersionString` / `CFBundleVersion` 均為 0.1.18，執行檔為 Mach-O arm64。包內 `Contents/Resources/prompts/` 只有三份 `.txt` prompt，未偵測到 prompt `.bin`；AI runtime 只保留 `ai/bin/darwin-arm64/llama-server`；packaged `app.asar` 找到 0.1.18 且未找到 0.1.17。
+- EXE static check：PASS，辨識為 Windows NSIS installer；builder log 顯示 Windows x64 target。未在 Windows 真機執行，無法宣稱 Windows fresh install 與 AI 操作實機通過。
+
+最新 installer：
+
+- EXE：667,082,736 bytes，SHA-256 `e107ca91dcc2eb802be7c9e523b58f842da044f857df6baf4bc2c257663c7f1c`
+- arm64 DMG：683,806,607 bytes，SHA-256 `0104c49602331bf613cb8bb6dccd451930390c1ac376efcc82444a2935af93d4`
+
+限制：Windows 真機安裝與 AI 操作尚未驗收；macOS DMG 未做 Apple Developer ID 簽章或 notarization；Windows EXE 未做 code signing。未用使用者真實本機音樂資料重跑完整人工點擊流程。
+
+### English QA Summary
+
+- Scope: 0.1.18 continues from 0.1.17 main and strengthens the three prompts, router schema normalization, summary-only result guard, safe reply fallback, candidate trackId validation, and the no-model-track-list chat rule.
+- Prompts: still exactly three open prompt files: `character_prompt.txt`, `ai_router_prompt.txt`, and `ai_reply_prompt.txt`.
+- Harness: tool intents force `reply_level = summary_only`, `allow_track_list_output = false`, and empty `reply`. Model replies that look like track lists or mention candidate track titles are replaced with safe app-generated replies before display.
+- UI: the AI chat no longer renders candidate track titles. Track lists remain rendered by the playlist UI from `playlist.trackIds`.
+- Passed checks: prompt check, AI track search/schema check, AI assets, all-target AI assets, build, Electron compile, playlist logic, Mini opacity, FLAC metadata, custom images, theme colors, elevated `npm run dist:release`, DMG verify, packaged version/architecture/prompt/runtime checks, and Windows NSIS static check.
+- Limits: real Windows install and AI operation remain unverified. Developer ID/notarization and Windows code signing are still not configured.
 
 ## 2026-06-29 GitHub main 合併 0.1.17
 
