@@ -1,9 +1,67 @@
 # 版本資訊
 
-產品：Aquariusgirl Music Room / 水瓶罐子的音樂小水池  
-版本：0.1.15  
-日期：2026-06-22  
-平台目標：Windows x64、macOS arm64、macOS x64
+產品：Aquariusgirl Music Room / 水瓶罐子的音樂小水池
+版本：0.1.17
+日期：2026-06-28
+平台目標：Windows x64、macOS arm64
+
+## 2026-06-28 0.1.17 最新發行狀態
+
+0.1.17 將 AI 助手改成 rule-first 的本機工具架構：小模型只做 intent JSON 與短回覆潤飾，真正的搜尋、隨機歌單、建立歌單、加入歌單與移除安全說明都由播放器程式執行。Prompt 改為 `private/prompts/` 三份開源文字檔：`character_prompt.txt`、`ai_router_prompt.txt`、`ai_reply_prompt.txt`，不再加密、不再產生 prompt bundle。
+
+`npm run check:prompts`、AI track search、playlist logic、Mini opacity、FLAC metadata、custom images、theme colors、all-target AI assets、build、Electron compile、升權 `npm run dist:release` 均通過。一般沙盒仍會在 macOS `hdiutil create` 失敗，升權重跑後完成。交付位置只有兩個 installer；DMG 唯讀驗證 VALID，封裝版本為 0.1.17，執行檔為 arm64，包內只有三份 prompt `.txt`，無 prompt `.bin`。EXE 為 Windows NSIS installer；Windows 真機與正式簽章仍需驗收。
+
+SHA-256：
+
+- EXE：`b20c7522f79de137b0534c23f66632cdb21cdeb2623714c37c9576a1b1c142de`
+- arm64 DMG：`c6fd6831e480c9ff2c40c1849357e7cb0e0f2134ded80722afe4a993f872b7b4`
+
+### English Summary
+
+0.1.17 changes the AI assistant into a rule-first local tool architecture. The small model only emits intent JSON and polishes short replies; app code performs local search, random playlist creation, playlist creation, playlist insertion, and safe removal guidance. Prompts are now three open text files in `private/prompts/`, with no encrypted prompt bundle.
+
+Passed: `npm run check:prompts`, AI track search, playlist logic, Mini opacity, FLAC metadata, custom images, theme colors, all-target AI assets, build, Electron compile, and elevated `npm run dist:release`. DMG verify is VALID, packaged version is 0.1.17, the app executable is arm64, packaged prompts are `.txt`, and no prompt `.bin` is present. Windows EXE is a NSIS installer but still needs real Windows QA and signing.
+
+SHA-256:
+
+- EXE: `b20c7522f79de137b0534c23f66632cdb21cdeb2623714c37c9576a1b1c142de`
+- arm64 DMG: `c6fd6831e480c9ff2c40c1849357e7cb0e0f2134ded80722afe4a993f872b7b4`
+
+## 2026-06-28 0.1.16 歷史發行狀態
+
+0.1.16 修正 AI 建立播放清單：隨機、關鍵字與睡前等需求都只從目前已載入/已索引的真實本機歌曲 metadata 挑選，找不到歌曲時不建立假歌。AI 面板移入右側歌單卡，以 `歌單 / AI 助手` 分頁切換；未新增 embedding 模型或向量資料庫。
+
+AI track search、playlist logic、Mini opacity、FLAC metadata、custom images、theme colors、secure prompts、all-target AI assets、build、Electron compile、`dist:mac`、`dist:win` 均通過。兩個 DMG 唯讀掛載 CRC 通過，封裝版本均為 0.1.16，架構分別為 arm64／x86_64，且包含模型與加密 prompt bundle。EXE 為 Windows NSIS installer；Windows 真機與正式簽章仍需驗收。
+
+SHA-256：
+
+- EXE：`38a37f0d4cbab4237439fccb5d24baf1b6319e8dadaee5fa325159f8907f4af7`
+- arm64 DMG：`04e348006c00df084a7d08ad3c8ec8b564bc998bb9be6ac6cf21627501b1131c`
+- x64 DMG：`a90098927ffcc360f42b4624e7fc26357625710040be857c659acd22dcb223d3`
+
+### English Summary
+
+0.1.16 fixes AI playlist creation so random, keyword, and mood requests only select real local tracks that are currently loaded or indexed. If no match exists, the app reports no match instead of creating fake songs. The AI panel moved into the playlist card as `Playlists / AI Assistant` tabs. No embedding model or vector database was added.
+
+Passed: AI track search, playlist logic, Mini opacity, FLAC metadata, custom images, theme colors, secure prompts, all-target AI assets, build, Electron compile, `dist:mac`, and `dist:win`. DMG read-only checks confirmed version 0.1.16 and arm64 / x86_64 architectures. Windows EXE is a NSIS installer but still needs real Windows QA and signing.
+
+SHA-256:
+
+- EXE: `38a37f0d4cbab4237439fccb5d24baf1b6319e8dadaee5fa325159f8907f4af7`
+- arm64 DMG: `04e348006c00df084a7d08ad3c8ec8b564bc998bb9be6ac6cf21627501b1131c`
+- x64 DMG: `a90098927ffcc360f42b4624e7fc26357625710040be857c659acd22dcb223d3`
+
+## 2026-06-28 14:32 最新發行狀態
+
+0.1.15 內建離線 AI 現已把播放清單建議整合進聊天：音樂相關對話先詢問是否整理，取得同意或直接要求建立播放清單後才產生候選歌單；聊天保留極短本機上下文記憶，首次載入本機 AI 模型時會提示請稍等。使用者安裝 EXE / DMG 後不需要 Ollama、不需要 Node.js、不需要另外下載模型。
+
+`npm run encrypt:prompts`、`check:secure-prompts`、all-target `check:ai-assets`、AI track search check、build、Electron compile、`dist:mac`、`dist:win` 均通過。兩個 DMG 唯讀掛載 CRC 通過，封裝版本均為 0.1.15，架構分別為 arm64／x86_64，且各自只保留對應 mac runtime。EXE 為 Windows NSIS installer；Windows 真機與正式簽章仍需驗收。
+
+SHA-256：
+
+- EXE：`e2feba0e6a9fd466f4a339bd0bdb57031ff7a4631f3247ccd91856e2a4e34921`
+- arm64 DMG：`717eb5d5edda12552d85407fb3309f9a3842c13e2940e521c0c72af827bb0680`
+- x64 DMG：`0416418659b2439f09450180062b7572984c3d8cb672593dbdf975b7bcf090e4`
 
 ## 2026-06-22 17:44 最新發行狀態
 

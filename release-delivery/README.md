@@ -1,7 +1,8 @@
 # Aquariusgirl Music Room 交付說明
 
-版本：0.1.2  
-日期：2026-06-19  
+版本：0.1.17
+發行日期：2026-06-28
+文件更新：2026-06-29
 產品名稱：Aquariusgirl Music Room / 水瓶罐子的音樂小水池
 
 ## 最新安裝檔在哪裡
@@ -12,112 +13,137 @@
 release-delivery/installers/
 ```
 
-這裡會保留最新版 DMG / EXE。`release/` 是打包暫存輸出，整理腳本會自動清掉，避免同時出現兩個像交付資料夾的位置。
+0.1.17 只保留兩個交付檔：
+
+- `Aquariusgirl Music Room Setup 0.1.17.exe`
+- `Aquariusgirl Music Room-0.1.17-arm64.dmg`
+
+`release/` 是 electron-builder 暫存輸出；正式整理後不應存在，避免同時出現兩個像最新版的資料夾。
 
 ## 這是什麼軟體
 
-Aquariusgirl Music Room 是一款本地音樂播放器。它只播放你電腦中已經存在的音樂檔，不串接 YouTube、不串流、不上傳音樂，也不會自動掃描整台硬碟。
+Aquariusgirl Music Room 是本地優先音樂播放器。它只播放使用者明確選擇的本機音樂檔，不使用 YouTube、不串流、不下載音樂，也不會自動掃描整台硬碟。
+
+0.1.17 桌面版可內建離線 AI。AI 在本機執行，只接收目前已載入歌曲的安全 metadata 摘要；不會上傳音樂檔、路徑、封面圖片、Blob、File 或 ArrayBuffer。
 
 支援格式：mp3、wav、ogg、m4a、flac。
 
+## 0.1.17 重點
+
+- 小模型只負責 intent JSON 與短回覆潤飾。
+- 本機搜尋、隨機歌單、建立歌單、加入歌單與移除安全提示由播放器程式執行。
+- Prompt 改為三份開源文字檔，不再使用加密 prompt bundle。
+- 打包目標收斂為 Windows x64 EXE 與 macOS Apple Silicon DMG。
+
+## 0.1.16 重點
+
+- AI 建歌單只能使用目前已載入 / 已索引的真實歌曲。
+- 隨機歌單從真實 tracks 抽樣，找不到歌曲時不建立假歌。
+- AI 助手移入右側歌單卡，以「歌單 / AI 助手」分頁切換。
+- 先使用 metadata 關鍵字、別名與 mood scoring；未新增 embedding 或向量資料庫。
+
 ## Windows 如何安裝
 
-1. 取得 `Aquariusgirl Music Room Setup 0.1.2.exe`。
+1. 取得 `Aquariusgirl Music Room Setup 0.1.17.exe`。
 2. 雙擊安裝檔。
 3. 依照安裝器指示完成安裝。
 4. 從桌面捷徑或開始選單開啟 `Aquariusgirl Music Room`。
 
-如果 Windows Defender 或 SmartScreen 顯示提醒，原因通常是測試版尚未做程式碼簽章。確認來源是你自己的建置檔後，可選擇繼續執行。
+如果 Windows Defender 或 SmartScreen 顯示提醒，原因通常是測試版尚未做程式碼簽章。確認來源是自己的建置檔後，可選擇繼續執行。
 
 ## macOS 如何安裝
 
-1. 取得對應架構的 `.dmg`。
+1. 取得 `Aquariusgirl Music Room-0.1.17-arm64.dmg`。
 2. 雙擊 `.dmg`。
 3. 將 `Aquariusgirl Music Room.app` 拖曳到 Applications。
 4. 從 Applications 開啟。
 
 如果 macOS 顯示「未認證開發者」，原因是目前測試版尚未做 Apple Developer ID 簽章與 notarization。可在「系統設定 > 隱私權與安全性」允許開啟，或使用右鍵開啟。
 
-## 第一次開啟如何加入音樂
+## 資料保存
 
-1. 點選「選擇音樂檔」加入多首音樂。
-2. 或點選「選擇資料夾」加入整個資料夾中的音樂。
-3. 也可以把音樂檔拖曳到播放器。
+播放清單、收藏、音量、循環、隨機、主題與 metadata 會保存於 localStorage / IndexedDB。音樂檔本體不會被複製進 App，也不會被上傳。
 
-桌面版會透過系統檔案選擇器讀取音樂。Web preview 版本因瀏覽器安全限制，重新整理後需要重新選擇檔案或資料夾。
+解除安裝 App 不會刪除使用者原始音樂檔。若要清除 App 設定，需另外清除 Electron app userData。
 
-## 如何新增播放清單
+## 交付驗收狀態
 
-1. 在右側「歌單」區點「新增播放清單」。
-2. 輸入名稱。
-3. 按 Enter 或點建立。
-4. 空白名稱與重複名稱會顯示錯誤，不會建立。
+已通過：prompt 檢查、AI track search、playlist logic、Mini opacity、FLAC metadata、custom images、theme colors、AI assets、build、Electron compile、DMG verify、macOS packaged static checks、Windows EXE static check。
 
-## 如何更換介面圖片
+尚未完成：Windows 真機安裝與 AI 操作、Apple Developer ID / notarization、Windows code signing。
 
-1. 點右上角齒輪按鈕。
-2. 在九張圖片中選擇「新增」或「更換」。
-3. 支援 PNG、JPG、WebP、GIF，單張上限 10 MB。
-4. 「回復預設」只移除 App 保存的副本，不會刪除原始圖片。
+---
 
-內建圖片位於 `public/assets`；自訂圖片保存於 Electron app userData，不會覆寫安裝檔內的內建素材。
+## English Delivery Notes
 
-## 如何調整介面色彩
+Version: 0.1.17
+Release date: 2026-06-28
+Document update: 2026-06-29
+Product: Aquariusgirl Music Room
 
-1. 開啟右上角外觀設定。
-2. 切換到「色彩」。
-3. 分別調整主色、輔色、金色點綴、文字與背景色相。
-4. 設定會自動保存；需要回到初始外觀時，點「全部復原」。
+## Latest Installers
 
-## 如何把歌曲加入播放清單
+Use only this folder:
 
-1. 先建立至少一個一般播放清單。
-2. 在歌曲列表每首歌右側使用「加入歌單」選單。
-3. 選擇目標歌單。
-4. 已加入的歌單會顯示為「已在 ...」，避免重複加入。
+```text
+release-delivery/installers/
+```
 
-也可以切到一般播放清單後，用「加入目前歌曲」把正在播放或剛選取的歌曲加入。
+0.1.17 ships two installer files:
 
-## 如何使用 MINI 模式
+- `Aquariusgirl Music Room Setup 0.1.17.exe`
+- `Aquariusgirl Music Room-0.1.17-arm64.dmg`
 
-1. 點選上方「切換 mini 模式」。
-2. MINI 模式控制列預設隱藏，滑鼠移入播放器小卡時浮現。
-3. MINI 模式可播放、暫停、上一首、下一首。
-4. 點「回到完整播放器」返回主播放器。
+The temporary `release/` folder should not remain after packaging.
 
-完整播放器視窗會保留系統原生視窗按鈕：macOS 是紅黃綠，Windows 是原生最小化、最大化、關閉。
+## Product Summary
 
-## 如何使用 MINI 置頂
+Aquariusgirl Music Room is a local-first music player. It only plays local music files explicitly selected by the user. It does not use YouTube, streaming services, music downloads, or automatic disk scanning.
 
-1. 進入 MINI 模式。
-2. 點釘選按鈕啟用置頂。
-3. 切到其他應用程式確認 MINI 視窗仍在最上層。
-4. 再點一次取消置頂。
+The 0.1.17 desktop app can bundle offline AI. The AI runs locally and receives only a safe metadata summary of the currently loaded library. It does not upload music files, paths, artwork, Blob, File, or ArrayBuffer data.
 
-## 如何調整 MINI 透明度
+Supported formats: mp3, wav, ogg, m4a, flac.
 
-1. 進入 MINI 模式。
-2. 點透明度按鈕。
-3. 使用 slider 調整透明度，或點「重設 92%」。
+## 0.1.17 Highlights
 
-透明度只應套用在 MINI 視窗本體，不應讓主播放器或其他 App 受影響。
+- The small model only routes intent JSON and polishes short replies.
+- Local search, random playlists, playlist creation, playlist insertion, and safe removal guidance are handled by app code.
+- Prompts are now three open text files instead of an encrypted prompt bundle.
+- Packaging targets are Windows x64 EXE and macOS Apple Silicon DMG.
 
-## 播放清單資料保存在哪裡
+## 0.1.16 Highlights
 
-播放清單、收藏、音量、循環、隨機等設定會保存於 App 的 localStorage / IndexedDB。音樂檔本體不會被複製進 App，也不會被上傳。
+- AI playlist creation can only use real loaded or indexed local tracks.
+- Random playlists sample from real tracks; missing matches do not create fake songs.
+- The AI assistant moved into the playlist card as a `Playlists / AI Assistant` tab.
+- Metadata keyword, alias, and mood scoring are used first; no embedding or vector database was added.
 
-解除安裝 App 不應刪除你的原始音樂檔。
+## Windows Install
 
-## 常見問題
+1. Use `Aquariusgirl Music Room Setup 0.1.17.exe`.
+2. Run the installer.
+3. Follow the setup wizard.
+4. Open `Aquariusgirl Music Room` from the desktop shortcut or Start menu.
 
-### 為什麼重新開 App 後還要重新選音樂？
+SmartScreen warnings are expected for unsigned test builds.
 
-播放器不會永久保存 File 物件或複製你的音樂本體。這是為了符合瀏覽器與桌面 WebView 的安全模型。
+## macOS Install
 
-### 為什麼沒有簽章？
+1. Use `Aquariusgirl Music Room-0.1.17-arm64.dmg`.
+2. Open the DMG.
+3. Drag the app into Applications.
+4. Open the app from Applications.
 
-目前是測試版建置，尚未接 Apple Developer ID、notarization、Windows code signing certificate。正式發行前需要補簽章流程。
+Gatekeeper warnings are expected until Developer ID signing and notarization are configured.
 
-### 如何下載 GitHub Actions artifacts？
+## Data Storage
 
-推送 tag，例如 `v0.1.2` 後，GitHub Actions 會在 Release workflow 中產出 Windows 與 macOS artifacts。到該 workflow run 的 Artifacts 區下載。
+Playlists, liked state, volume, repeat, shuffle, theme settings, and metadata are stored in localStorage / IndexedDB. Music files are not copied into the app and are not uploaded.
+
+Uninstalling the app does not delete the user's original music files.
+
+## Delivery QA Status
+
+Passed: prompt checks, AI track search, playlist logic, Mini opacity, FLAC metadata, custom images, theme colors, AI assets, build, Electron compile, DMG verify, macOS packaged static checks, and Windows EXE static check.
+
+Still open: Windows real-machine install and AI operation, Apple Developer ID / notarization, and Windows code signing.
