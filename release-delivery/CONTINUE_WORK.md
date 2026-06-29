@@ -2,16 +2,30 @@
 
 最後更新：2026-06-29 CST
 
-## 2026-06-29 GitHub main 內容盤點
+## 2026-06-29 GitHub main 合併 0.1.17 完成
 
-- 根 `CONTINUE_WORK.md` 已補上 2026-06-29 GitHub 內容盤點，標明 `main` 程式碼仍是 0.1.15，而 0.1.17 程式變更位於 `codex/ai-harness-0.1.17`。
-- 下一次若要讓 GitHub `main` source 與 0.1.17 installer / 文件一致，需明確合併 `codex/ai-harness-0.1.17` 到 `main`，並保留目前 `main` 較新的 README / release-delivery 文件。
+- 已合併 `codex/ai-harness-0.1.17` 到 `main`，使 GitHub main source、`package.json`、AI harness、prompt、runtime checks 與 workflow 更新到 0.1.17。
+- README 與 release-delivery 文件衝突已保留 main 較新的中英版本。
+- 已完成合併後驗收：prompt / AI assets / AI track search / playlist / Mini / FLAC / custom images / theme colors / build / Electron compile 均通過。
+- 大模型與 installers 仍不進 Git；若之後 source、資源、版本或打包設定再改，才重新驗收並重打 installer。
+
+## 2026-06-29 GitHub main 0.1.17 Merge Complete
+
+- Merged `codex/ai-harness-0.1.17` into `main`, updating GitHub main source, `package.json`, AI harness, prompts, runtime checks, and workflow to 0.1.17.
+- README and release-delivery conflicts were resolved by keeping the newer bilingual main docs.
+- Post-merge validation passed for prompts, AI assets, AI track search, playlist logic, Mini opacity, FLAC metadata, custom images, theme colors, build, and Electron compile.
+- The large model and installers remain out of Git. Rebuild installers only if source, resources, version, or packaging settings change again.
+
+## 2026-06-29 GitHub main 內容盤點（合併前記錄）
+
+- 根 `CONTINUE_WORK.md` 已補上 2026-06-29 GitHub 內容盤點，標明合併前 `main` 程式碼是 0.1.15，而 0.1.17 程式變更位於 `codex/ai-harness-0.1.17`。
+- 後續已合併 `codex/ai-harness-0.1.17` 到 `main`，並保留 `main` 較新的 README / release-delivery 文件。
 - 本次只更新文件，不重打 installer；若合併後 source、資源、版本或打包設定與既有 installer 不一致，才重新驗收與打包。
 
-## 2026-06-29 GitHub main Content Audit
+## 2026-06-29 GitHub main Content Audit (Pre-Merge Record)
 
-- Root `CONTINUE_WORK.md` now records the 2026-06-29 GitHub content audit: `main` source is still at 0.1.15, while 0.1.17 source changes are on `codex/ai-harness-0.1.17`.
-- To make GitHub `main` source match the 0.1.17 installers and docs, explicitly merge `codex/ai-harness-0.1.17` into `main` while keeping the newer README / release-delivery docs from `main`.
+- Root `CONTINUE_WORK.md` records the pre-merge GitHub content audit: `main` source was still at 0.1.15, while 0.1.17 source changes were on `codex/ai-harness-0.1.17`.
+- `codex/ai-harness-0.1.17` has since been merged into `main` while keeping the newer README / release-delivery docs from `main`.
 - This pass only updates docs and does not rebuild installers. Rebuild only if the later source/resource/version/packaging merge makes the existing installers stale.
 
 ## 0.1.17 AI harness、開源 prompt 與雙平台發行完成

@@ -15,7 +15,7 @@ function run(command, args) {
 function electronBuilderArgsForPlatform() {
   if (process.platform === "darwin") {
     return [
-      ["--mac", "dmg", "--arm64", "--x64"],
+      ["--mac", "dmg", "--arm64"],
       ["--win", "nsis", "--x64"],
     ];
   }
@@ -36,6 +36,15 @@ if (targetArgs.length === 0) {
   process.exit(1);
 }
 
+const requiredRuntimeIds = targetArgs.flatMap((args) => {
+  if (args[0] === "--mac") return ["darwin-arm64"];
+  if (args[0] === "--win") return ["win32-x64"];
+  return [];
+});
+
+run("npm", ["run", "check:prompts"]);
+process.env.AI_REQUIRED_RUNTIMES = Array.from(new Set(requiredRuntimeIds)).join(",");
+run("npm", ["run", "check:ai-assets"]);
 run("npm", ["run", "build"]);
 run("npm", ["run", "electron:compile"]);
 

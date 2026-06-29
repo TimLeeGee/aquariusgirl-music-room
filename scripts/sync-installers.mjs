@@ -11,18 +11,23 @@ if (!existsSync(buildOutputDir)) {
 
 mkdirSync(deliveryDir, { recursive: true });
 
-for (const fileName of readdirSync(deliveryDir)) {
-  if (installerPattern.test(fileName)) {
-    rmSync(join(deliveryDir, fileName), { force: true });
-  }
-}
-
 const installerFileNames = readdirSync(buildOutputDir).filter((fileName) =>
   installerPattern.test(fileName),
 );
 
 if (installerFileNames.length === 0) {
   throw new Error(`No DMG/EXE installers found in ${buildOutputDir}`);
+}
+
+const outputExtensions = new Set(
+  installerFileNames.map((fileName) => fileName.split(".").pop()?.toLowerCase()),
+);
+
+for (const fileName of readdirSync(deliveryDir)) {
+  const extension = fileName.split(".").pop()?.toLowerCase();
+  if (extension && outputExtensions.has(extension)) {
+    rmSync(join(deliveryDir, fileName), { force: true });
+  }
 }
 
 for (const fileName of installerFileNames) {

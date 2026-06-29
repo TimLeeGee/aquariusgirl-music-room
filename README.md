@@ -101,13 +101,31 @@ npm run electron:dev
 
 ## Electron 打包
 
-一般打包：
+檢查開源 prompt：
+
+```bash
+npm run check:prompts
+```
+
+打包前檢查內建 AI 模型與 llama.cpp runtime：
+
+```bash
+npm run check:ai-assets
+```
+
+正式發行打包，產出 macOS Apple Silicon DMG 與 Windows x64 NSIS EXE：
+
+```bash
+npm run dist:release
+```
+
+一般 `dist` 也是同一條正式發行流程：
 
 ```bash
 npm run dist
 ```
 
-macOS `.dmg`，目前腳本會嘗試產出 Apple Silicon arm64 與 Intel x64：
+macOS `.dmg`，只產 Apple Silicon arm64：
 
 ```bash
 npm run dist:mac
@@ -125,7 +143,7 @@ npm run dist:win
 npm run dist:all
 ```
 
-`dist:all` 會透過 `scripts/dist-all.mjs` 依作業系統選擇可支援的打包目標；若缺少網路、Wine 或系統映像工具，錯誤會直接顯示在終端機。
+`dist:all` 會透過 `scripts/dist-all.mjs` 依作業系統選擇可支援的打包目標；在 macOS 上會產出 arm64 DMG 與 Windows x64 EXE。若缺少 Wine 或系統映像工具，錯誤會直接顯示在終端機。
 
 最新可安裝檔只會保留在：
 
@@ -140,10 +158,22 @@ release-delivery/installers/
 - `appId`: `com.aquariusgirl.musicroom`
 - `productName`: `Aquariusgirl Music Room`
 - mac target: `dmg`
-- mac arch: `arm64`, `x64`
+- mac arch: `arm64`
 - win target: `nsis`
 - desktop shortcut: enabled
 - start menu shortcut: enabled
+
+內建 AI 打包資源會放在：
+
+```text
+resources/ai/models/qwen3.5-0.8b.gguf
+private/prompts/character_prompt.txt
+private/prompts/ai_router_prompt.txt
+private/prompts/ai_reply_prompt.txt
+resources/ai/bin/<platform-arch>/llama-server
+```
+
+安裝後 main process 會從 `process.resourcesPath/ai/` 載入模型與 runtime，並從 `process.resourcesPath/prompts/` 載入三份 prompt。
 
 舊指令仍保留為 alias：
 
@@ -172,7 +202,8 @@ workflow 會在 GitHub hosted runner 上產出：
 
 - Windows x64 NSIS installer
 - macOS arm64 DMG
-- macOS x64 DMG
+
+workflow 可透過 `AI_MODEL_URL` secret 下載 GGUF 模型；模型檔本體不進 Git。
 
 目前未設定 Apple Developer ID、notarization 或 Windows code signing。測試版 artifacts 可安裝測試，但正式公開發行前建議補簽章。
 
@@ -531,28 +562,28 @@ This compiles `electron/main.ts` and `electron/preload.ts`, starts the Vite dev 
 
 ## Packaging
 
-General packaging:
+Check the open prompt files:
+
+```bash
+npm run check:prompts
+```
+
+Check the bundled AI model and llama.cpp runtimes:
+
+```bash
+npm run check:ai-assets
+```
+
+Build the release installers:
+
+```bash
+npm run dist:release
+```
+
+General `dist` runs the same release flow:
 
 ```bash
 npm run dist
-```
-
-macOS DMG:
-
-```bash
-npm run dist:mac
-```
-
-Windows 10 / Windows 11 EXE:
-
-```bash
-npm run dist:win
-```
-
-Build every target supported by the current environment:
-
-```bash
-npm run dist:all
 ```
 
 Release installers are synced to:
@@ -563,13 +594,19 @@ release-delivery/installers/
 
 The temporary `release/` folder is removed after syncing installers.
 
+The release target is intentionally limited to:
+
+- macOS Apple Silicon DMG
+- Windows x64 NSIS EXE
+
 ## GitHub Actions
 
 `.github/workflows/release.yml` can build:
 
 - Windows x64 NSIS installer
 - macOS arm64 DMG
-- macOS x64 DMG
+
+The workflow can download the GGUF model through the `AI_MODEL_URL` secret. The model file itself is ignored by Git.
 
 Developer ID notarization and Windows code signing are not configured yet. Test artifacts can be installed for testing, but public releases should be signed.
 

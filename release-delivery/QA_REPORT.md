@@ -5,20 +5,34 @@
 日期：2026-06-28
 驗收角色：PM / QA / Electron 發行工程師
 
-## 2026-06-29 GitHub 內容盤點
+## 2026-06-29 GitHub main 合併 0.1.17
+
+- 範圍：依使用者同意合併 `codex/ai-harness-0.1.17` 到 `main`，讓 GitHub main source 與 0.1.17 文件 / installer 狀態一致。
+- 衝突處理：README、`release-delivery/INSTALLER_STATUS.md`、`release-delivery/QA_REPORT.md`、`release-delivery/VERSION.md` 保留 main 較新的中英文件；0.1.17 source、AI harness、prompt、runtime checks 與 workflow 採分支內容。
+- 驗證：`package.json` 讀回版本為 0.1.17；`git diff --check`、衝突標記掃描、`check:prompts`、`check:ai-assets`、`check:ai-track-search`、playlist logic、Mini opacity、FLAC metadata、custom images、theme colors、`npm run build`、`npm run electron:compile` 均通過。`resources/ai/models/qwen3.5-0.8b.gguf` 未納入 Git；installer 未納入 Git。
+- 限制：本次是 source / GitHub 內容合併，未重打 installer；現有 0.1.17 EXE / DMG 仍沿用 2026-06-28 已驗收檔案。
+
+### English QA Summary
+
+- Scope: merged `codex/ai-harness-0.1.17` into `main` with user approval so GitHub main source matches the 0.1.17 docs and installer status.
+- Conflict handling: kept the newer bilingual main versions of README, `release-delivery/INSTALLER_STATUS.md`, `release-delivery/QA_REPORT.md`, and `release-delivery/VERSION.md`; took the 0.1.17 source, AI harness, prompts, runtime checks, and workflow from the branch.
+- Verification: `package.json` reads as version 0.1.17. `git diff --check`, conflict-marker scan, `check:prompts`, `check:ai-assets`, `check:ai-track-search`, playlist logic, Mini opacity, FLAC metadata, custom images, theme colors, `npm run build`, and `npm run electron:compile` all passed. `resources/ai/models/qwen3.5-0.8b.gguf` and installers are not tracked by Git.
+- Limit: this is a source / GitHub content merge, not an installer rebuild. The existing 0.1.17 EXE / DMG remain the 2026-06-28 validated files.
+
+## 2026-06-29 GitHub 內容盤點（合併前記錄）
 
 - 範圍：檢查 GitHub `main` 應公開的主要內容，包括根 `README.md`、根 `CONTINUE_WORK.md`、`release-delivery/*.md`、`package.json`、`package-lock.json`、`.github/workflows/release.yml` 與本地分支狀態。
 - 結果：根 `README.md` 與 `release-delivery/README.md` 已有中英交付檔案索引；`release-delivery` 文件已更新 0.1.16 / 0.1.17 AI、QA、installer 與人工驗收缺口。
-- 發現：GitHub `main` 的程式碼與 `package.json` 仍停在 0.1.15；完整 0.1.17 程式變更位於已推送分支 `codex/ai-harness-0.1.17`。
-- 風險：若只看 `main`，GitHub source 與 0.1.17 文件/installer 狀態不一致。修正方式是明確合併 `codex/ai-harness-0.1.17` 到 `main`，並保留目前 `main` 較新的 README / release-delivery 文件。
+- 合併前發現：GitHub `main` 的程式碼與 `package.json` 停在 0.1.15；完整 0.1.17 程式變更位於已推送分支 `codex/ai-harness-0.1.17`。
+- 後續修正：已明確合併 `codex/ai-harness-0.1.17` 到 `main`，並保留 `main` 較新的 README / release-delivery 文件。
 - 安全：本地大模型 `resources/ai/models/qwen3.5-0.8b.gguf` 不應進 Git；`.gitignore` 需保留 `resources/ai/models/*.gguf` 與 `resources/ai/bin/darwin-x64/`。本次未重打 installer。
 
 ### English QA Summary
 
 - Scope: checked the main GitHub-facing content: root `README.md`, root `CONTINUE_WORK.md`, `release-delivery/*.md`, `package.json`, `package-lock.json`, `.github/workflows/release.yml`, and local branch status.
 - Result: root `README.md` and `release-delivery/README.md` include the bilingual delivery file index. `release-delivery` docs cover the 0.1.16 / 0.1.17 AI, QA, installer, and manual-QA gaps.
-- Finding: GitHub `main` source code and `package.json` are still at 0.1.15. The complete 0.1.17 source changes are on the pushed `codex/ai-harness-0.1.17` branch.
-- Risk: reading only `main` shows a mismatch between source code and 0.1.17 docs / installer status. The fix is to explicitly merge `codex/ai-harness-0.1.17` into `main` while keeping the newer README / release-delivery docs from `main`.
+- Pre-merge finding: GitHub `main` source code and `package.json` were still at 0.1.15. The complete 0.1.17 source changes were on the pushed `codex/ai-harness-0.1.17` branch.
+- Resolution: `codex/ai-harness-0.1.17` has been merged into `main` while keeping the newer README / release-delivery docs from `main`.
 - Safety: the local large model `resources/ai/models/qwen3.5-0.8b.gguf` should not enter Git. Keep `resources/ai/models/*.gguf` and `resources/ai/bin/darwin-x64/` ignored. Installers were not rebuilt in this docs-only pass.
 
 ## 2026-06-28 AI harness、開源 prompt 與雙平台發行 0.1.17

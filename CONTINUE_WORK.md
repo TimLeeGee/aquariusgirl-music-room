@@ -1,20 +1,36 @@
 # Aquariusgirl Music Room Continue Work
 
-## 2026-06-29 09:35 GitHub 內容盤點與 main 分支狀態
+## 2026-06-29 10:00 GitHub main 合併 0.1.17 完成
+
+- 已依使用者同意合併 `codex/ai-harness-0.1.17` 到 `main`。
+- `package.json` 版本已是 0.1.17；AI harness、open prompts、runtime 檢查腳本、GitHub workflow 與 0.1.17 source 已進入 main。
+- 合併衝突只發生在 README 與 release-delivery 文件；已保留 main 較新的中英 README / release-delivery / QA 內容。
+- 大模型 `resources/ai/models/qwen3.5-0.8b.gguf` 仍不進 Git；installer 仍不放進 Git。
+- 本次合併 source 與打包設定，但未重打 installer；現有 0.1.17 installer 仍沿用 2026-06-28 已驗收檔案。
+
+## 2026-06-29 10:00 GitHub main 0.1.17 Merge Complete
+
+- Merged `codex/ai-harness-0.1.17` into `main` with user approval.
+- `package.json` is now 0.1.17. The AI harness, open prompts, runtime check scripts, GitHub workflow, and 0.1.17 source are now on main.
+- Merge conflicts only touched README and release-delivery docs; the newer bilingual main docs were kept.
+- The large local model `resources/ai/models/qwen3.5-0.8b.gguf` remains out of Git. Installers also remain out of Git.
+- This merge updates source and packaging settings but does not rebuild installers. The existing 0.1.17 installers are still the 2026-06-28 validated files.
+
+## 2026-06-29 09:35 GitHub 內容盤點與 main 分支狀態（合併前記錄）
 
 - 已檢查 GitHub `main` 對應的追蹤檔案清單、根 `README.md`、根 `CONTINUE_WORK.md`、`release-delivery/*.md`、`package.json`、`package-lock.json` 與 `.github/workflows/release.yml`。
 - 根 `README.md` 與 `release-delivery/README.md` 已有中英交付檔案索引；`release-delivery` 文件已更新 0.1.16 / 0.1.17 AI、QA、installer 與人工缺口。
-- 發現差異：`main` 的程式碼與 `package.json` 仍停在 0.1.15；0.1.17 AI harness、open prompts、runtime 檢查腳本、GitHub workflow 與 `package.json` 0.1.17 位於已存在分支 `codex/ai-harness-0.1.17`。
-- 要讓 GitHub `main` 完整成為 0.1.17，需要明確合併 `codex/ai-harness-0.1.17` 到 `main`，並保留目前 `main` 較新的 README / release-delivery 文件。
+- 合併前差異：`main` 的程式碼與 `package.json` 停在 0.1.15；0.1.17 AI harness、open prompts、runtime 檢查腳本、GitHub workflow 與 `package.json` 0.1.17 位於已存在分支 `codex/ai-harness-0.1.17`。
+- 後續修正：已合併 `codex/ai-harness-0.1.17` 到 `main`，並保留 `main` 較新的 README / release-delivery 文件。
 - 安全邊界：`resources/ai/models/*.gguf` 與 `resources/ai/bin/darwin-x64/` 不應進 Git；GitHub 只追蹤必要 runtime、prompt 文字、檢查腳本與 `.gitkeep`。
 - 本次只做 GitHub 內容盤點與文件修正，未改播放器 source、資源、版本或打包設定，因此不重打 installer。
 
-## 2026-06-29 09:35 GitHub Content Audit and main Branch Status
+## 2026-06-29 09:35 GitHub Content Audit and main Branch Status (Pre-Merge Record)
 
 - Checked the tracked GitHub `main` file list, root `README.md`, root `CONTINUE_WORK.md`, `release-delivery/*.md`, `package.json`, `package-lock.json`, and `.github/workflows/release.yml`.
 - Root `README.md` and `release-delivery/README.md` now include the bilingual delivery file index. `release-delivery` docs cover the 0.1.16 / 0.1.17 AI, QA, installer, and manual-gap status.
-- Finding: `main` source code and `package.json` are still at 0.1.15. The 0.1.17 AI harness, open prompts, runtime checks, GitHub workflow, and `package.json` 0.1.17 are on the existing `codex/ai-harness-0.1.17` branch.
-- To make GitHub `main` fully 0.1.17, explicitly merge `codex/ai-harness-0.1.17` into `main` while keeping the newer README / release-delivery docs from `main`.
+- Pre-merge finding: `main` source code and `package.json` were still at 0.1.15. The 0.1.17 AI harness, open prompts, runtime checks, GitHub workflow, and `package.json` 0.1.17 were on the existing `codex/ai-harness-0.1.17` branch.
+- Resolution: `codex/ai-harness-0.1.17` has been merged into `main` while keeping the newer README / release-delivery docs from `main`.
 - Safety boundary: `resources/ai/models/*.gguf` and `resources/ai/bin/darwin-x64/` should stay out of Git. GitHub should only track the needed runtime files, prompt text, check scripts, and `.gitkeep`.
 - This pass only audits GitHub content and updates docs. It does not change app source, resources, version, or packaging settings, so installers were not rebuilt.
 
