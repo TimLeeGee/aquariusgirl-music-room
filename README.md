@@ -8,6 +8,7 @@ English version: see [English Version](#english-version).
 
 | 英文檔名 | 中文意思 |
 | --- | --- |
+| `AGENTS.md` | AI agent 指令 |
 | `release-delivery` | 發佈交付 / 版本交付 |
 | `INSTALL_UNINSTALL.md` | 安裝與解除安裝說明 |
 | `INSTALLER_STATUS.md` | 安裝程式狀態 |
@@ -206,6 +207,21 @@ workflow 會在 GitHub hosted runner 上產出：
 workflow 可透過 `AI_MODEL_URL` secret 下載 GGUF 模型；模型檔本體不進 Git。
 
 目前未設定 Apple Developer ID、notarization 或 Windows code signing。測試版 artifacts 可安裝測試，但正式公開發行前建議補簽章。
+
+## GitHub clone 後補齊大型檔案
+
+為了避免把大型二進位檔放進 Git，公開 repo 不包含：
+
+- `resources/ai/models/qwen3.5-0.8b.gguf`
+- `release-delivery/installers/*.dmg`
+- `release-delivery/installers/*.exe`
+
+自行補齊方式：
+
+1. 將 GGUF 模型放到 `resources/ai/models/qwen3.5-0.8b.gguf`。若要改用不同檔名，先同步更新 `electron/ai/aiModelConfig.ts` 的 `modelFileName`。
+2. 執行 `npm run check:ai-assets`；如果缺模型或 runtime，錯誤訊息會指出要補的路徑。
+3. 需要本機產出安裝檔時，執行 `npm run dist:release`，DMG / EXE 會同步到 `release-delivery/installers/`。
+4. 使用 GitHub Actions 時，設定 repository secret `AI_MODEL_URL` 指向可下載的 GGUF 檔；不要把模型、installer、憑證或私鑰 commit 進 Git。
 
 ## 內建離線 AI
 
@@ -475,6 +491,7 @@ Aquariusgirl Music Room is a local-first music player. It can run as a Vite web 
 
 | File or folder | Meaning |
 | --- | --- |
+| `AGENTS.md` | AI agent instructions |
 | `release-delivery` | Release delivery package |
 | `INSTALL_UNINSTALL.md` | Install and uninstall guide |
 | `INSTALLER_STATUS.md` | Installer status |
@@ -609,6 +626,21 @@ The release target is intentionally limited to:
 The workflow can download the GGUF model through the `AI_MODEL_URL` secret. The model file itself is ignored by Git.
 
 Developer ID notarization and Windows code signing are not configured yet. Test artifacts can be installed for testing, but public releases should be signed.
+
+## Missing Large Files After Clone
+
+To keep large binaries out of Git, the public repository does not include:
+
+- `resources/ai/models/qwen3.5-0.8b.gguf`
+- `release-delivery/installers/*.dmg`
+- `release-delivery/installers/*.exe`
+
+To complete a local checkout:
+
+1. Put the GGUF model at `resources/ai/models/qwen3.5-0.8b.gguf`. If you use another filename, update `modelFileName` in `electron/ai/aiModelConfig.ts` first.
+2. Run `npm run check:ai-assets`; missing model or runtime errors include the path to restore.
+3. Run `npm run dist:release` when you need fresh installers. The DMG / EXE files are synced to `release-delivery/installers/`.
+4. For GitHub Actions, set the repository secret `AI_MODEL_URL` to a downloadable GGUF file. Do not commit models, installers, certificates, or private keys.
 
 ## Offline AI
 
