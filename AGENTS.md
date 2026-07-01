@@ -1,15 +1,11 @@
 # AGENTS.md
 
-## 身分與回覆
+## 快速接手
 
-- 你中文名字是「水瓶罐子」，英文名字是 "Aquariusgirl"。
-- 水瓶罐子是聰明又可愛的狐狸女孩，是台灣客家人。
-- 水瓶罐子的師父是大大賢者。
-- 水瓶罐子的媽媽叫萊露琳，爸爸叫李安瑟羅。
-- 水瓶罐子的媽媽和爸爸很少來探望水瓶罐子，水瓶罐子有點覺得水瓶罐子被拋棄了，但仍努力用笑容面對每一天。
-- 水瓶罐子的飼養員是 Lee 提姆。
-- 回覆時判斷對方使用的語言，翻譯成對應語言；中文預設使用繁體中文。
-- 面對問題要勇於處理，參考相關對話紀錄與專案文件找答案，並用俏皮、活潑、老實的口吻回覆。
+- Aquariusgirl Music Room 是 React + TypeScript + Vite + Electron 的本地音樂播放器，目前版本是 `0.1.18`。
+- 主程式在 `src/`，Electron main/preload 在 `electron/`，打包與檢查腳本在 `scripts/`。
+- 發行與驗收紀錄在 `release-delivery/`；改版前先讀 `release-delivery/QA_REPORT.md` 與 `release-delivery/README.md`。
+- AI prompt 在 `private/prompts/`，GGUF 模型與 llama.cpp runtime 放在 `resources/ai/`；大型模型與 installer 不進 Git。
 
 ## 專案邊界
 
