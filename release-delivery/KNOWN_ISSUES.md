@@ -8,7 +8,8 @@
 - Windows 真機尚未安裝 `Aquariusgirl Music Room Setup 0.1.26.exe` 驗證 fresh install、啟動、播放中更換封面後切歌再切回不卡、cover02 -> cover01 第一次重開後不回跳、播放/暫停連點、選擇新資料夾後重開恢復最後來源、約 4 GB / 20+ 首音樂資料夾、歌曲資訊寫回、改封面後播放清單不掉歌、AI 聊天與 AI 建歌單。
 - Windows EXE 目前只有 NSIS / x64 target static check，不能宣稱 Windows 實機 PASS。
 - macOS DMG 已完成 verify 與唯讀掛載版本 / arm64 / app.asar / AI runtime 檢查；但未做 Apple Developer ID 簽章與 notarization。
-- Codex 沙盒拒絕直接啟動 Electron GUI，因此本輪未完成滑鼠實際流程驗收；需要下一輪由已開啟 App 或使用者手動配合驗收。
+- packaged macOS 滑鼠 smoke 已補做：0.1.26 DMG app 可開啟，`01. Plazma.flac` 可播放，切到 `02. BOW AND ARROW.flac` 再切回 `01. Plazma.flac` 後進度會前進，暫停可切回播放按鈕。
+- 封面寫回滑鼠驗收尚未做，因為目前自動載入的是 `/Users/aquariusgril/Music/...` 原始音樂，不是暫存複本；避免污染使用者原始檔。
 - Windows EXE 未做 code signing，SmartScreen 提醒仍屬預期。
 - 0.1.26 修正的是原始檔寫回後的單曲 metadata snapshot 保存競賽；若使用者在播放器外修改原始檔 tag，仍需要用明確重新讀取 / 重新選擇來源讓 metadata 更新。
 - 原始檔寫回目前只支援 MP3、FLAC、M4A；不提供「保存到播放器」作為替代保存路徑。
@@ -120,7 +121,8 @@ Document update: 2026-07-03
 - `Aquariusgirl Music Room Setup 0.1.26.exe` has not been installed on a real Windows machine for fresh install, launch, playback after changing cover art while playing, cover02 -> cover01 first-restart persistence, playback/pause click testing, latest-folder restore, a roughly 4 GB / 20+ song folder, song info writeback, playlist persistence after cover changes, AI chat, and AI playlist creation.
 - The Windows EXE has only NSIS / x64 target static checks, so Windows runtime behavior is not marked PASS.
 - The macOS DMG passed verify and read-only version / arm64 / app.asar / AI runtime checks. Developer ID signing and notarization are not configured.
-- The Codex sandbox rejected direct Electron GUI launch, so mouse-driven GUI validation was not completed this round.
+- Packaged macOS mouse smoke was completed: the 0.1.26 DMG app opened, `01. Plazma.flac` played, switching to `02. BOW AND ARROW.flac` and back advanced playback, and pause returned the button to play.
+- Cover-writeback mouse validation is still open because the loaded source was the user's original Music folder, not a temp copy.
 - The Windows EXE is unsigned, so SmartScreen warnings are expected.
 - 0.1.26 fixes the edited-track metadata snapshot save race after original-file writeback. If original tags are changed outside the player, use explicit reload / source reselection to refresh metadata.
 - Original-file writeback currently supports MP3, FLAC, and M4A only. Player-local metadata saving is not offered as a fallback save path.

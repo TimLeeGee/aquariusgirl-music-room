@@ -16,7 +16,8 @@ release-delivery/installers/Aquariusgirl Music Room-0.1.26-arm64.dmg
 
 - SHA-256：EXE `0486767f4ebf7cf4d0adb233f62bd1d62da0c53709895d00e1a3fc50ce94dc5d`；DMG `16acf709838b2fc1831227693aba133e47d5979ee0dc580865734d3038a2be91`。
 - 已通過 playback-restore、真實 Plazma song-info / cover roundtrip、track-display、track-identity、AI track search、FLAC metadata、prompt、AI assets、custom images、theme colors、build、Electron compile、升權 `npm run dist:release`、DMG verify、DMG 唯讀掛載版本 / arm64 / app.asar / AI runtime 檢查、Windows NSIS static check。
-- Codex 沙盒拒絕直接啟動 Electron GUI；本輪不宣稱滑鼠實機流程 PASS。Windows 真機驗收、播放中封面回改後切歌不卡、第一次重開即保留 cover01、播放/暫停、4 GB 資料夾與簽章仍需人工驗收。
+- GUI 驗收補做：升權掛載 0.1.26 DMG 並開啟 packaged app；用滑鼠點選 `01. Plazma.flac`、播放、切到 `02. BOW AND ARROW.flac`、再切回 `01. Plazma.flac`，進度可從 0:00 前進到 0:07，沒有卡死；再點暫停後按鈕回到「播放」。未做封面寫回滑鼠驗收，因為目前自動載入的是 `/Users/aquariusgril/Music/...` 原始音樂，不是暫存複本。
+- Windows 真機驗收、播放中封面回改後切歌不卡、第一次重開即保留 cover01、4 GB 資料夾與簽章仍需人工驗收。
 
 ### 接續給下一輪 Codex
 
@@ -27,7 +28,7 @@ release-delivery/installers/Aquariusgirl Music Room-0.1.26-arm64.dmg
 - Fixed the remaining original-file writeback persistence race by awaiting the edited track snapshot save to IndexedDB before reporting success.
 - 0.1.25 historical installers are in `release-delivery/installers/`.
 - SHA-256: EXE `0486767f4ebf7cf4d0adb233f62bd1d62da0c53709895d00e1a3fc50ce94dc5d`; DMG `16acf709838b2fc1831227693aba133e47d5979ee0dc580865734d3038a2be91`.
-- Passed source checks, build, package, DMG verify, read-only DMG checks, and Windows NSIS static check. GUI mouse validation and real Windows QA remain open.
+- Passed source checks, build, package, DMG verify, read-only DMG checks, packaged macOS mouse playback / switch-track / pause smoke, and Windows NSIS static check. Cover-writeback mouse validation and real Windows QA remain open.
 
 ## 2026-07-03 audio source 誤重載 hotfix 0.1.25 完成
 

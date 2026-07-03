@@ -16,7 +16,8 @@
 - 打包：升權 `npm run dist:release` PASS，同步兩個 installer 到 `release-delivery/installers/`，暫存 `release/` 已移除。
 - DMG 驗證：`hdiutil verify` VALID；升權唯讀掛載讀回 `CFBundleShortVersionString` / `CFBundleVersion` 均為 0.1.26，執行檔為 Mach-O arm64，`app.asar` 存在，mac AI model/runtime 存在，掛載點已卸載。
 - EXE static check：PASS，辨識為 Windows NSIS installer；未在 Windows 真機執行，不能宣稱 Windows fresh install、播放中改封面、播放/暫停、4 GB 資料夾、寫回與 AI 操作實機通過。
-- GUI 驗收限制：Codex 沙盒拒絕直接啟動 Electron GUI；本輪未由 Codex 完成滑鼠實際流程，需下一輪由已開啟 App 或使用者手動配合驗收。
+- GUI 驗收：升權掛載 0.1.26 DMG 並開啟 packaged app；用滑鼠點選 `01. Plazma.flac`、播放、切到 `02. BOW AND ARROW.flac`、再切回 `01. Plazma.flac`，進度可從 0:00 前進到 0:07，沒有卡死；再點暫停後按鈕回到「播放」。
+- GUI 驗收限制：未做封面寫回滑鼠驗收，因為目前自動載入的是 `/Users/aquariusgril/Music/...` 原始音樂，不是暫存複本；避免污染使用者原始檔。封面寫回仍以真實 Plazma 暫存複本自動檢查作為證據。
 - 技能更新：已整理並嘗試補入 `build-music-player` 經驗；若環境再次擋寫入，下一輪要優先補記 0.1.26。
 
 0.1.26 最新 installer：
@@ -24,15 +25,15 @@
 - EXE：667,496,468 bytes，SHA-256 `0486767f4ebf7cf4d0adb233f62bd1d62da0c53709895d00e1a3fc50ce94dc5d`
 - arm64 DMG：684,434,117 bytes，SHA-256 `16acf709838b2fc1831227693aba133e47d5979ee0dc580865734d3038a2be91`
 
-限制：Codex GUI 滑鼠驗收、Windows 真機安裝、播放中更換封面後切歌再切回不卡、cover02 -> cover01 第一次重開後不回跳、播放/暫停連點、選擇新資料夾後重開恢復、約 4 GB / 20+ 首資料夾載入、歌曲資訊 / 封面寫回、AI 操作與 Mini/dialog focus 尚未驗收；macOS DMG 未做 Apple Developer ID 簽章或 notarization；Windows EXE 未做 code signing。
+限制：封面寫回滑鼠驗收、Windows 真機安裝、播放中更換封面後切歌再切回不卡、cover02 -> cover01 第一次重開後不回跳、選擇新資料夾後重開恢復、約 4 GB / 20+ 首資料夾載入、歌曲資訊 / 封面寫回、AI 操作與 Mini/dialog focus 尚未驗收；macOS DMG 未做 Apple Developer ID 簽章或 notarization；Windows EXE 未做 code signing。
 
 ### English QA Summary
 
 - Scope: fixes the remaining original-file writeback persistence race after cover/song-info edits.
 - Root cause: the app could show success before the updated track snapshot had finished saving to IndexedDB.
 - Fix: reload only the edited track and await `libraryDb.saveTracksNow(...)` before reporting success.
-- Passed checks: playback-restore, real Plazma song-info / cover roundtrip, track-display, track-identity, AI track search, FLAC metadata, prompt checks, theme colors, custom images, all-target AI assets, build, Electron compile, elevated `dist:release`, DMG verify, read-only DMG checks, and Windows NSIS static check.
-- Limits: GUI mouse validation, real Windows install, playback/writeback UX, signing, and notarization remain open.
+- Passed checks: playback-restore, real Plazma song-info / cover roundtrip, track-display, track-identity, AI track search, FLAC metadata, prompt checks, theme colors, custom images, all-target AI assets, build, Electron compile, elevated `dist:release`, DMG verify, read-only DMG checks, packaged macOS mouse playback / switch-track / pause smoke, and Windows NSIS static check.
+- Limits: cover-writeback mouse validation, real Windows install, writeback UX, signing, and notarization remain open.
 
 ## 2026-07-03 audio source 誤重載 hotfix 0.1.25
 
