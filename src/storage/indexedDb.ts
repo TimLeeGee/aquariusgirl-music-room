@@ -3,6 +3,7 @@ import type { Track } from "../types/track";
 
 const DB_NAME = "aquariusgirl-music-room";
 const DB_VERSION = 1;
+const MUSIC_SOURCE_PATHS_KEY = "music-source-paths";
 // ponytail: 不升版清除已退役的資料 store，避免破壞使用者資料；只有明確要求清理儲存空間時才加 migration。
 
 export type StoredTrackMetadata = Omit<
@@ -120,6 +121,21 @@ export async function getSetting<T>(key: string) {
     store.get(key),
   );
   return result?.value;
+}
+
+export async function saveMusicSourcePaths(sourcePaths: string[]) {
+  const cleanPaths = Array.from(
+    new Set(sourcePaths.map((sourcePath) => sourcePath.trim()).filter(Boolean)),
+  );
+  await saveSetting(MUSIC_SOURCE_PATHS_KEY, cleanPaths);
+}
+
+export async function getMusicSourcePaths() {
+  const value = await getSetting<unknown>(MUSIC_SOURCE_PATHS_KEY);
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.filter((item): item is string => typeof item === "string" && item.length > 0);
 }
 
 export async function saveDirectoryHandle(handle: FileSystemDirectoryHandle) {

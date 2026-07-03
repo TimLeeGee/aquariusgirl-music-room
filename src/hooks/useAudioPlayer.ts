@@ -39,6 +39,7 @@ export function useAudioPlayer({
   onStopAfterCurrentTrack,
 }: UseAudioPlayerOptions) {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const loadedTrackSourceRef = useRef("");
   const [currentTrackId, setCurrentTrackId] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -61,6 +62,15 @@ export function useAudioPlayer({
     () => tracks.find((track) => track.id === currentTrackId) ?? null,
     [currentTrackId, tracks],
   );
+  const currentTrackSource = useMemo(() => {
+    if (!currentTrack) {
+      return "";
+    }
+
+    return currentTrack.mediaVersion && currentTrack.localUrl.startsWith("file:")
+      ? `${currentTrack.localUrl}?v=${currentTrack.mediaVersion}`
+      : currentTrack.localUrl;
+  }, [currentTrack?.localUrl, currentTrack?.mediaVersion]);
 
   const getTrackIndex = useCallback(
     (trackId: string | null) =>
@@ -87,7 +97,7 @@ export function useAudioPlayer({
   const playAudioElement = useCallback(async () => {
     const audio = audioRef.current;
 
-    if (!audio || !currentTrack) {
+    if (!audio || !currentTrackSource) {
       onError?.("先放幾首音樂進水池，水瓶罐子才有歌可以播。");
       setIsPlaying(false);
       return false;
@@ -102,7 +112,7 @@ export function useAudioPlayer({
       onError?.("瀏覽器暫時阻擋播放，請再點一次播放按鈕。");
       return false;
     }
-  }, [currentTrack, onError]);
+  }, [currentTrackSource, onError]);
 
   const pause = useCallback(() => {
     audioRef.current?.pause();
@@ -118,6 +128,7 @@ export function useAudioPlayer({
       audio.load();
     }
 
+    loadedTrackSourceRef.current = "";
     setCurrentTrackId(null);
     setCurrentTime(0);
     setDuration(0);
@@ -363,11 +374,11 @@ export function useAudioPlayer({
       const nextDuration = event.currentTarget.duration;
       setDuration(Number.isFinite(nextDuration) ? nextDuration : 0);
 
-      if (currentTrack && Number.isFinite(nextDuration)) {
-        onTrackDuration?.(currentTrack.id, nextDuration);
+      if (currentTrackId && Number.isFinite(nextDuration)) {
+        onTrackDuration?.(currentTrackId, nextDuration);
       }
     },
-    [currentTrack, onTrackDuration],
+    [currentTrackId, onTrackDuration],
   );
 
   const handleTimeUpdate = useCallback(
@@ -400,29 +411,42 @@ export function useAudioPlayer({
       return;
     }
 
-    if (!currentTrack) {
+    if (!currentTrackSource) {
       audio.pause();
       audio.removeAttribute("src");
       audio.load();
+      loadedTrackSourceRef.current = "";
       setCurrentTime(0);
       setDuration(0);
       return;
     }
 
-    if (audio.src !== currentTrack.localUrl) {
-      audio.src = currentTrack.localUrl;
+    // ponytail: audio.src is browser-normalized; compare only the source we assigned so metadata updates do not reload playback.
+    if (loadedTrackSourceRef.current !== currentTrackSource) {
+      audio.src = currentTrackSource;
+      loadedTrackSourceRef.current = currentTrackSource;
       audio.load();
       setCurrentTime(0);
-      setDuration(currentTrack.duration ?? 0);
+    }
+  }, [currentTrackSource]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+
+    if (!audio || !currentTrackSource) {
+      return;
     }
 
-    if (isPlaying) {
-      void audio.play().catch(() => {
-        setIsPlaying(false);
-        onError?.("瀏覽器暫時阻擋播放，請再點一次播放按鈕。");
-      });
+    if (!isPlaying) {
+      audio.pause();
+      return;
     }
-  }, [currentTrack, isPlaying, onError]);
+
+    void audio.play().catch(() => {
+      setIsPlaying(false);
+      onError?.("瀏覽器暫時阻擋播放，請再點一次播放按鈕。");
+    });
+  }, [currentTrackSource, isPlaying, onError]);
 
   useEffect(() => {
     if (tracks.length === 0) {

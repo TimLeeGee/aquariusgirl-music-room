@@ -46,12 +46,17 @@ function hashString(input: string) {
 function getFileIdentity(file: File) {
   const metadata = file as File & {
     sourcePath?: string;
+    sourceSize?: number;
     webkitRelativePath?: string;
   };
 
+  if (metadata.sourcePath) {
+    return `source:${metadata.sourcePath}`;
+  }
+
   return [
-    metadata.sourcePath || metadata.webkitRelativePath || file.name,
-    file.size,
+    metadata.webkitRelativePath || file.name,
+    metadata.sourceSize ?? file.size,
     file.lastModified,
   ].join("::");
 }
@@ -68,5 +73,11 @@ export function createSafeTrackId(file: File) {
 }
 
 export function createFileSignature(file: File) {
-  return `${file.name}::${file.size}::${file.lastModified}`;
+  const metadata = file as File & {
+    sourcePath?: string;
+    sourceSize?: number;
+    webkitRelativePath?: string;
+  };
+  if (metadata.sourcePath) return `source:${metadata.sourcePath}`;
+  return `${metadata.webkitRelativePath ?? file.name}::${metadata.sourceSize ?? file.size}::${file.lastModified}`;
 }

@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain, screen, type Rectangle } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, screen, shell, type Rectangle } from "electron";
 import { appendFile, mkdir, readFile, readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -10,6 +10,11 @@ import {
   removeCustomImage,
   saveCustomImage,
 } from "./customImages.js";
+import {
+  readSongInfoFromOriginalFile,
+  writeSongInfoToOriginalFile,
+} from "./songInfoWriter.js";
+import { toSelectedFile } from "./selectedFile.js";
 
 const supportedExtensions = new Set([".mp3", ".wav", ".ogg", ".m4a", ".flac"]);
 const __filename = fileURLToPath(import.meta.url);
@@ -157,16 +162,6 @@ async function collectAudioFiles(folderPath: string): Promise<string[]> {
   return files.flat();
 }
 
-function getMimeType(filePath: string) {
-  const ext = path.extname(filePath).toLowerCase();
-  if (ext === ".mp3") return "audio/mpeg";
-  if (ext === ".wav") return "audio/wav";
-  if (ext === ".ogg") return "audio/ogg";
-  if (ext === ".m4a") return "audio/mp4";
-  if (ext === ".flac") return "audio/flac";
-  return "audio/*";
-}
-
 function getCustomImagesRoot() {
   return path.join(app.getPath("userData"), "custom-images");
 }
@@ -179,24 +174,6 @@ function getAIPlaylistActionLogPath() {
 
 function safeLogEntry(value: unknown) {
   return typeof value === "string" ? value.slice(0, 24_000).trim() : "";
-}
-
-async function toSelectedFile(filePath: string, basePath?: string) {
-  const fileStat = await stat(filePath);
-  const buffer = await readFile(filePath);
-  const arrayBuffer = buffer.buffer.slice(
-    buffer.byteOffset,
-    buffer.byteOffset + buffer.byteLength,
-  );
-
-  return {
-    name: path.basename(filePath),
-    type: getMimeType(filePath),
-    buffer: arrayBuffer,
-    sourcePath: filePath,
-    lastModified: Math.round(fileStat.mtimeMs),
-    relativePath: basePath ? path.relative(basePath, filePath) : undefined,
-  };
 }
 
 function createMainWindow() {
@@ -324,13 +301,70 @@ ipcMain.handle("aquariusgirl:restore-music-paths", async (_event, sourcePaths: u
     }
 
     try {
-      files.push(await toSelectedFile(filePath));
+      files.push(await toSelectedFile(filePath, undefined, { readMetadata: false }));
     } catch {
       missingPaths.push(filePath);
     }
   }
 
   return { files, missingPaths };
+});
+
+ipcMain.handle("aquariusgirl:show-track-in-folder", async (_event, sourcePath: unknown) => {
+  if (typeof sourcePath !== "string" || !path.isAbsolute(sourcePath)) {
+    return { ok: false, error: "這首歌沒有可顯示的位置。" };
+  }
+
+  try {
+    const fileStat = await stat(sourcePath);
+
+    if (!fileStat.isFile()) {
+      return { ok: false, error: "找不到原始音樂檔。" };
+    }
+
+    shell.showItemInFolder(sourcePath);
+    return { ok: true };
+  } catch {
+    return { ok: false, error: "找不到原始音樂檔。" };
+  }
+});
+
+ipcMain.handle("aquariusgirl:read-song-info-from-original-file", async (_event, sourcePath: unknown) => {
+  if (typeof sourcePath !== "string" || !path.isAbsolute(sourcePath)) {
+    return { ok: false, error: "重新讀取音樂標籤失敗，請確認原始檔仍可讀取。" };
+  }
+
+  try {
+    return await readSongInfoFromOriginalFile(sourcePath);
+  } catch (error) {
+    console.error("[song-info] Failed to read original metadata:", error);
+    return { ok: false, error: "重新讀取音樂標籤失敗，請確認原始檔仍可讀取。" };
+  }
+});
+
+ipcMain.handle("aquariusgirl:apply-song-info-to-original-file", async (_event, payload: unknown) => {
+  const sourcePath =
+    payload && typeof payload === "object"
+      ? (payload as { sourcePath?: unknown }).sourcePath
+      : undefined;
+  const metadata =
+    payload && typeof payload === "object"
+      ? (payload as { metadata?: unknown }).metadata
+      : undefined;
+
+  if (typeof sourcePath !== "string" || !path.isAbsolute(sourcePath)) {
+    return { ok: false, error: "寫回原始檔失敗，原始檔未修改" };
+  }
+
+  try {
+    return await writeSongInfoToOriginalFile(
+      sourcePath,
+      metadata && typeof metadata === "object" ? metadata : {},
+    );
+  } catch (error) {
+    console.error("[song-info] Failed to write original metadata:", error);
+    return { ok: false, error: "寫回原始檔失敗，原始檔未修改" };
+  }
 });
 
 ipcMain.handle("aquariusgirl:get-platform", () => ({

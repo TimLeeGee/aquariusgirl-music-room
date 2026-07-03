@@ -1,5 +1,6 @@
 import { Pause, Play, SkipBack, SkipForward } from "lucide-react";
 import type { Track } from "../types/track";
+import { getTrackPrimaryText, getTrackSecondaryText } from "../utils/trackDisplay";
 import { IconButton } from "./IconButton";
 import { ProgressBar } from "./ProgressBar";
 import { TrackArtwork } from "./TrackArtwork";
@@ -39,10 +40,10 @@ export function MiniPlayer({
         <TrackArtwork track={currentTrack} size="md" className="h-12 w-12" />
         <div className="min-w-0">
           <p className="truncate text-sm font-black text-white">
-            {currentTrack?.title ?? "水瓶罐子的音樂小水池待機中"}
+            {currentTrack ? getTrackPrimaryText(currentTrack) : "水瓶罐子的音樂小水池待機中"}
           </p>
           <p className="truncate text-xs text-aquarius-mist">
-            {currentTrack?.artist ?? "加入本地音樂後開始播放"}
+            {currentTrack ? getTrackSecondaryText(currentTrack) : "加入本地音樂後開始播放"}
           </p>
           {sleepTimerActive && sleepTimerLabel && (
             <p className="mt-1 truncate text-[11px] font-bold text-aquarius-pink">

@@ -1,3 +1,5 @@
+import type { SongInfoDraft } from "./songInfo";
+
 export type CustomImageSlot =
   | "logo"
   | "avatar"
@@ -47,9 +49,26 @@ export type AIReplyResult =
 export type AquariusgirlElectronAPI = {
   selectMusicFiles: () => Promise<ElectronSelectedFile[]>;
   selectMusicFolder: () => Promise<ElectronSelectedFile[]>;
-  restoreMusicPaths: (paths: string[]) => Promise<{
+  restoreMusicPaths: (paths: string[], options?: { readMetadata?: boolean }) => Promise<{
     files: ElectronSelectedFile[];
     missingPaths: string[];
+  }>;
+  showTrackInFolder?: (sourcePath: string) => Promise<{
+    ok: boolean;
+    error?: string;
+  }>;
+  readSongInfoFromOriginalFile?: (sourcePath: string) => Promise<{
+    ok: boolean;
+    metadata?: SongInfoDraft;
+    error?: string;
+  }>;
+  applySongInfoToOriginalFile?: (payload: {
+    sourcePath: string;
+    metadata: SongInfoDraft;
+  }) => Promise<{
+    ok: boolean;
+    unsupported?: boolean;
+    error?: string;
   }>;
   getPlatform: () => Promise<{ platform: string; arch: string; isElectron: boolean }>;
   getAppDataPath: () => Promise<string>;
@@ -111,10 +130,13 @@ export type AquariusgirlElectronAPI = {
 export type ElectronSelectedFile = {
   name: string;
   type: string;
-  buffer: ArrayBuffer;
+  buffer?: ArrayBuffer;
+  localUrl?: string;
+  size?: number;
   sourcePath?: string;
   lastModified?: number;
   relativePath?: string;
+  metadata?: SongInfoDraft;
 };
 
 declare global {

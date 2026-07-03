@@ -138,41 +138,48 @@ export function AIAssistantPanel({
 
   const createPlaylistFromDraft = async (nextDraft: PlaylistDraft) => {
     if (nextDraft.candidates.length === 0) return;
+    setPlaylistBusy(true);
+    setPlaylistError("");
     const validTrackIds = new Set(tracks.map((track) => track.id));
     const candidates = nextDraft.candidates.filter((candidate) =>
       validTrackIds.has(candidate.track.id),
     );
-    if (candidates.length === 0) {
-      setPlaylistError("目前載入的歌曲裡找不到符合條件的歌曲。");
-      return;
-    }
 
-    const result = onCreatePlaylist(
-      nextDraft.name,
-      candidates.map((candidate) => candidate.track.id),
-      {
-        requestText: nextDraft.requestText,
-        searchMethod: nextDraft.searchMethod,
-        intent: nextDraft.intent,
-        candidates,
-      },
-    );
-    if (!result.ok) {
-      setPlaylistError(result.error);
-      return;
+    try {
+      if (candidates.length === 0) {
+        setPlaylistError("目前載入的歌曲裡找不到符合條件的歌曲。");
+        return;
+      }
+
+      const result = onCreatePlaylist(
+        nextDraft.name,
+        candidates.map((candidate) => candidate.track.id),
+        {
+          requestText: nextDraft.requestText,
+          searchMethod: nextDraft.searchMethod,
+          intent: nextDraft.intent,
+          candidates,
+        },
+      );
+      if (!result.ok) {
+        setPlaylistError(result.error);
+        return;
+      }
+      await publishSkillResult({
+        ok: true,
+        skill: "createPlaylistFromSearch",
+        message: "",
+        tracks: candidates,
+        playlist: { name: result.name, trackCount: result.count },
+        error: null,
+        reply_level: "summary_only",
+        allow_track_list_output: false,
+      });
+      setPlaylistDraft(null);
+      setPendingPlaylistText("");
+    } finally {
+      setPlaylistBusy(false);
     }
-    await publishSkillResult({
-      ok: true,
-      skill: "createPlaylistFromSearch",
-      message: "",
-      tracks: candidates,
-      playlist: { name: result.name, trackCount: result.count },
-      error: null,
-      reply_level: "summary_only",
-      allow_track_list_output: false,
-    });
-    setPlaylistDraft(null);
-    setPendingPlaylistText("");
   };
 
   const runMusicLibrarySearch = async (
@@ -350,7 +357,7 @@ export function AIAssistantPanel({
   };
 
   const handleCreatePlaylist = () => {
-    if (!playlistDraft) return;
+    if (!playlistDraft || playlistBusy) return;
     void createPlaylistFromDraft(playlistDraft);
   };
 
@@ -404,6 +411,7 @@ export function AIAssistantPanel({
             <div className="mb-2 flex items-center justify-between gap-2">
               <input
                 value={playlistDraft.name}
+                disabled={playlistBusy}
                 onChange={(event) =>
                   setPlaylistDraft((current) =>
                     current ? { ...current, name: event.target.value } : current,
@@ -415,7 +423,7 @@ export function AIAssistantPanel({
               <button
                 type="button"
                 onClick={handleCreatePlaylist}
-                disabled={!playlistDraft.name.trim() || playlistDraft.candidates.length === 0}
+                disabled={playlistBusy || !playlistDraft.name.trim() || playlistDraft.candidates.length === 0}
                 className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-aquarius-gold/30 bg-aquarius-gold/20 text-aquarius-gold transition hover:bg-aquarius-gold/30 disabled:cursor-not-allowed disabled:opacity-45"
                 aria-label="建立播放清單"
                 title="建立播放清單"
@@ -426,6 +434,14 @@ export function AIAssistantPanel({
             <p className="mb-2 text-xs text-aquarius-mist">
               {playlistDraft.candidates.length} 首候選 · {playlistDraft.searchMethod}
             </p>
+          </div>
+        )}
+        {playlistBusy && (
+          <div
+            role="status"
+            className="mr-auto max-w-[92%] rounded-lg border border-aquarius-blue/25 bg-aquarius-blue/10 px-3 py-2 text-sm leading-6 text-aquarius-mist"
+          >
+            正在整理並建立播放清單，請稍候，完成前先不要重複送出。
           </div>
         )}
         {playlistResult && (

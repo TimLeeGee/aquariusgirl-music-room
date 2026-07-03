@@ -2,9 +2,13 @@ export type ParsedId3Tags = {
   title?: string;
   artist?: string;
   album?: string;
+  albumArtist?: string;
   year?: string;
   genre?: string;
   trackNumber?: string;
+  discNumber?: string;
+  comment?: string;
+  composer?: string;
   coverBlob?: Blob;
   coverMimeType?: string;
 };
@@ -158,12 +162,30 @@ function mergeTagValue(tags: ParsedId3Tags, nextTags: ParsedId3Tags) {
     title: tags.title || nextTags.title,
     artist: tags.artist || nextTags.artist,
     album: tags.album || nextTags.album,
+    albumArtist: tags.albumArtist || nextTags.albumArtist,
     year: tags.year || nextTags.year,
     genre: tags.genre || nextTags.genre,
     trackNumber: tags.trackNumber || nextTags.trackNumber,
+    discNumber: tags.discNumber || nextTags.discNumber,
+    comment: tags.comment || nextTags.comment,
+    composer: tags.composer || nextTags.composer,
     coverBlob: tags.coverBlob || nextTags.coverBlob,
     coverMimeType: tags.coverMimeType || nextTags.coverMimeType,
   };
+}
+
+function parseCommentFrame(frameData: Uint8Array): ParsedId3Tags {
+  const encoding = frameData[0] ?? 0;
+  const textStart = 4;
+  const descriptionEnd = getDescriptionEnd(frameData, textStart, encoding);
+
+  if (descriptionEnd < 0) {
+    return {};
+  }
+
+  const terminatorLength = encoding === 1 || encoding === 2 ? 2 : 1;
+  const comment = decodeBytes(frameData.slice(descriptionEnd + terminatorLength), encoding).trim();
+  return comment ? { comment } : {};
 }
 
 function parseFlacPictureBlock(bytes: Uint8Array) {
@@ -266,6 +288,10 @@ function parseFrame(frameId: string, frameData: Uint8Array, version: number): Pa
     return { album: decodeTextFrame(frameData) };
   }
 
+  if (frameId === "TPE2" || frameId === "TP2") {
+    return { albumArtist: decodeTextFrame(frameData) };
+  }
+
   if (frameId === "TYER" || frameId === "TDRC" || frameId === "TYE") {
     return { year: decodeTextFrame(frameData) };
   }
@@ -276,6 +302,18 @@ function parseFrame(frameId: string, frameData: Uint8Array, version: number): Pa
 
   if (frameId === "TRCK" || frameId === "TRK") {
     return { trackNumber: decodeTextFrame(frameData) };
+  }
+
+  if (frameId === "TPOS" || frameId === "TPA") {
+    return { discNumber: decodeTextFrame(frameData) };
+  }
+
+  if (frameId === "TCOM" || frameId === "TCM") {
+    return { composer: decodeTextFrame(frameData) };
+  }
+
+  if (frameId === "COMM" || frameId === "COM") {
+    return parseCommentFrame(frameData);
   }
 
   if (frameId === "APIC") {
@@ -352,7 +390,19 @@ export async function parseId3Tags(file: File): Promise<ParsedId3Tags> {
     const frameData = tagBytes.slice(offset + headerSize, offset + headerSize + frameSize);
     tags = mergeTagValue(tags, parseFrame(frameId, frameData, version));
 
-    if (tags.title && tags.artist && tags.album && tags.coverBlob && tags.year && tags.genre && tags.trackNumber) {
+    if (
+      tags.title &&
+      tags.artist &&
+      tags.album &&
+      tags.albumArtist &&
+      tags.coverBlob &&
+      tags.year &&
+      tags.genre &&
+      tags.trackNumber &&
+      tags.discNumber &&
+      tags.comment &&
+      tags.composer
+    ) {
       break;
     }
 

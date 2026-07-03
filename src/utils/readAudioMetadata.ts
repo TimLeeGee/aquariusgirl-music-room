@@ -3,7 +3,17 @@ import { parseAudioTags } from "./id3Tags";
 
 export type AudioMetadata = Partial<Pick<
   Track,
-  "title" | "artist" | "album" | "year" | "genre" | "trackNumber" | "coverMimeType"
+  | "title"
+  | "artist"
+  | "album"
+  | "albumArtist"
+  | "year"
+  | "genre"
+  | "trackNumber"
+  | "discNumber"
+  | "comment"
+  | "composer"
+  | "coverMimeType"
 >> & {
   artworkBlob?: Blob;
   metadataLoaded: boolean;
@@ -18,9 +28,13 @@ export async function readAudioMetadata(file: File): Promise<AudioMetadata> {
       title: id3Tags.title,
       artist: id3Tags.artist,
       album: id3Tags.album,
+      albumArtist: id3Tags.albumArtist,
       year: id3Tags.year,
       genre: id3Tags.genre,
       trackNumber: id3Tags.trackNumber,
+      discNumber: id3Tags.discNumber,
+      comment: id3Tags.comment,
+      composer: id3Tags.composer,
       coverMimeType: id3Tags.coverMimeType,
       artworkBlob: id3Tags.coverBlob,
       metadataLoaded: true,

@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import { filesFromElectronSelection, pickDirectoryWithFileSystemAccess } from "../utils/fileSystemAccess";
 import { isElectronRuntime, supportsFileSystemAccess } from "../utils/platform";
-import { saveDirectoryHandle } from "../storage/indexedDb";
+import { saveDirectoryHandle, saveMusicSourcePaths } from "../storage/indexedDb";
 
 type UseFileSystemAccessOptions = {
   onFiles: (files: File[]) => void;
@@ -18,7 +18,16 @@ export function useFileSystemAccess({ onFiles, onInfo, onError }: UseFileSystemA
     try {
       if (isElectronRuntime() && window.aquariusgirlAPI) {
         const selected = await window.aquariusgirlAPI.selectMusicFolder();
+        if (selected.length === 0) {
+          return true;
+        }
+
         const files = filesFromElectronSelection(selected);
+        await saveMusicSourcePaths(
+          selected
+            .map((item) => item.sourcePath)
+            .filter((sourcePath): sourcePath is string => Boolean(sourcePath)),
+        ).catch(() => undefined);
         onFiles(files);
         setAuthorizationStatus("electron");
         onInfo?.(`已從桌面版資料夾加入 ${files.length} 首音樂。`);
@@ -64,7 +73,9 @@ export function useFileSystemAccess({ onFiles, onInfo, onError }: UseFileSystemA
         return { restored: 0, missing: sourcePaths.length };
       }
 
-      const restored = await window.aquariusgirlAPI.restoreMusicPaths(sourcePaths);
+      const restored = await window.aquariusgirlAPI.restoreMusicPaths(sourcePaths, {
+        readMetadata: false,
+      });
       const files = filesFromElectronSelection(restored.files);
 
       if (files.length > 0) {

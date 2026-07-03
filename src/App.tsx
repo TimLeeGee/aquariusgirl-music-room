@@ -26,6 +26,7 @@ import { PlaylistNameDialog } from "./components/PlaylistNameDialog";
 import { PlaylistSidebar } from "./components/PlaylistSidebar";
 import { SleepTimer } from "./components/SleepTimer";
 import { AudioVisualizer } from "./components/AudioVisualizer";
+import { SongInfoPanel } from "./components/SongInfoPanel";
 import { SmartPlaylistEditorDialog } from "./components/SmartPlaylistEditorDialog";
 import {
   BrandAssetsContext,
@@ -71,6 +72,7 @@ import {
   type CustomImages,
   type CustomImageSlot,
 } from "./utils/platform";
+import { isSupportedOriginalWriteFormat, type SongInfoDraft } from "./utils/songInfo";
 
 function sortTracks(tracks: Track[], sortMode: SortMode) {
   const nextTracks = [...tracks];
@@ -433,6 +435,7 @@ export default function App() {
     useState<PlaylistNameDialogState>(null);
   const [stopAfterCurrentTrack, setStopAfterCurrentTrack] = useState(false);
   const [sleepStopSignal, setSleepStopSignal] = useState(0);
+  const [songInfoTrackId, setSongInfoTrackId] = useState<string | null>(null);
 
   const showInfo = useCallback((message: string) => {
     setErrorMessage("");
@@ -483,6 +486,9 @@ export default function App() {
     toggleLike,
     setTrackDuration,
     recordTrackPlayback,
+    replaceTrackSongInfo,
+    reloadTrackMetadata,
+    applyStoredTrackMetadata,
   } = useLocalTracks({
     likedTrackNames,
     onLikedTrackNamesChange: setLikedTrackNames,
@@ -530,6 +536,10 @@ export default function App() {
     [playlistsState.activeTrackIds, tracks],
   );
   const libraryDb = useMusicLibraryDb(tracks, playlistsState.playlists);
+  const songInfoTrack = useMemo(
+    () => tracks.find((track) => track.id === songInfoTrackId) ?? null,
+    [songInfoTrackId, tracks],
+  );
 
   const player = useAudioPlayer({
     tracks: playbackTracks,
@@ -573,6 +583,31 @@ export default function App() {
     onError: showError,
   });
   const restoreMusicPaths = fileSystemAccess.restoreMusicPaths;
+
+  useEffect(() => {
+    if (tracks.length === 0 || libraryDb.storedTracks.length === 0) {
+      return;
+    }
+
+    applyStoredTrackMetadata(libraryDb.storedTracks);
+    const currentIdsBySourcePath = new Map(
+      tracks
+        .filter((track) => track.sourcePath)
+        .map((track) => [track.sourcePath as string, track.id]),
+    );
+    const idMap = new Map<string, string>();
+    libraryDb.storedTracks.forEach((storedTrack) => {
+      if (!storedTrack.sourcePath) return;
+      const nextId = currentIdsBySourcePath.get(storedTrack.sourcePath);
+      if (nextId && nextId !== storedTrack.id) idMap.set(storedTrack.id, nextId);
+    });
+    playlistsState.remapTrackIds(idMap);
+  }, [
+    applyStoredTrackMetadata,
+    libraryDb.storedTracks,
+    playlistsState.remapTrackIds,
+    tracks.length,
+  ]);
 
   const handleVisualizerSettingsChange = useCallback(
     (settings: AudioVisualizerSettings) => {
@@ -729,13 +764,16 @@ export default function App() {
       return;
     }
 
-    const sourcePaths = Array.from(
-      new Set(
-        libraryDb.storedTracks
-          .map((track) => track.sourcePath)
-          .filter((sourcePath): sourcePath is string => Boolean(sourcePath)),
-      ),
-    );
+    const sourcePaths =
+      libraryDb.musicSourcePaths.length > 0
+        ? libraryDb.musicSourcePaths
+        : Array.from(
+            new Set(
+              libraryDb.storedTracks
+                .map((track) => track.sourcePath)
+                .filter((sourcePath): sourcePath is string => Boolean(sourcePath)),
+            ),
+          );
 
     if (sourcePaths.length === 0) {
       return;
@@ -765,6 +803,7 @@ export default function App() {
   }, [
     addFiles,
     isDesktopApp,
+    libraryDb.musicSourcePaths,
     libraryDb.storedTracks,
     restoreMusicPaths,
     showError,
@@ -1016,6 +1055,127 @@ export default function App() {
       }
     },
     [moveTrack, playlistsState, showInfo],
+  );
+
+  const openCurrentSongInfo = useCallback(() => {
+    if (!player.currentTrack) {
+      showError("目前沒有選取歌曲。");
+      return;
+    }
+
+    setSongInfoTrackId(player.currentTrack.id);
+  }, [player.currentTrack, showError]);
+
+  const reloadSongInfoFromOriginal = useCallback(
+    async (track: Track) => {
+      if (
+        track.sourcePath &&
+        isSupportedOriginalWriteFormat(track.sourcePath) &&
+        window.aquariusgirlAPI?.readSongInfoFromOriginalFile
+      ) {
+        const result = await window.aquariusgirlAPI.readSongInfoFromOriginalFile(track.sourcePath);
+
+        if (result.ok && result.metadata) {
+          return replaceTrackSongInfo(track.id, result.metadata);
+        }
+
+        return null;
+      }
+
+      return (await reloadTrackMetadata(track.id)) ? track : null;
+    },
+    [reloadTrackMetadata, replaceTrackSongInfo],
+  );
+
+  const handleReloadCurrentTrackMetadata = useCallback(async () => {
+    const track = player.currentTrack;
+
+    if (!track) {
+      showError("目前沒有選取歌曲。");
+      return;
+    }
+
+    if (
+      track.metadataOverride &&
+      !window.confirm("重新讀取會以原始檔標籤覆蓋播放器內的歌曲資訊，是否繼續？")
+    ) {
+      return;
+    }
+
+    const reloadedTrack = await reloadSongInfoFromOriginal(track);
+
+    if (reloadedTrack) {
+      showInfo("已重新讀取音樂標籤。");
+    } else {
+      showError("重新讀取音樂標籤失敗，請確認原始檔仍可讀取。");
+    }
+  }, [player.currentTrack, reloadSongInfoFromOriginal, showError, showInfo]);
+
+  const handleShowCurrentTrackFileLocation = useCallback(async () => {
+    const track = player.currentTrack;
+
+    if (!track?.sourcePath) {
+      showError("這首歌沒有可顯示的位置。");
+      return;
+    }
+
+    try {
+      const result = await window.aquariusgirlAPI?.showTrackInFolder?.(track.sourcePath);
+
+      if (!result?.ok) {
+        showError(result?.error ?? "顯示檔案位置失敗。");
+        return;
+      }
+
+      showInfo("已開啟檔案位置。");
+    } catch {
+      showError("顯示檔案位置失敗。");
+    }
+  }, [player.currentTrack, showError, showInfo]);
+
+  const handleApplySongInfoToOriginal = useCallback(
+    async (trackId: string, draft: SongInfoDraft) => {
+      const track = tracks.find((item) => item.id === trackId);
+
+      if (!track?.sourcePath) {
+        showError("寫回原始檔僅支援桌面版。");
+        return false;
+      }
+
+      try {
+        const result = await window.aquariusgirlAPI?.applySongInfoToOriginalFile?.({
+          sourcePath: track.sourcePath,
+          metadata: draft,
+        });
+
+        if (!result?.ok) {
+          showError(result?.error ?? "寫回原始檔失敗，原始檔未修改");
+          return false;
+        }
+
+        const reloadedTrack = await reloadSongInfoFromOriginal(track);
+        if (!reloadedTrack) {
+          showError("原始檔已處理，但重新讀取音樂標籤失敗。");
+          return false;
+        }
+
+        try {
+          await libraryDb.saveTracksNow(
+            tracks.map((item) => (item.id === reloadedTrack.id ? reloadedTrack : item)),
+          );
+        } catch {
+          showError("原始檔已更新，但播放器資料庫保存失敗，請重新載入音樂資料夾。");
+          return false;
+        }
+
+        showInfo("已套用到原始檔");
+        return true;
+      } catch {
+        showError("寫回原始檔失敗，原始檔未修改");
+        return false;
+      }
+    },
+    [libraryDb, reloadSongInfoFromOriginal, showError, showInfo, tracks],
   );
 
   const handleDeletePlaylist = useCallback(
@@ -1419,6 +1579,12 @@ export default function App() {
                 player.currentTrack ? trackPlaylistIdsByTrackId[player.currentTrack.id] ?? [] : []
               }
               onAddCurrentTrackToPlaylist={handleAddTrackToPlaylist}
+              onEditCurrentTrack={openCurrentSongInfo}
+              onReloadCurrentTrackMetadata={() => void handleReloadCurrentTrackMetadata()}
+              onShowCurrentTrackFileLocation={() => void handleShowCurrentTrackFileLocation()}
+              canShowCurrentTrackFileLocation={Boolean(
+                isDesktopApp && player.currentTrack?.sourcePath,
+              )}
               showWebLimitNotice={!isDesktopApp}
             />
             <AudioVisualizer
@@ -1632,6 +1798,14 @@ export default function App() {
           handleMiniOpacityChange(defaultMiniPlayerSettings.opacity);
           showInfo("色彩與透明度已全部復原。");
         }}
+      />
+      <SongInfoPanel
+        open={Boolean(songInfoTrack)}
+        track={songInfoTrack}
+        isDesktopApp={isDesktopApp}
+        onClose={() => setSongInfoTrackId(null)}
+        onApplyToOriginal={handleApplySongInfoToOriginal}
+        onError={showError}
       />
     </BrandAssetsContext.Provider>
   );

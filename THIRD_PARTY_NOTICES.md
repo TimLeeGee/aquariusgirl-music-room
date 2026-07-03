@@ -13,6 +13,17 @@ The bundled offline AI runtime uses `llama-server` from llama.cpp.
 
 Include the upstream MIT license text with any bundled llama.cpp binary.
 
+## taglib-wasm
+
+0.1.19 uses `taglib-wasm` in the Electron main process for MP3/FLAC/M4A metadata and cover read/write.
+
+- Project: https://github.com/CharlesWiltgen/TagLib-Wasm
+- Package version: 1.4.0
+- JavaScript package license: MIT
+- Bundled WebAssembly TagLib code: LGPL-2.1-or-later
+
+Include `node_modules/taglib-wasm/LICENSE` and the upstream LGPL compliance notes with any public binary release. If the bundled TagLib WebAssembly binary is modified, publish the corresponding LGPL-covered changes and keep a relinking path available.
+
 ## node-llama-cpp
 
 This project currently uses the llama.cpp sidecar runtime instead of importing `node-llama-cpp` into Electron. If `node-llama-cpp` is adopted later, include its upstream license notice before release.

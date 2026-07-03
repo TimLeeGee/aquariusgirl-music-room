@@ -1,5 +1,6 @@
 import {
   Heart,
+  MoreHorizontal,
   Pause,
   Play,
   Repeat,
@@ -8,8 +9,10 @@ import {
   SkipBack,
   SkipForward,
 } from "lucide-react";
+import { useState } from "react";
 import type { NormalPlaylist } from "../types/playlist";
 import type { RepeatMode, Track } from "../types/track";
+import { getTrackPrimaryText, getTrackSecondaryText } from "../utils/trackDisplay";
 import { IconButton } from "./IconButton";
 import { ProgressBar } from "./ProgressBar";
 import { TrackArtwork } from "./TrackArtwork";
@@ -41,6 +44,10 @@ type PlayerCoreProps = {
   onCycleRepeatMode: () => void;
   onToggleLike: (trackId: string) => void;
   onAddCurrentTrackToPlaylist?: (playlistId: string, trackId: string) => void;
+  onEditCurrentTrack?: () => void;
+  onReloadCurrentTrackMetadata?: () => void;
+  onShowCurrentTrackFileLocation?: () => void;
+  canShowCurrentTrackFileLocation?: boolean;
 };
 
 function getRepeatLabel(repeatMode: RepeatMode) {
@@ -81,10 +88,16 @@ export function PlayerCore({
   onCycleRepeatMode,
   onToggleLike,
   onAddCurrentTrackToPlaylist,
+  onEditCurrentTrack,
+  onReloadCurrentTrackMetadata,
+  onShowCurrentTrackFileLocation,
+  canShowCurrentTrackFileLocation = false,
 }: PlayerCoreProps) {
   const RepeatIcon = repeatMode === "one" ? Repeat1 : Repeat;
   const hasTracks = trackCount > 0;
   const currentTrackPlaylistIdSet = new Set(currentTrackPlaylistIds);
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+  const closeMoreMenu = () => setMoreMenuOpen(false);
 
   return (
     <section className="glass-panel p-5 sm:p-6">
@@ -97,10 +110,10 @@ export function PlayerCore({
                 {isPlaying ? "Playing" : hasTracks ? "Ready" : "Waiting"}
               </p>
               <h2 className="mt-2 animate-track-in truncate text-2xl font-black text-white sm:text-3xl">
-                {currentTrack?.title ?? "水瓶罐子正在等音樂"}
+                {getTrackPrimaryText(currentTrack)}
               </h2>
               <p className="mt-1 truncate text-sm text-aquarius-mist">
-                {currentTrack?.artist ?? "選擇本地音樂檔後開始播放"}
+                {currentTrack ? getTrackSecondaryText(currentTrack) : "選擇本地音樂檔後開始播放"}
               </p>
               {currentTrack?.album && (
                 <p className="mt-1 truncate text-xs text-aquarius-mist">
@@ -165,6 +178,54 @@ export function PlayerCore({
               disabled={!currentTrack}
               onClick={() => currentTrack && onToggleLike(currentTrack.id)}
             />
+            <div className="relative">
+              <IconButton
+                icon={<MoreHorizontal className="h-5 w-5" />}
+                label="更多"
+                disabled={!currentTrack}
+                onClick={() => setMoreMenuOpen((open) => !open)}
+              />
+              {moreMenuOpen && currentTrack && (
+                <div className="absolute right-0 z-30 mt-2 w-52 overflow-hidden rounded-lg border border-white/[0.12] bg-aquarius-navy/[0.96] p-1 text-sm font-bold text-aquarius-mist shadow-[0_16px_44px_rgba(0,0,0,0.35)]">
+                  <button
+                    type="button"
+                    className="block w-full rounded-md px-3 py-2 text-left transition hover:bg-white/[0.09] hover:text-white"
+                    onClick={() => {
+                      closeMoreMenu();
+                      onEditCurrentTrack?.();
+                    }}
+                  >
+                    編輯歌曲資訊
+                  </button>
+                  <button
+                    type="button"
+                    className="block w-full rounded-md px-3 py-2 text-left transition hover:bg-white/[0.09] hover:text-white"
+                    onClick={() => {
+                      closeMoreMenu();
+                      onReloadCurrentTrackMetadata?.();
+                    }}
+                  >
+                    重新讀取音樂標籤
+                  </button>
+                  <button
+                    type="button"
+                    className="block w-full rounded-md px-3 py-2 text-left transition hover:bg-white/[0.09] hover:text-white disabled:cursor-not-allowed disabled:opacity-45"
+                    disabled={!canShowCurrentTrackFileLocation}
+                    title={
+                      canShowCurrentTrackFileLocation
+                        ? "顯示檔案位置"
+                        : "這個模式不支援顯示檔案位置"
+                    }
+                    onClick={() => {
+                      closeMoreMenu();
+                      onShowCurrentTrackFileLocation?.();
+                    }}
+                  >
+                    顯示檔案位置
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

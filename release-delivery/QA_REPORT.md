@@ -1,9 +1,268 @@
 # QA 驗收報告
 
 產品：Aquariusgirl Music Room / 水瓶罐子的音樂小水池
-版本：0.1.18
-日期：2026-06-29
+版本：0.1.26
+日期：2026-07-03
 驗收角色：PM / QA / Electron 發行工程師
+
+## 2026-07-03 單曲寫回後 DB 立即保存 hotfix 0.1.26
+
+- 範圍：補完 0.1.24 / 0.1.25 同族殘留，修正原始檔封面寫回後 UI 已更新但 IndexedDB 仍可能保存舊 cover，導致第一次重開還原舊 cover02、第二次才看到 cover01。
+- 判斷：不採用每次歌曲資訊更新就清空整個音樂資料庫再重載。這對 99 首可能看似有效，但對未來上萬首曲庫會造成不必要 I/O 與等待。
+- 根因：`reloadSongInfoFromOriginal` 寫回後只更新 React state；`useMusicLibraryDb` 透過 effect 非同步保存 tracks。成功提示 / 面板關閉可能早於 IndexedDB transaction 完成，快速重開時會讀到舊 snapshot。
+- 修正：`replaceTrackSongInfo` 回傳更新後的 `Track`；`useMusicLibraryDb` 新增 `saveTracksNow(tracksSnapshot)`，沿用既有 save queue 並回傳 promise；`handleApplySongInfoToOriginal` 只在重新讀回原始檔 metadata 且 `await libraryDb.saveTracksNow(...)` 完成後回報成功。
+- 失敗先行：先讓 `scripts/playback-restore-check.mjs` 要求 `saveTracksNow`、`return saveTask`、App 端 `await libraryDb.saveTracksNow`，舊程式紅燈；修正後 PASS。
+- 檢查：`npm run check:playback-restore` PASS；`SONG_INFO_FIXTURE_PATH=/private/tmp/.../Plazma-test/01. Plazma.flac npm run check:song-info` PASS；`npm run check:track-display` PASS；`npm run check:track-identity` PASS；`npm run check:ai-track-search` PASS；`npm run check:flac-metadata` PASS；`npm run check:prompts` PASS；`npm run check:theme-colors` PASS；`npm run check:custom-images` PASS；all-target `check:ai-assets` PASS；`npm run build` PASS；`npm run electron:compile` PASS。
+- 打包：升權 `npm run dist:release` PASS，同步兩個 installer 到 `release-delivery/installers/`，暫存 `release/` 已移除。
+- DMG 驗證：`hdiutil verify` VALID；升權唯讀掛載讀回 `CFBundleShortVersionString` / `CFBundleVersion` 均為 0.1.26，執行檔為 Mach-O arm64，`app.asar` 存在，mac AI model/runtime 存在，掛載點已卸載。
+- EXE static check：PASS，辨識為 Windows NSIS installer；未在 Windows 真機執行，不能宣稱 Windows fresh install、播放中改封面、播放/暫停、4 GB 資料夾、寫回與 AI 操作實機通過。
+- GUI 驗收限制：Codex 沙盒拒絕直接啟動 Electron GUI；本輪未由 Codex 完成滑鼠實際流程，需下一輪由已開啟 App 或使用者手動配合驗收。
+- 技能更新：已整理並嘗試補入 `build-music-player` 經驗；若環境再次擋寫入，下一輪要優先補記 0.1.26。
+
+0.1.26 最新 installer：
+
+- EXE：667,496,468 bytes，SHA-256 `0486767f4ebf7cf4d0adb233f62bd1d62da0c53709895d00e1a3fc50ce94dc5d`
+- arm64 DMG：684,434,117 bytes，SHA-256 `16acf709838b2fc1831227693aba133e47d5979ee0dc580865734d3038a2be91`
+
+限制：Codex GUI 滑鼠驗收、Windows 真機安裝、播放中更換封面後切歌再切回不卡、cover02 -> cover01 第一次重開後不回跳、播放/暫停連點、選擇新資料夾後重開恢復、約 4 GB / 20+ 首資料夾載入、歌曲資訊 / 封面寫回、AI 操作與 Mini/dialog focus 尚未驗收；macOS DMG 未做 Apple Developer ID 簽章或 notarization；Windows EXE 未做 code signing。
+
+### English QA Summary
+
+- Scope: fixes the remaining original-file writeback persistence race after cover/song-info edits.
+- Root cause: the app could show success before the updated track snapshot had finished saving to IndexedDB.
+- Fix: reload only the edited track and await `libraryDb.saveTracksNow(...)` before reporting success.
+- Passed checks: playback-restore, real Plazma song-info / cover roundtrip, track-display, track-identity, AI track search, FLAC metadata, prompt checks, theme colors, custom images, all-target AI assets, build, Electron compile, elevated `dist:release`, DMG verify, read-only DMG checks, and Windows NSIS static check.
+- Limits: GUI mouse validation, real Windows install, playback/writeback UX, signing, and notarization remain open.
+
+## 2026-07-03 audio source 誤重載 hotfix 0.1.25
+
+- 範圍：補完 0.1.24 同族殘留，修正播放中更換封面 / 歌曲資訊後，切歌再切回同一首仍可能因同來源重載而短暫卡住。
+- 判斷：不是全新問題，而是 metadata / cover 寫回後音訊來源刷新干擾的同族殘留。0.1.24 修掉 `mediaVersion` 與 IndexedDB save queue，但另一條 source reload 路徑仍在。
+- 根因：`useAudioPlayer` 以 `audio.src !== currentTrackSource` 判斷是否重載；`audio.src` 是瀏覽器正規化後的 URL，不能直接拿來跟原始 `currentTrackSource` 比。來源 effect 同時依賴 duration，metadata / duration 更新可能誤觸 `audio.load()`。
+- 修正：新增 `loadedTrackSourceRef` 記住最後指定給 audio element 的 source；source effect 只依賴 `currentTrackSource`，只有來源真的改變才 `audio.load()`；`stop()` / 清空來源時清 ref。
+- 失敗先行：先讓 `scripts/playback-restore-check.mjs` 要求 `loadedTrackSourceRef`、禁止 `audio.src !== currentTrackSource`、禁止 `[currentTrackDuration, currentTrackSource]`，舊程式紅燈；修正後 PASS。
+- 封面驗證：`song-info-writer-check` 已補真實封面 roundtrip。使用 `/private/tmp/.../Plazma-test/01. Plazma.flac` 暫存複本，寫 `Cover 02.jpg` 後讀回，再寫 4.3 MB `Cover 01.jpg` 後讀回，PASS；原始音樂檔未修改。
+- 檢查：`npm run check:playback-restore` PASS；`npm run check:track-display` PASS；`npm run check:track-identity` PASS；`SONG_INFO_FIXTURE_PATH=/private/tmp/.../Plazma-test/01. Plazma.flac npm run check:song-info` PASS；`npm run check:ai-track-search` PASS；`npm run check:flac-metadata` PASS；`npm run check:prompts` PASS；`npm run check:theme-colors` PASS；`npm run check:custom-images` PASS；all-target `check:ai-assets` PASS；`npm run build` PASS；`npm run electron:compile` PASS。
+- 打包：一般沙盒 `npm run dist:release` 在 `hdiutil create` 失敗；使用者同意打包後，升權重跑同一 `npm run dist:release` PASS。同步兩個 installer 到 `release-delivery/installers/`，暫存 `release/` 已移除。
+- DMG 驗證：`hdiutil verify` VALID。`hdiutil attach` / `hdiutil imageinfo` 因裝置權限與用量限制未完成，所以本輪不標記 DMG 唯讀掛載版本 / arm64 / app.asar 讀回 PASS。
+- EXE static check：PASS，辨識為 Windows NSIS installer；未在 Windows 真機執行，不能宣稱 Windows fresh install、播放中改封面、播放/暫停、4 GB 資料夾、寫回與 AI 操作實機通過。
+- GUI 驗收限制：Codex 沙盒拒絕直接啟動 Electron GUI；本輪未由 Codex 完成滑鼠實際流程，需下一輪由已開啟 App 或使用者手動配合驗收。
+- 技能更新限制：已整理 0.1.25 lesson，但寫入 `~/.codex/skills/build-music-player/references/aquariusgirl-lessons.md` 被用量限制擋住，提示 18:48 後再試。
+
+0.1.25 installer（歷史）：
+
+- EXE：667,496,304 bytes，SHA-256 `591442e89c863405e59666b1aa19372927f909b02f3a55eaa47a1d06f9984442`
+- arm64 DMG：684,416,581 bytes，SHA-256 `dac596ee8df1b54103984d6b292d6d74f4f9c19ce52350efc90c9a736924e1c4`
+
+限制：Windows 真機安裝、播放中更換封面後切歌再切回不卡、cover02 -> cover01 重開後不回跳、播放/暫停連點、選擇新資料夾後重開恢復、約 4 GB / 20+ 首資料夾載入、歌曲資訊 / 封面寫回、AI 操作與 Mini/dialog focus 尚未驗收；macOS GUI 滑鼠驗收與 DMG 唯讀掛載讀回尚未完成；macOS DMG 未做 Apple Developer ID 簽章或 notarization；Windows EXE 未做 code signing。
+
+### English QA Summary
+
+- Scope: fixes the remaining 0.1.24-family same-source audio reload after cover/song-info writeback.
+- Root cause: `useAudioPlayer` compared browser-normalized `audio.src` with raw `currentTrackSource`, and source loading depended on duration updates.
+- Fix: `loadedTrackSourceRef` stores the assigned source; source loading depends only on `currentTrackSource`.
+- Red/green validation: `check:playback-restore` was first extended to fail on the old direct `audio.src` comparison and duration-dependent source effect, then passed after the fix.
+- Passed checks: playback-restore, track-display, track-identity, real Plazma song-info / cover roundtrip, AI track search, FLAC metadata, prompt checks, theme colors, custom images, all-target AI assets, build, Electron compile, elevated `dist:release`, DMG verify, and Windows NSIS static check.
+- Limits: GUI mouse validation, DMG read-only mount readback, real Windows install, writeback UX, AI operation, signing, notarization, and installed skill update remain open.
+
+## 2026-07-03 封面寫回播放卡頓 hotfix 0.1.24
+
+- 範圍：修正播放中更換封面後，切歌再切回同一首會短暫卡住才播放；修正 cover02 -> cover01 後第一次重開舊封面、第二次重開才新封面的保存順序問題。
+- 判斷：不是全新問題，也不是 0.1.23 原 bug 復發；同屬 metadata / cover 寫回後狀態打架。本次精確路徑是 `mediaVersion` 造成 `file://` audio source 變動並觸發 `audio.load()`，以及 IndexedDB track metadata 非同步保存順序競賽。
+- 根因：`replaceTrackSongInfo` 對封面 / metadata-only 更新設定 `mediaVersion: Date.now()`；`useAudioPlayer` 會把它接到 audio source，造成單純改封面也重載音訊。另一路是 tracks 變動時多筆 `saveTrackMetadata` transaction 可能交錯完成，讓舊 cover02 save 晚於新 cover01 save。
+- 修正：移除 metadata/cover-only 的 `mediaVersion` bump；`useMusicLibraryDb` 新增 `trackSaveQueueRef`，串接 track metadata save / clear，固定保存順序。
+- 失敗先行：先在 `scripts/playback-restore-check.mjs` 加入斷言，確認舊程式因 `mediaVersion: Date.now()` 失敗；修正後同檢查 PASS，並要求 `trackSaveQueueRef` 保存順序防線存在。
+- 檢查：`npm run check:playback-restore` PASS；`npm run check:track-display` PASS；`npm run check:track-identity` PASS；`npm run check:song-info` PASS；`npm run check:ai-track-search` PASS；`npm run check:flac-metadata` PASS；`npm run check:prompts` PASS；`npm run check:theme-colors` PASS；`npm run check:custom-images` PASS；all-target `check:ai-assets` PASS；`npm run build` PASS；`npm run electron:compile` PASS。
+- 打包：一般沙盒 `npm run dist:release` 在 `hdiutil create` 失敗，`npm run dist:win` 在 Wine `wineserver: bind` 失敗；使用者明確同意打包後，升權重跑同一 `npm run dist:release` PASS。同步兩個 installer 到 `release-delivery/installers/`，暫存 `release/` 已移除。
+- DMG 驗證：`hdiutil verify` VALID；唯讀掛載後 `CFBundleShortVersionString` / `CFBundleVersion` 均為 0.1.24，執行檔為 Mach-O arm64，`app.asar` package version 為 0.1.24，未找到 0.1.23，prompt 只有三份 `.txt` 且無 `.bin`，AI runtime 只保留 `darwin-arm64`。
+- EXE static check：PASS，辨識為 Windows NSIS installer；未在 Windows 真機執行，不能宣稱 Windows fresh install、播放中改封面、播放/暫停、4 GB 資料夾、寫回與 AI 操作實機通過。
+
+0.1.24 installer（歷史）：
+
+- EXE：667,496,263 bytes，SHA-256 `648e1283bcdb299f284026c1e312692ee98a12f2fd53acd9ba28f8aec3c8447e`
+- arm64 DMG：684,416,368 bytes，SHA-256 `dd42b468718c12dcb3d585f582c896263ba45fdc111a16d846bb702e91adf603`
+
+限制：Windows 真機安裝、播放中更換封面後切歌再切回不卡、cover02 -> cover01 重開後不回跳、播放/暫停連點、選擇新資料夾後重開恢復、約 4 GB / 20+ 首資料夾載入、歌曲資訊 / 封面寫回、AI 操作與 Mini/dialog focus 尚未驗收；macOS DMG 未做 Apple Developer ID 簽章或 notarization；Windows EXE 未做 code signing。
+
+### English QA Summary
+
+- Scope: fixes playback stalling after cover writeback when switching away and back, plus the first-restart-old-cover / second-restart-new-cover persistence race.
+- Root cause: `replaceTrackSongInfo` bumped `mediaVersion` for metadata/cover-only edits, causing the `file://` audio source to change and reload. IndexedDB track metadata saves could also complete out of order.
+- Fix: metadata/cover-only updates no longer bump `mediaVersion`; track metadata save / clear operations now run through one queue.
+- Red/green validation: `check:playback-restore` was first extended to fail on the old `mediaVersion: Date.now()` path, then passed after the fix.
+- Passed checks: playback-restore, track-display, track-identity, song-info, AI track search, FLAC metadata, prompt checks, theme colors, custom images, all-target AI assets, build, Electron compile, elevated `dist:release`, DMG verify, read-only DMG checks, and Windows NSIS static check.
+- Limits: real Windows install, playback-while-editing UI verification, latest-cover persistence, playback/pause, latest-folder restore, large-folder load, writeback, AI operation, signing, and notarization remain open.
+
+## 2026-07-03 歌手欄位閃爍 hotfix 0.1.23（歷史）
+
+- 範圍：修正歌手欄位在「米津玄師」與「未知歌手」之間反覆切換造成的閃爍，並避免同類 metadata 回授再次讓弱資料覆蓋強資料。
+- 判斷：這不是全新的問題類型，而是舊版 metadata 來源打架的同族問題；本次精確路徑是 `storedTracks` 同時作為開機舊資料與目前 `tracks` 的即時鏡像。
+- 根因：Electron auto-restore 為了啟動速度使用 `readMetadata:false`，早期 track 可能只有弱 metadata。`applyStoredTrackMetadata` 直接 `artist: stored.artist`，且回灌 stored metadata 後沒有標記 `metadataLoaded`，所以後續弱 stored metadata 可能蓋回真實歌手。
+- 修正：stored 文字欄位只在非空時覆蓋目前 track 文字；套用任一 stored metadata 後標記 `metadataLoaded`，後續同 `sourcePath` 同步只更新 duration、playCount、lastPlayedAt 等播放統計。
+- 失敗先行：先在 `scripts/playback-restore-check.mjs` 加入斷言，確認舊程式因 `artist: stored.artist` 失敗；修正後同檢查 PASS。
+- 檢查：`npm run check:playback-restore` PASS；`npm run check:track-display` PASS；`npm run check:track-identity` PASS；`npm run check:song-info` PASS；`npm run check:ai-track-search` PASS；`npm run check:flac-metadata` PASS；`npm run build` PASS；`npm run electron:compile` PASS；`npm run check:prompts` PASS；all-target `check:ai-assets` PASS；`npm run check:custom-images` PASS；`npm run check:theme-colors` PASS。
+- 打包：一般沙盒 `npm run dist:release` 在 `hdiutil create` 失敗；升權重跑同一命令 PASS。同步兩個 installer 到 `release-delivery/installers/`，暫存 `release/` 已移除。
+- DMG 驗證：`hdiutil verify` VALID；唯讀掛載後 `CFBundleShortVersionString` / `CFBundleVersion` 均為 0.1.23，執行檔為 Mach-O arm64，`app.asar` 存在且含 0.1.23，未找到 0.1.22，prompt 只有三份 `.txt`，AI runtime 只保留 `darwin-arm64`。
+- EXE static check：PASS，辨識為 Windows NSIS installer；未在 Windows 真機執行，不能宣稱 Windows fresh install、歌手欄位 UI、播放/暫停、4 GB 資料夾、寫回與 AI 操作實機通過。
+
+0.1.23 最新 installer：
+
+- EXE：667,496,298 bytes，SHA-256 `8bd5a6a0114c8b405cea373a0a74fddaebb0df263c837cd6172628fec754e259`
+- arm64 DMG：684,416,209 bytes，SHA-256 `7d0ecf5d3f842ce2712f3ca5f0f27b17158f5caf33c71b15d7f80b9cebe3f21a`
+
+限制：Windows 真機安裝、歌手欄位不閃爍 UI 驗收、播放/暫停連點、選擇新資料夾後重開恢復、約 4 GB / 20+ 首資料夾載入、歌曲資訊 / 封面寫回、AI 操作與 Mini/dialog focus 尚未驗收；macOS DMG 未做 Apple Developer ID 簽章或 notarization；Windows EXE 未做 code signing。
+
+### English QA Summary
+
+- Scope: fixes the artist field flicker between real artist text and `未知歌手`.
+- Root cause: `storedTracks` acted as both startup snapshot and live `tracks` mirror. Auto-restore can create weak metadata first, and direct stored artist assignment could overwrite restored real artist text.
+- Fix: stored text overwrites current text only when non-empty; applying stored metadata marks the track metadata-loaded so later same-source syncs update playback stats only.
+- Red/green validation: `check:playback-restore` was first extended to fail on the old `artist: stored.artist` merge, then passed after the fix.
+- Passed checks: playback-restore, track-display, track-identity, song-info, AI track search, FLAC metadata, build, Electron compile, prompt checks, all-target AI assets, custom images, theme colors, elevated `dist:release`, DMG verify, read-only DMG checks, and Windows NSIS static check.
+- Limits: real Windows install, artist-flicker UI verification, playback/pause, latest-folder restore, large-folder load, writeback, AI operation, signing, and notarization remain open.
+
+## 2026-07-03 Cover 01 封面回改 hotfix 0.1.22（歷史）
+
+- 範圍：修正米津玄師 `Cover 01.jpg` 從 `Cover 02.jpg` 改回時，預覽圖與「套用到原始檔」都沒有變成 cover01；若圖片過大，必須明確提示使用者。
+- 根因：`Cover 01.jpg` 是正常 JPEG/Exif，1500×1500、4,342,414 bytes；不是特殊壞結構。舊版 `MAX_SONG_COVER_BYTES` 是 3 MB，`Cover 02.jpg` 約 1 MB 可通過，`Cover 01.jpg` 被 `isSupportedSongCoverFile` 擋在預覽與保存前。
+- 修正：封面上限調整為 5 MB；Electron writer 的 data URL 解碼上限同步為 5 MB。仍保留上限，避免過大圖片拖慢 M1 MacBook Air 8GB 與大量曲庫情境。
+- 錯誤提示：新增 `getSongCoverFileValidationError`，空檔、過大、格式錯誤分開提示。超過上限時顯示「封面圖片太大，請選擇 5 MB 以內的 JPG / PNG」。
+- 測試：`song-info-check` 覆蓋 4,342,414 bytes JPEG 可選、超過 5 MB 會有過大提示、GIF 會有格式提示；`song-info-writer-check` 覆蓋 4,342,414 bytes JPEG data URL 解碼。
+- 真檔驗證：使用真實 `01. Plazma.flac` 暫存複本，先寫入 `Cover 02.jpg` 並讀回，再寫入 `Cover 01.jpg` 並讀回，PASS；原始音樂檔與封面檔未修改。
+- 檢查：`npm run check:song-info` PASS；真實 FLAC cover02 -> cover01 roundtrip PASS；`npm run check:track-display` PASS；`npm run check:track-identity` PASS；`npm run check:playback-restore` PASS；`npm run check:ai-track-search` PASS；`npm run check:flac-metadata` PASS；`npm run build` PASS；`npm run check:prompts` PASS；all-target `check:ai-assets` PASS；`npm run check:custom-images` PASS；`npm run check:theme-colors` PASS。
+- 打包：一般沙盒 `npm run dist:release` 在 `hdiutil create` 失敗；升權重跑同一命令 PASS。同步兩個 installer 到 `release-delivery/installers/`，暫存 `release/` 已移除。
+- DMG 驗證：`hdiutil verify` VALID；唯讀掛載後 `CFBundleShortVersionString` / `CFBundleVersion` 均為 0.1.22，執行檔為 Mach-O arm64，`app.asar` 存在且含 0.1.22，未找到 0.1.21，prompt 只有三份 `.txt`，AI runtime 只保留 `darwin-arm64`。
+- EXE static check：PASS，辨識為 Windows NSIS installer；未在 Windows 真機執行，不能宣稱 Windows fresh install、封面寫回、播放/暫停、4 GB 資料夾與 AI 操作實機通過。
+
+0.1.22 hotfix installer（歷史）：
+
+- EXE：667,496,050 bytes，SHA-256 `c0ae948862958ba50cfd9984d6b2df475a528b306d116a1691683d3fb585c7b3`
+- arm64 DMG：684,416,428 bytes，SHA-256 `341198490334adfb712cd831aa89f6e0c256d8c74b509138a352c522bca4e3b4`
+
+限制：Windows 真機安裝、封面 >3 MB 且 <=5 MB 的 UI 預覽 / 寫回、>5 MB 圖片錯誤提示、FLAC 封面寫回、播放/暫停連點、選擇新資料夾後重開恢復、約 4 GB / 20+ 首資料夾載入、AI 操作與 Mini/dialog focus 尚未驗收；macOS DMG 未做 Apple Developer ID 簽章或 notarization；Windows EXE 未做 code signing。
+
+### English QA Summary
+
+- Scope: fixes `Cover 01.jpg` not replacing `Cover 02.jpg` in preview or original-file writeback, and adds a clear oversized-image message.
+- Root cause: `Cover 01.jpg` is a valid JPEG/Exif image, 1500x1500 and 4,342,414 bytes. The old 3 MB cover limit blocked it before preview/writeback.
+- Fix: renderer validation and Electron writer cover decode limits are now 5 MB. Oversized images show a clear 5 MB error.
+- Real-file validation: a temp copy of `01. Plazma.flac` passed `Cover 02.jpg` write/read followed by `Cover 01.jpg` write/read. Original files were not modified.
+- Passed checks: song-info, real FLAC cover roundtrip, track-display, track-identity, playback-restore, AI track search, FLAC metadata, build, prompt checks, all-target AI assets, custom images, theme colors, elevated `dist:release`, DMG verify, read-only DMG checks, and Windows NSIS static check.
+- Limits: real Windows install, cover UI/writeback, >5 MB error UX, playback/pause, latest-folder restore, large-folder load, AI operation, signing, and notarization remain open.
+
+## 2026-07-02 顯示、封面、啟動效能 hotfix 0.1.21（歷史）
+
+- 範圍：修正歌曲顯示排序、封面更換後播放清單重開掉歌、封面 cover02 改回 cover01、啟動載入音樂資料庫過慢，以及 AI 建立播放清單時沒有等待提示。
+- 顯示：新增 `trackDisplay` helper，現在目前播放卡、歌曲列表與 Mini 會優先顯示 `file.name`，沒有檔名才 fallback 到歌曲 title / name；第二行顯示 artist。
+- 播放清單掉歌根因：0.1.19 / 0.1.20 的 Electron 本機 track id 使用 `sourcePath + sourceSize + lastModified`。原始檔寫回封面會改變 size 或 mtime，導致同一首歌重開後變成新 id，舊播放清單 id 找不到。
+- 修正：Electron 本機 track id 與 file signature 改以穩定 `sourcePath` 為主；載入曲庫後用保存的 `sourcePath` 將舊播放清單 id remap 到目前 id。
+- 封面回改驗證：`SONG_INFO_FIXTURE_PATH=/Users/aquariusgril/Music/.../Rekindled.mp3 node --experimental-strip-types scripts/song-info-writer-check.mjs` 使用真 MP3 暫存複本，先寫 cover02 並讀回，再寫 cover01 並讀回，PASS；原始 fixture 未被修改。
+- 啟動效能根因：auto-restore 走 `restore-music-paths -> toSelectedFile -> readSongInfoFromOriginalFile`，每次開啟都逐首讀 taglib metadata / cover。99 首已感覺慢，若上萬首會放大。
+- 修正：restore path 預設 `readMetadata: false`，renderer 先用 IndexedDB 保存 metadata / cover 快速還原；使用者要重新讀原始檔時再走明確重讀流程。
+- AI UX：AI 助手建立播放清單期間顯示 `role="status"` 等待訊息，並暫時停用輸入與建立按鈕，避免使用者連續送出無效指令。
+- 檢查：`npm run check:track-display` PASS；`npm run check:track-identity` PASS；`npm run check:playback-restore` PASS；`npm run check:song-info` PASS；真 MP3 cover02 -> cover01 fixture roundtrip PASS；`npm run check:ai-track-search` PASS；`npm run check:flac-metadata` PASS；`npm run build` PASS；`npm run check:prompts` PASS；all-target `check:ai-assets` PASS；`npm run check:custom-images` PASS；`npm run check:theme-colors` PASS；`npm run electron:compile` PASS。
+- 打包：一般沙盒 `npm run dist:release` 在 `hdiutil create` 失敗；升權重跑同一命令 PASS。同步兩個 installer 到 `release-delivery/installers/`，暫存 `release/` 已移除。
+- DMG 驗證：`hdiutil verify` VALID；唯讀掛載後 `CFBundleShortVersionString` / `CFBundleVersion` 均為 0.1.21，執行檔為 Mach-O arm64，`app.asar` 存在且含 0.1.21，未找到 0.1.20，prompt 只有三份 `.txt`，AI runtime 只保留 `darwin-arm64`。
+- EXE static check：PASS，辨識為 Windows NSIS installer；未在 Windows 真機執行，不能宣稱 Windows fresh install、播放/暫停、4 GB 資料夾、封面回寫與 AI 操作實機通過。
+
+0.1.21 最新 installer：
+
+- EXE：667,496,033 bytes，SHA-256 `f27c6d64a6828283b75c471a7d2d08f39409c3fa8f7f9645114e38baceaa97d5`
+- arm64 DMG：684,415,979 bytes，SHA-256 `350ed86187d78279654138bd8f0e9bc069ae8908cc114eafb606371991b04fe5`
+
+限制：Windows 真機安裝、播放/暫停連點、選擇新資料夾後重開恢復、約 4 GB / 20+ 首資料夾載入、99 首以上曲庫啟動體感、歌曲資訊寫回、封面 cover02 -> cover01 實機寫回、改封面後播放清單重開不掉歌、AI 建歌單等待狀態與 Mini/dialog focus 尚未驗收；macOS DMG 未做 Apple Developer ID 簽章或 notarization；Windows EXE 未做 code signing。
+
+### English QA Summary
+
+- Scope: fixes track display order, playlist loss after cover writeback, cover02 -> cover01 replacement, slow startup restore, and missing AI playlist busy feedback.
+- Root cause: Electron local track ids included `sourceSize` and `lastModified`; cover writeback changes those values, so the same file could become a different track id after restart.
+- Fix: local ids now use stable `sourcePath` first, and stored playlist ids are remapped through `sourcePath` during library restore.
+- Cover validation: a real MP3 fixture temp copy passed cover02 write/read followed by cover01 write/read. The original fixture was not modified.
+- Startup fix: auto-restore skips full taglib metadata / cover reads per file and restores from IndexedDB metadata first.
+- Passed checks: track-display, track-identity, playback-restore, song-info, real MP3 cover roundtrip, AI track search, FLAC metadata, build, prompt checks, all-target AI assets, custom images, theme colors, Electron compile, elevated `dist:release`, DMG verify, read-only DMG checks, and Windows NSIS static check.
+- Limits: real Windows install, playback/pause click testing, latest-folder restore, large-folder load, real cover writeback, playlist persistence after cover changes, AI busy-state UX, signing, and notarization remain open.
+
+## 2026-07-02 播放與資料夾恢復 hotfix 0.1.20（歷史）
+
+- 範圍：修正播放音樂卡頓、按播放後再按暫停沒有停下、畫面播放狀態閃爍，以及新選擇音樂資料夾後下次啟動未優先恢復新資料夾。
+- 根因：`useAudioPlayer` 的 audio source effect 依賴整個 `currentTrack`。播放期間 duration、playCount 或 metadata 寫入都會產生新的 track object，導致 effect 重跑、重設 `audio.src` / `audio.load()`，並在 `isPlaying` 還是 true 時再次呼叫 `audio.play()`。
+- 修正：新增穩定的 `currentTrackSource`，只在 `localUrl` 或 `mediaVersion` 改變時重設 source；播放/暫停改由獨立 effect 同步，`isPlaying = false` 時明確呼叫 `audio.pause()`。
+- 資料夾恢復：Electron 手動選資料夾時，將該次 selection 的 `sourcePath[]` 寫入既有 IndexedDB settings；啟動 auto-restore 優先使用最後一次手動選擇的來源清單，沒有才退回舊版 tracks metadata。空 selection 不覆蓋最後成功來源。
+- 檢查：`npm run check:playback-restore` PASS；`npm run check:song-info` PASS；`npm run check:flac-metadata` PASS；`npm run build` PASS；`npm run electron:compile` PASS。
+- 打包：一般沙盒 `npm run dist:release` 在 `hdiutil create` 失敗；升權重跑同一命令 PASS。同步兩個 installer 到 `release-delivery/installers/`，暫存 `release/` 已移除。
+- DMG 驗證：`hdiutil verify` VALID。DMG 唯讀掛載版本 / 架構讀回本輪因使用限制未完成，不能宣稱 PASS。
+- EXE static check：PASS，辨識為 Windows NSIS installer；builder log 顯示 Windows x64 target。未在 Windows 真機執行，不能宣稱 Windows fresh install、播放/暫停、資料夾恢復與 AI 操作實機通過。
+
+0.1.20 最新 installer：
+
+- EXE：667,495,541 bytes，SHA-256 `a22876f29dc2f6128066bbe6292412723942e9f6b88f25c71e49dc396012fdda`
+- arm64 DMG：684,478,119 bytes，SHA-256 `36c52a05f47405fb7b2073b689527534873372fa7f6cb0cf57a0f67d58ed80f7`
+
+限制：Windows 真機安裝、播放/暫停連點、選擇新資料夾後重開恢復、約 4 GB / 20+ 首資料夾載入、歌曲資訊寫回、AI 操作尚未驗收；macOS DMG 未做 Apple Developer ID 簽章或 notarization；Windows EXE 未做 code signing。
+
+### English QA Summary
+
+- Scope: fixes playback stutter, unreliable pause, flashing playback state, and latest-folder restore after selecting a new music folder.
+- Root cause: the playback source effect depended on the whole `currentTrack`, so duration / play-count / metadata updates could reset `audio.src`, call `audio.load()`, and trigger `audio.play()` again while `isPlaying` was still true.
+- Fix: audio source sync now depends on stable `currentTrackSource`; play/pause sync is separate and explicitly pauses when `isPlaying` is false.
+- Restore: Electron folder selection saves the latest selected `sourcePath[]` in the existing IndexedDB settings store. Auto-restore prefers that latest manual selection before falling back to stored track metadata.
+- Passed checks: playback-restore, song-info, FLAC metadata, build, Electron compile, elevated `npm run dist:release`, DMG verify, and Windows NSIS static check.
+- Limits: real Windows install, playback/pause click testing, latest-folder restore after restart, large-folder load, song-info writeback, AI operation, DMG read-only mount version/architecture readback, signing, and notarization remain open.
+
+## 2026-07-02 歌曲資訊寫回 hotfix 0.1.19
+
+- 範圍：修正 0.1.19 初版後回報的歌曲資訊反覆跳動、保存流程打架、重複封面入口，以及 Windows EXE 選擇大型音樂資料夾可能閃退。
+- UI：已移除「保存到播放器」與目前播放卡更多選單內的「更換專輯封面」。目前只保留歌曲資訊面板內的封面更換與「套用到原始檔」。
+- 狀態同步：`SongInfoPanel` 只在 open / track id 改變時重置 draft；寫回成功後重新讀取原始檔 metadata，`replaceTrackSongInfo` 清除 metadata override，並用 `mediaVersion` 讓 `file://` audio source 重新載入。
+- Electron 大檔載入：`select-music-files`、`select-music-folder`、`restore-music-paths` 回傳 `file://` / source path / size / mtime / relative path / metadata，不再回傳整個音檔 `ArrayBuffer`。EXE 選擇約 4 GB 資料夾閃退的可能根因是總檔案 bytes 經 IPC 傳輸造成記憶體壓力，不是 20 多首這個數量本身。
+- Writeback：原始檔寫回改用 `TagLib.copyWithTags(source, temp, tags)` 產生同副檔名暫存檔，封面也在暫存檔處理，最後 rename 覆蓋；避免先前 `applyTags()` 回傳 buffer 再自行覆蓋時，真 MP3 複本出現 `RangeError: position -128`。
+- 測試踩坑紀錄：已寫入 `~/.codex/skills/build-music-player/references/aquariusgirl-lessons.md`。未來不要用 `afconvert` 產生的極短 m4a 代表真實寫回；要用 `SONG_INFO_FIXTURE_PATH` 指向真音檔，並只改 temp copy。
+- 檢查：`npm run check:song-info` PASS；`SONG_INFO_FIXTURE_PATH=/Users/aquariusgril/Music/.../Rekindled.mp3 npm run check:song-info` PASS；`npm run check:flac-metadata` PASS；`npm run build` PASS；`npm run electron:compile` PASS。
+- 打包：一般沙盒 `npm run dist:release` 在 `hdiutil create` 失敗；升權重跑同一命令 PASS。同步兩個 installer 到 `release-delivery/installers/`，暫存 `release/` 已移除。
+- DMG 驗證：`hdiutil verify` VALID；唯讀掛載後 `CFBundleShortVersionString` / `CFBundleVersion` 均為 0.1.19，執行檔為 Mach-O arm64，`Contents/Resources` 含 `app.asar`、AI 與 prompts。
+- EXE static check：PASS，辨識為 Windows NSIS installer；builder log 顯示 Windows x64 target。未在 Windows 真機執行，不能宣稱 Windows fresh install、4 GB 資料夾選擇、播放、寫回與 AI 操作實機通過。
+
+0.1.19 hotfix installer（歷史）：
+
+- EXE：667,495,272 bytes，SHA-256 `a66b024b68c84f1a1cb94cdaa22210ad12a84f0f2f4ce5481216785e4869d1dc`
+- arm64 DMG：684,463,396 bytes，SHA-256 `cbb66a0efe8b59d6efd835f375399ec2731bb4db3ff34e23fda86df17e6ac37c`
+
+限制：Windows 真機安裝、約 4 GB / 20+ 首資料夾選擇、播放、歌曲資訊寫回、封面寫回與 AI 操作尚未驗收；macOS DMG 未做 Apple Developer ID 簽章或 notarization；Windows EXE 未做 code signing。
+
+### English QA Summary
+
+- Scope: fixes song-info jumping, save-flow conflicts, duplicate cover-entry UI, and the likely large-folder selection crash path from the initial 0.1.19 build.
+- UI: player-local save and the duplicate More-menu cover button were removed. Original-file writeback is now the only save path.
+- Electron selection: file/folder selection no longer sends whole audio `ArrayBuffer`s through IPC; it returns `file://`, source path, size, mtime, relative path, and metadata.
+- Writeback: original-file writes use `TagLib.copyWithTags(source, temp, tags)`, then optional cover writing on the temp file, then rename. A real MP3 fixture copy write/read check passed.
+- Passed checks: song-info, real MP3 fixture write/read, FLAC metadata, build, Electron compile, elevated `npm run dist:release`, DMG verify, read-only DMG version / arm64 checks, and Windows NSIS static check.
+- Limits: real Windows install, large-folder selection, playback, original-file writeback, AI operation, signing, and notarization remain open.
+
+## 2026-07-02 歌曲資訊與原始檔標籤寫回發行 0.1.19
+
+- 範圍：延續 0.1.18，新增目前播放卡「更多」選單、歌曲資訊面板、單曲封面更換、重新讀取音樂標籤、顯示原始檔位置，以及桌面版 MP3/FLAC/M4A 原始檔 metadata / cover 寫回。
+- 安全邊界：仍只處理使用者明確加入播放器的本機音樂；不掃描硬碟、不上傳音樂檔、不保存音樂檔本體、`File`、`Blob`、`ArrayBuffer` 或 object URL。原始檔寫回前要求確認。
+- Writeback：`taglib-wasm` 在 Electron main process 執行；先產生修改後 bytes，再用 temporary file + rename 寫回。失敗時回傳「寫回原始檔失敗，原始檔未修改」。
+- Reload：寫回成功後，Electron 版由主程序重新讀取原始檔標籤，避免 FLAC/M4A 使用舊 renderer parser 而顯示不同步。
+- 檢查：`npm run check:song-info`、`npm run check:prompts`、`npm run check:ai-track-search`、`npm run check:ai-assets`、all-target `check:ai-assets`、`npm run build`、`npm run electron:compile`、playlist logic、FLAC metadata、custom images、theme colors 均 PASS。
+- 打包：一般沙盒 `npm run dist:release` 在 macOS `hdiutil create` 失敗；升權重跑 `npm run dist:release` PASS。只同步兩個 installer 到 `release-delivery/installers/`，暫存 `release/` 已移除。
+- DMG 驗證：`hdiutil verify` VALID；唯讀掛載後 `CFBundleShortVersionString` / `CFBundleVersion` 均為 0.1.19，執行檔為 Mach-O arm64。包內 `Contents/Resources/prompts/` 只有三份 `.txt` prompt，未偵測到 prompt `.bin`；AI runtime 在 DMG 只保留 `darwin-arm64` 目錄；packaged `app.asar` 含 `taglib-wasm` 與 `dist-electron/songInfoWriter.js`。
+- EXE static check：PASS，辨識為 Windows NSIS installer；builder log 顯示 Windows x64 target。未在 Windows 真機執行，無法宣稱 Windows fresh install、播放、寫回與 AI 操作實機通過。
+
+0.1.19 初版 installer（歷史）：
+
+- EXE：667,494,676 bytes，SHA-256 `e6552d58b6c15606bb70e1574e7c66345172c7d8896879e249ae829e30e93bc0`
+- arm64 DMG：684,445,307 bytes，SHA-256 `4d513162387539f5dcc51eb159ffe77d7ab4cb42ac5c63b02f81e979bbb75cf5`
+
+限制：Windows 真機安裝、播放、寫回原始檔與 AI 操作尚未驗收；macOS DMG 未做 Apple Developer ID 簽章或 notarization；Windows EXE 未做 code signing。未用使用者真實本機音樂資料重跑完整人工點擊流程。
+
+### English QA Summary
+
+- Scope: 0.1.19 adds the current-track More menu, song info panel, per-track cover changes, metadata reload, show original file location, and desktop MP3/FLAC/M4A original metadata / cover writeback.
+- Safety: the app still only touches local music explicitly added by the user. It does not scan disks, upload music files, or persist music file bodies, `File`, `Blob`, `ArrayBuffer`, or object URLs. Original-file writeback requires confirmation.
+- Writeback: `taglib-wasm` runs in Electron main, produces modified bytes first, then writes through a temporary file and rename. Failures report that the original file was not modified.
+- Passed checks: song-info, prompts, AI track search/schema, AI assets, all-target AI assets, build, Electron compile, playlist logic, FLAC metadata, custom images, theme colors, elevated `npm run dist:release`, DMG verify, packaged version/architecture checks, and Windows NSIS static check.
+- Limits: real Windows install, playback, original-file writeback, and AI operation remain unverified. Developer ID/notarization and Windows code signing are still not configured.
 
 ## 2026-06-29 AI playlist schema / result guard 發行 0.1.18
 

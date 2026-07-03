@@ -2,6 +2,7 @@ import { GripVertical, Heart, Pause, Play, Trash2 } from "lucide-react";
 import type { NormalPlaylist } from "../types/playlist";
 import type { Track } from "../types/track";
 import { formatTime } from "../utils/formatTime";
+import { getTrackPrimaryText, getTrackSecondaryText } from "../utils/trackDisplay";
 import { IconButton } from "./IconButton";
 import { TrackArtwork } from "./TrackArtwork";
 
@@ -102,10 +103,10 @@ export function TrackItem({
         </span>
         <span className="min-w-0">
           <span className="block truncate text-sm font-bold text-white">
-            {track.title}
+            {getTrackPrimaryText(track)}
           </span>
           <span className="mt-1 block truncate text-xs text-aquarius-mist">
-            {track.artist ?? "未知歌手"} · {track.name}
+            {getTrackSecondaryText(track)}
           </span>
         </span>
         <span className="flex items-center gap-1">

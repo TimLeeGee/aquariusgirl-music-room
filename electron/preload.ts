@@ -7,8 +7,14 @@ function createRequestId() {
 contextBridge.exposeInMainWorld("aquariusgirlAPI", {
   selectMusicFiles: () => ipcRenderer.invoke("aquariusgirl:select-music-files"),
   selectMusicFolder: () => ipcRenderer.invoke("aquariusgirl:select-music-folder"),
-  restoreMusicPaths: (paths: string[]) =>
-    ipcRenderer.invoke("aquariusgirl:restore-music-paths", paths),
+  restoreMusicPaths: (paths: string[], options?: unknown) =>
+    ipcRenderer.invoke("aquariusgirl:restore-music-paths", paths, options),
+  showTrackInFolder: (sourcePath: string) =>
+    ipcRenderer.invoke("aquariusgirl:show-track-in-folder", sourcePath),
+  readSongInfoFromOriginalFile: (sourcePath: string) =>
+    ipcRenderer.invoke("aquariusgirl:read-song-info-from-original-file", sourcePath),
+  applySongInfoToOriginalFile: (payload: unknown) =>
+    ipcRenderer.invoke("aquariusgirl:apply-song-info-to-original-file", payload),
   getPlatform: () => ipcRenderer.invoke("aquariusgirl:get-platform"),
   getAppDataPath: () => ipcRenderer.invoke("aquariusgirl:get-app-data-path"),
   loadCustomImages: () => ipcRenderer.invoke("aquariusgirl:load-custom-images"),

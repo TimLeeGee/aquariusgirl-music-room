@@ -7,6 +7,11 @@ import {
 } from "../utils/audioFiles";
 import { parseTrackName } from "../utils/parseTrackName";
 import { readAudioMetadata } from "../utils/readAudioMetadata";
+import {
+  normalizeSongInfoDraft,
+  type SongInfoDraft,
+} from "../utils/songInfo";
+import type { StoredTrackMetadata } from "../storage/indexedDb";
 
 type UseLocalTracksOptions = {
   likedTrackNames: string[];
@@ -18,7 +23,31 @@ type UseLocalTracksOptions = {
 type LocalAudioFile = File & {
   path?: string;
   sourcePath?: string;
+  localUrl?: string;
+  sourceSize?: number;
+  songInfo?: SongInfoDraft;
 };
+
+function preserveStoredText(storedValue?: string, currentValue?: string) {
+  return storedValue?.trim() || currentValue;
+}
+
+function hasStoredMetadata(stored: StoredTrackMetadata) {
+  return Boolean(
+    stored.metadataLoaded ||
+      stored.title?.trim() ||
+      stored.artist?.trim() ||
+      stored.album?.trim() ||
+      stored.albumArtist?.trim() ||
+      stored.year?.trim() ||
+      stored.genre?.trim() ||
+      stored.trackNumber?.trim() ||
+      stored.discNumber?.trim() ||
+      stored.comment?.trim() ||
+      stored.composer?.trim() ||
+      stored.coverDataUrl,
+  );
+}
 
 export function useLocalTracks({
   likedTrackNames,
@@ -36,13 +65,25 @@ export function useLocalTracks({
   );
 
   const revokeTrackUrls = useCallback((track: Track) => {
-    URL.revokeObjectURL(track.localUrl);
+    if (track.localUrl.startsWith("blob:")) {
+      URL.revokeObjectURL(track.localUrl);
+    }
 
-    if (track.coverUrl) {
+    if (track.coverUrl?.startsWith("blob:")) {
       URL.revokeObjectURL(track.coverUrl);
     }
 
-    if (track.artworkUrl && track.artworkUrl !== track.coverUrl) {
+    if (track.artworkUrl?.startsWith("blob:") && track.artworkUrl !== track.coverUrl) {
+      URL.revokeObjectURL(track.artworkUrl);
+    }
+  }, []);
+
+  const revokeTrackArtworkUrls = useCallback((track: Track) => {
+    if (track.coverUrl?.startsWith("blob:")) {
+      URL.revokeObjectURL(track.coverUrl);
+    }
+
+    if (track.artworkUrl?.startsWith("blob:") && track.artworkUrl !== track.coverUrl) {
       URL.revokeObjectURL(track.artworkUrl);
     }
   }, []);
@@ -75,6 +116,13 @@ export function useLocalTracks({
         !metadata.title &&
         !metadata.artist &&
         !metadata.album &&
+        !metadata.albumArtist &&
+        !metadata.year &&
+        !metadata.genre &&
+        !metadata.trackNumber &&
+        !metadata.discNumber &&
+        !metadata.comment &&
+        !metadata.composer &&
         !metadata.artworkBlob &&
         metadata.metadataLoaded
       ) {
@@ -101,12 +149,15 @@ export function useLocalTracks({
           return currentTracks;
         }
 
-        if (targetTrack.coverUrl && artworkUrl) {
-          URL.revokeObjectURL(targetTrack.coverUrl);
+        if (targetTrack.metadataOverride) {
+          if (artworkUrl) {
+            URL.revokeObjectURL(artworkUrl);
+          }
+          return currentTracks;
         }
 
-        if (targetTrack.artworkUrl && artworkUrl && targetTrack.artworkUrl !== targetTrack.coverUrl) {
-          URL.revokeObjectURL(targetTrack.artworkUrl);
+        if (artworkUrl) {
+          revokeTrackArtworkUrls(targetTrack);
         }
 
         return currentTracks.map((track) =>
@@ -116,14 +167,20 @@ export function useLocalTracks({
                 title: metadata.title?.trim() || track.title,
                 artist: metadata.artist?.trim() || track.artist,
                 album: metadata.album?.trim() || track.album,
+                albumArtist: metadata.albumArtist?.trim() || track.albumArtist,
                 year: metadata.year?.trim() || track.year,
                 genre: metadata.genre?.trim() || track.genre,
                 trackNumber: metadata.trackNumber?.trim() || track.trackNumber,
+                discNumber: metadata.discNumber?.trim() || track.discNumber,
+                comment: metadata.comment?.trim() || track.comment,
+                composer: metadata.composer?.trim() || track.composer,
                 artworkUrl: artworkUrl || track.artworkUrl,
                 coverUrl: artworkUrl || track.coverUrl,
+                coverDataUrl: track.coverDataUrl,
                 coverMimeType: metadata.coverMimeType || track.coverMimeType,
                 metadataLoaded: metadata.metadataLoaded,
                 metadataError: metadata.metadataError,
+                metadataOverride: false,
               }
             : track,
         );
@@ -131,7 +188,217 @@ export function useLocalTracks({
     } catch {
       // Bad or unsupported ID3 data should never block local playback.
     }
-  }, []);
+  }, [revokeTrackArtworkUrls]);
+
+  const replaceTrackSongInfo = useCallback(
+    (trackId: string, draft: SongInfoDraft) => {
+      const normalized = normalizeSongInfoDraft(draft);
+      const createNextTrack = (track: Track): Track => {
+        const parsed = parseTrackName(track.file?.name ?? track.name);
+
+        return {
+          ...track,
+          title: normalized.title || parsed.title,
+          artist: normalized.artist || parsed.artist,
+          album: normalized.album || undefined,
+          albumArtist: normalized.albumArtist || undefined,
+          year: normalized.year || undefined,
+          genre: normalized.genre || undefined,
+          trackNumber: normalized.track || undefined,
+          discNumber: normalized.disc || undefined,
+          comment: normalized.comment || undefined,
+          composer: normalized.composer || undefined,
+          artworkUrl: normalized.coverDataUrl,
+          coverUrl: normalized.coverDataUrl,
+          coverDataUrl: normalized.coverDataUrl,
+          coverMimeType: normalized.coverMimeType,
+          metadataLoaded: true,
+          metadataError: undefined,
+          metadataOverride: false,
+        };
+      };
+      const currentTrack = tracksRef.current.find((track) => track.id === trackId);
+
+      if (!currentTrack) {
+        return null;
+      }
+
+      if (normalized.coverDataUrl !== currentTrack.coverDataUrl) {
+        revokeTrackArtworkUrls(currentTrack);
+      }
+
+      const nextTrack = createNextTrack(currentTrack);
+      tracksRef.current = tracksRef.current.map((track) =>
+        track.id === trackId ? nextTrack : track,
+      );
+
+      setTracks((currentTracks) =>
+        currentTracks.map((track) => (track.id === trackId ? createNextTrack(track) : track)),
+      );
+
+      return nextTrack;
+    },
+    [revokeTrackArtworkUrls],
+  );
+
+  const reloadTrackMetadata = useCallback(
+    async (trackId: string) => {
+      const track = tracksRef.current.find((item) => item.id === trackId);
+
+      if (!track?.file) {
+        return false;
+      }
+
+      const metadata = await readAudioMetadata(track.file);
+      const artworkUrl = metadata.artworkBlob
+        ? URL.createObjectURL(metadata.artworkBlob)
+        : undefined;
+      const parsed = parseTrackName(track.file.name);
+
+      setTracks((currentTracks) => {
+        const targetTrack = currentTracks.find((item) => item.id === trackId);
+
+        if (!targetTrack) {
+          if (artworkUrl) URL.revokeObjectURL(artworkUrl);
+          return currentTracks;
+        }
+
+        if (artworkUrl) {
+          revokeTrackArtworkUrls(targetTrack);
+        }
+
+        return currentTracks.map((item) =>
+          item.id === trackId
+            ? {
+                ...item,
+                title: metadata.title?.trim() || parsed.title,
+                artist: metadata.artist?.trim() || parsed.artist,
+                album: metadata.album?.trim() || undefined,
+                albumArtist: metadata.albumArtist?.trim() || undefined,
+                year: metadata.year?.trim() || undefined,
+                genre: metadata.genre?.trim() || undefined,
+                trackNumber: metadata.trackNumber?.trim() || undefined,
+                discNumber: metadata.discNumber?.trim() || undefined,
+                comment: metadata.comment?.trim() || undefined,
+                composer: metadata.composer?.trim() || undefined,
+                artworkUrl,
+                coverUrl: artworkUrl,
+                coverDataUrl: undefined,
+                coverMimeType: metadata.coverMimeType,
+                metadataLoaded: metadata.metadataLoaded,
+                metadataError: metadata.metadataError,
+                metadataOverride: false,
+              }
+            : item,
+        );
+      });
+
+      return metadata.metadataLoaded;
+    },
+    [revokeTrackArtworkUrls],
+  );
+
+  const applyStoredTrackMetadata = useCallback(
+    (storedTracks: StoredTrackMetadata[]) => {
+      if (storedTracks.length === 0) {
+        return;
+      }
+
+      setTracks((currentTracks) => {
+        let changed = false;
+        const storedById = new Map(storedTracks.map((track) => [track.id, track]));
+        const storedBySourcePath = new Map(
+          storedTracks
+            .filter((track) => track.sourcePath)
+            .map((track) => [track.sourcePath as string, track]),
+        );
+        const storedByFileName = new Map(
+          storedTracks
+            .filter((track) => track.fileName)
+            .map((track) => [track.fileName, track]),
+        );
+
+        const nextTracks = currentTracks.map((track) => {
+          const stored =
+            storedById.get(track.id) ??
+            (track.sourcePath ? storedBySourcePath.get(track.sourcePath) : undefined) ??
+            storedByFileName.get(track.file?.name ?? track.name);
+
+          if (!stored) {
+            return track;
+          }
+
+          if (track.sourcePath && !track.metadataOverride && track.metadataLoaded) {
+            const nextTrack: Track = {
+              ...track,
+              duration: stored.duration ?? track.duration,
+              lastPlayedAt: stored.lastPlayedAt,
+              playCount: stored.playCount,
+            };
+
+            if (
+              nextTrack.duration !== track.duration ||
+              nextTrack.lastPlayedAt !== track.lastPlayedAt ||
+              nextTrack.playCount !== track.playCount
+            ) {
+              changed = true;
+              return nextTrack;
+            }
+
+            return track;
+          }
+
+          const nextTrack: Track = {
+            ...track,
+            title: preserveStoredText(stored.title, track.title) ?? track.title,
+            artist: preserveStoredText(stored.artist, track.artist),
+            album: preserveStoredText(stored.album, track.album),
+            albumArtist: preserveStoredText(stored.albumArtist, track.albumArtist),
+            year: preserveStoredText(stored.year, track.year),
+            genre: preserveStoredText(stored.genre, track.genre),
+            trackNumber: preserveStoredText(stored.trackNumber, track.trackNumber),
+            discNumber: preserveStoredText(stored.discNumber, track.discNumber),
+            comment: preserveStoredText(stored.comment, track.comment),
+            composer: preserveStoredText(stored.composer, track.composer),
+            duration: stored.duration ?? track.duration,
+            lastPlayedAt: stored.lastPlayedAt,
+            playCount: stored.playCount,
+            coverDataUrl: stored.coverDataUrl,
+            coverUrl: stored.coverDataUrl ?? track.coverUrl,
+            artworkUrl: stored.coverDataUrl ?? track.artworkUrl,
+            coverMimeType: stored.coverMimeType ?? track.coverMimeType,
+            metadataLoaded: track.metadataLoaded || hasStoredMetadata(stored),
+            metadataOverride: stored.metadataOverride,
+          };
+
+          if (
+            nextTrack.title !== track.title ||
+            nextTrack.artist !== track.artist ||
+            nextTrack.album !== track.album ||
+            nextTrack.albumArtist !== track.albumArtist ||
+            nextTrack.year !== track.year ||
+            nextTrack.genre !== track.genre ||
+            nextTrack.trackNumber !== track.trackNumber ||
+            nextTrack.discNumber !== track.discNumber ||
+            nextTrack.comment !== track.comment ||
+            nextTrack.composer !== track.composer ||
+            nextTrack.coverDataUrl !== track.coverDataUrl
+          ) {
+            if (stored.coverDataUrl && stored.coverDataUrl !== track.coverDataUrl) {
+              revokeTrackArtworkUrls(track);
+            }
+            changed = true;
+            return nextTrack;
+          }
+
+          return track;
+        });
+
+        return changed ? nextTracks : currentTracks;
+      });
+    },
+    [revokeTrackArtworkUrls],
+  );
 
   const addFiles = useCallback(
     (inputFiles: FileList | File[]) => {
@@ -166,18 +433,31 @@ export function useLocalTracks({
       const nextTracks = freshFiles.map<Track>((file, index) => {
         const localFile = file as LocalAudioFile;
         const parsed = parseTrackName(file.name);
+        const songInfo = localFile.songInfo ? normalizeSongInfoDraft(localFile.songInfo) : null;
 
         return {
           id: createSafeTrackId(file),
           file,
           name: parsed.name,
-          title: parsed.title,
-          artist: parsed.artist,
-          size: file.size,
+          title: songInfo?.title || parsed.title,
+          artist: songInfo?.artist || parsed.artist,
+          album: songInfo?.album || undefined,
+          albumArtist: songInfo?.albumArtist || undefined,
+          year: songInfo?.year || undefined,
+          genre: songInfo?.genre || undefined,
+          trackNumber: songInfo?.track || undefined,
+          discNumber: songInfo?.disc || undefined,
+          comment: songInfo?.comment || undefined,
+          composer: songInfo?.composer || undefined,
+          coverDataUrl: songInfo?.coverDataUrl,
+          coverUrl: songInfo?.coverDataUrl,
+          artworkUrl: songInfo?.coverDataUrl,
+          coverMimeType: songInfo?.coverMimeType,
+          size: localFile.sourceSize ?? file.size,
           type: file.type,
           sourcePath: localFile.sourcePath ?? localFile.path,
-          localUrl: URL.createObjectURL(file),
-          metadataLoaded: false,
+          localUrl: localFile.localUrl ?? URL.createObjectURL(file),
+          metadataLoaded: Boolean(songInfo),
           liked: likedNameSet.has(parsed.name),
           addedAt: now + index,
         };
@@ -186,7 +466,7 @@ export function useLocalTracks({
       setTracks((currentTracks) => [...currentTracks, ...nextTracks]);
 
       nextTracks.forEach((track) => {
-        if (track.file) {
+        if (track.file && track.localUrl.startsWith("blob:")) {
           void applyId3Tags(track.id, track.file);
         }
       });
@@ -296,5 +576,8 @@ export function useLocalTracks({
     toggleLike,
     setTrackDuration,
     recordTrackPlayback,
+    replaceTrackSongInfo,
+    reloadTrackMetadata,
+    applyStoredTrackMetadata,
   };
 }

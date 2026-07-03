@@ -372,6 +372,38 @@ export function usePlaylists(tracks: Track[]) {
     });
   }, [setStoredPlaylists]);
 
+  const remapTrackIds = useCallback((idMap: Map<string, string>) => {
+    if (idMap.size === 0) return;
+
+    setStoredPlaylists((current) => {
+      let changed = false;
+      const now = Date.now();
+      const mapId = (trackId: string) => idMap.get(trackId) ?? trackId;
+      const next = current.map((playlist) => {
+        if (playlist.type === "normal") {
+          const trackIds = playlist.trackIds.map(mapId);
+          if (trackIds.some((trackId, index) => trackId !== playlist.trackIds[index])) {
+            changed = true;
+            return { ...playlist, trackIds, updatedAt: now };
+          }
+        }
+
+        if (playlist.type === "smart") {
+          const previousExcludedIds = playlist.excludedTrackIds ?? [];
+          const excludedTrackIds = previousExcludedIds.map(mapId);
+          if (excludedTrackIds.some((trackId, index) => trackId !== previousExcludedIds[index])) {
+            changed = true;
+            return { ...playlist, excludedTrackIds, updatedAt: now };
+          }
+        }
+
+        return playlist;
+      });
+
+      return changed ? next : current;
+    });
+  }, [setStoredPlaylists]);
+
   const activePlaylist =
     playlists.find((playlist) => playlist.id === activePlaylistId) ?? playlists[0];
   const activeTrackIds = playlistTrackIdsById[activePlaylist?.id ?? ""] ?? [];
@@ -394,5 +426,6 @@ export function usePlaylists(tracks: Track[]) {
     removeTrackFromAllPlaylists,
     moveTrackInPlaylist,
     mergeImportedPlaylists,
+    remapTrackIds,
   };
 }

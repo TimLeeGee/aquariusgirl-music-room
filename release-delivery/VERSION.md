@@ -1,9 +1,194 @@
 # 版本資訊
 
 產品：Aquariusgirl Music Room / 水瓶罐子的音樂小水池
-版本：0.1.18
-日期：2026-06-29
+版本：0.1.26
+日期：2026-07-03
 平台目標：Windows x64、macOS arm64
+
+## 2026-07-03 0.1.26 hotfix 發行狀態
+
+0.1.26 補完 0.1.24 / 0.1.25 同族殘留：原始檔寫回成功後，播放器 UI 可能已更新為 cover01，但 IndexedDB 仍未完成新 track snapshot 保存；若快速重開，第一次仍可能看到舊 cover02，第二次才看到 cover01。
+
+本版不清空整個音樂資料庫，也不為每次歌曲資訊更新重載所有歌曲。`replaceTrackSongInfo` 會回傳更新後的 `Track`；`useMusicLibraryDb.saveTracksNow()` 會沿用保存 queue 立即保存指定 snapshot；App 端在顯示成功前會等待單曲 metadata 重讀與 IndexedDB 保存完成。這是對 M1 MacBook Air 8GB 與未來上萬首曲庫較穩的最小修法。
+
+通過：先讓 `npm run check:playback-restore` 因缺少 `saveTracksNow` / 未等待 DB 保存失敗，再修到 PASS；真實 Plazma fixture `npm run check:song-info`、`npm run check:track-display`、`npm run check:track-identity`、`npm run check:ai-track-search`、`npm run check:flac-metadata`、`npm run check:prompts`、`npm run check:theme-colors`、`npm run check:custom-images`、all-target `check:ai-assets`、`npm run build`、`npm run electron:compile`、升權 `npm run dist:release`、DMG verify、DMG 唯讀掛載版本 / arm64 / app.asar / AI runtime 檢查、Windows NSIS static check。GUI 滑鼠驗收、Windows 真機與正式簽章仍需驗收。
+
+SHA-256：
+
+- EXE：`0486767f4ebf7cf4d0adb233f62bd1d62da0c53709895d00e1a3fc50ce94dc5d`
+- arm64 DMG：`16acf709838b2fc1831227693aba133e47d5979ee0dc580865734d3038a2be91`
+
+### English Summary
+
+0.1.26 fixes the remaining original-file writeback persistence race. After writeback, the app now reloads only the edited track and waits for the updated IndexedDB snapshot before reporting success. It does not clear or reload the whole music database.
+
+Passed: red/green playback-restore regression check, real Plazma song-info / cover roundtrip, track-display, track-identity, AI track search, FLAC metadata, prompt checks, theme colors, custom images, all-target AI assets, build, Electron compile, elevated `dist:release`, DMG verify, read-only DMG checks, and Windows NSIS static check. GUI mouse validation, real Windows QA, and signing remain open.
+
+## 2026-07-03 0.1.25 hotfix 發行狀態
+
+0.1.25 補完 0.1.24 同族殘留：播放中更換封面 / 歌曲資訊後，切歌再切回同一首仍可能短暫卡住。這不是全新問題，而是 audio source reload 路徑尚未完全收斂；精確根因是 `audio.src` 會被瀏覽器正規化，不能直接跟原始 `currentTrackSource` 比較，且 duration 更新不應觸發 source effect。
+
+本版新增 `loadedTrackSourceRef`，只在 `currentTrackSource` 真的改變時重載 audio source；duration / metadata 更新不再觸發 `audio.load()`。`check:playback-restore` 已防止直接 `audio.src !== currentTrackSource` 與 duration-dependent source effect 回歸。`song-info-writer-check` 也會在真實 fixture 下用 `Cover 02.jpg` -> `Cover 01.jpg` 做完整讀回驗證。
+
+通過：先讓 `npm run check:playback-restore` 因舊 direct `audio.src` 比較失敗，再修到 PASS；`npm run check:track-display`、`npm run check:track-identity`、真實 Plazma fixture `npm run check:song-info`、`npm run check:ai-track-search`、`npm run check:flac-metadata`、`npm run check:prompts`、`npm run check:theme-colors`、`npm run check:custom-images`、all-target `check:ai-assets`、`npm run build`、`npm run electron:compile`、升權 `npm run dist:release`、DMG verify、Windows NSIS static check。GUI 滑鼠驗收、DMG 唯讀掛載讀回、Windows 真機與正式簽章仍需驗收。
+
+SHA-256：
+
+- EXE：`591442e89c863405e59666b1aa19372927f909b02f3a55eaa47a1d06f9984442`
+- arm64 DMG：`dac596ee8df1b54103984d6b292d6d74f4f9c19ce52350efc90c9a736924e1c4`
+
+### English Summary
+
+0.1.25 fixes the remaining 0.1.24-family same-source audio reload after cover/song-info writeback. The precise root cause was comparing browser-normalized `audio.src` with raw `currentTrackSource`, plus source loading depending on duration updates.
+
+The player now uses `loadedTrackSourceRef` and reloads only when `currentTrackSource` actually changes. `check:playback-restore` blocks the old direct comparison and duration-dependent source effect. The writer check also validates real `Cover 02.jpg` -> `Cover 01.jpg` roundtrip with a temp copy.
+
+Passed: red/green playback-restore regression check, track-display, track-identity, real Plazma song-info / cover roundtrip, AI track search, FLAC metadata, prompt checks, theme colors, custom images, all-target AI assets, build, Electron compile, elevated `dist:release`, DMG verify, and Windows NSIS static check. GUI mouse validation, DMG mount readback, real Windows QA, and signing remain open.
+
+## 2026-07-03 0.1.24 hotfix 發行狀態（歷史）
+
+0.1.24 修正播放中更換封面後，切歌再切回同一首會短暫卡住，以及第一次重開仍看到舊 cover02、第二次重開才看到新 cover01 的問題。這不是全新問題，也不是 0.1.23 原 bug 復發；它同屬 metadata / cover 寫回後狀態打架，但精確路徑是 `mediaVersion` 造成 audio source 重載，另有 IndexedDB track metadata 保存順序競賽。
+
+本版讓 metadata/cover-only 更新不再 bump `mediaVersion`，避免單純封面更新觸發 `audio.load()`；`useMusicLibraryDb` 以 `trackSaveQueueRef` 串接 track metadata save / clear，固定保存順序。
+
+通過：先讓 `npm run check:playback-restore` 因舊 `mediaVersion: Date.now()` 失敗，再修到 PASS；`npm run check:track-display`、`npm run check:track-identity`、`npm run check:song-info`、`npm run check:ai-track-search`、`npm run check:flac-metadata`、`npm run check:prompts`、`npm run check:theme-colors`、`npm run check:custom-images`、all-target `check:ai-assets`、`npm run build`、`npm run electron:compile`、升權 `npm run dist:release`、DMG verify、DMG 唯讀掛載版本 / arm64 / app.asar / prompt / runtime 檢查、Windows NSIS static check。Windows 真機與正式簽章仍需驗收。
+
+SHA-256：
+
+- EXE：`648e1283bcdb299f284026c1e312692ee98a12f2fd53acd9ba28f8aec3c8447e`
+- arm64 DMG：`dd42b468718c12dcb3d585f582c896263ba45fdc111a16d846bb702e91adf603`
+
+### English Summary
+
+0.1.24 fixes playback stalling after cover writeback when switching away and back, plus the first-restart-old-cover / second-restart-new-cover persistence race. This is the same metadata / cover writeback conflict family as earlier fixes, but the precise path was unnecessary `mediaVersion` audio reload plus unordered IndexedDB track metadata saves.
+
+Metadata/cover-only updates no longer bump `mediaVersion`; IndexedDB track metadata save / clear operations now run through one queue.
+
+Passed: red/green playback-restore regression check, track-display, track-identity, song-info, AI track search, FLAC metadata, prompt checks, theme colors, custom images, all-target AI assets, build, Electron compile, elevated `dist:release`, DMG verify, read-only DMG checks, and Windows NSIS static check. Real Windows QA and signing remain open.
+
+## 2026-07-03 0.1.23 hotfix 發行狀態（歷史）
+
+0.1.23 修正歌手欄位在「米津玄師」與「未知歌手」之間反覆切換造成的閃爍。這不是新的功能需求，而是舊版 metadata 來源打架的同族問題；本次精確根因是 `storedTracks` 同時作為開機舊資料與目前 `tracks` 即時鏡像，弱 metadata 可能回頭蓋掉已回灌的真實歌手。
+
+本版讓 stored 文字欄位只有非空值才覆蓋目前 track 文字，並在 stored metadata 成功回灌後標記 `metadataLoaded`。後續同 `sourcePath` 同步只更新 duration、playCount、lastPlayedAt 等播放統計，避免 `未知歌手` 再覆蓋 `米津玄師`。
+
+通過：先讓 `npm run check:playback-restore` 因舊 `artist: stored.artist` 失敗，再修到 PASS；`npm run check:track-display`、`npm run check:track-identity`、`npm run check:song-info`、`npm run check:ai-track-search`、`npm run check:flac-metadata`、`npm run build`、`npm run electron:compile`、`npm run check:prompts`、all-target `check:ai-assets`、`npm run check:custom-images`、`npm run check:theme-colors`、升權 `npm run dist:release`、DMG verify、DMG 唯讀掛載版本 / arm64 / app.asar / prompt / runtime 檢查、Windows NSIS static check。Windows 真機與正式簽章仍需驗收。
+
+SHA-256：
+
+- EXE：`8bd5a6a0114c8b405cea373a0a74fddaebb0df263c837cd6172628fec754e259`
+- arm64 DMG：`7d0ecf5d3f842ce2712f3ca5f0f27b17158f5caf33c71b15d7f80b9cebe3f21a`
+
+### English Summary
+
+0.1.23 fixes the artist field flicker between real artist text and `未知歌手`. This belongs to the older metadata-source conflict family; the precise path was `storedTracks` acting as both startup snapshot and live `tracks` mirror, allowing weak metadata to overwrite restored real artist text.
+
+Stored text now overwrites current text only when non-empty. Applying stored metadata marks the track metadata-loaded, so later same-source syncs update playback stats only.
+
+Passed: red/green playback-restore regression check, track-display, track-identity, song-info, AI track search, FLAC metadata, build, Electron compile, prompt checks, all-target AI assets, custom images, theme colors, elevated `dist:release`, DMG verify, read-only DMG checks, and Windows NSIS static check. Real Windows QA and signing remain open.
+
+## 2026-07-03 0.1.22 hotfix 發行狀態（歷史）
+
+0.1.22 修正米津玄師 `Cover 01.jpg` 從 `Cover 02.jpg` 改回時，預覽與寫回都沒有變更的問題。`Cover 01.jpg` 經 `file` / `sips` 檢查為正常 JPEG/Exif，1500×1500、4,342,414 bytes，不是圖片結構壞掉；失敗根因是舊版封面上限只有 3 MB。
+
+本版將封面上限提高到 5 MB，讓 `Cover 01.jpg` 這類真實專輯封面可預覽與寫回，同時保留上限以避免過大圖片影響 M1 MacBook Air 8GB 與大量曲庫情境。若圖片仍超過上限，介面會明確提示「封面圖片太大，請選擇 5 MB 以內的 JPG / PNG」；格式錯誤則提示只支援 JPG / PNG。
+
+通過：`npm run check:song-info`、真實 `01. Plazma.flac` 暫存複本 `Cover 02.jpg` -> `Cover 01.jpg` roundtrip、`npm run check:track-display`、`npm run check:track-identity`、`npm run check:playback-restore`、`npm run check:ai-track-search`、`npm run check:flac-metadata`、`npm run build`、`npm run check:prompts`、all-target `check:ai-assets`、`npm run check:custom-images`、`npm run check:theme-colors`、升權 `npm run dist:release`、DMG verify、DMG 唯讀掛載版本 / arm64 / app.asar / prompt / runtime 檢查、Windows NSIS static check。Windows 真機與正式簽章仍需驗收。
+
+SHA-256：
+
+- EXE：`c0ae948862958ba50cfd9984d6b2df475a528b306d116a1691683d3fb585c7b3`
+- arm64 DMG：`341198490334adfb712cd831aa89f6e0c256d8c74b509138a352c522bca4e3b4`
+
+### English Summary
+
+0.1.22 fixes the Kenshi Yonezu `Cover 01.jpg` case where selecting cover01 after cover02 did not update preview or writeback. `Cover 01.jpg` is a valid JPEG/Exif image, 1500x1500 and 4,342,414 bytes; the old 3 MB cover limit blocked it.
+
+The cover limit is now 5 MB. Oversized images show a clear 5 MB too-large message, while format errors still say JPG / PNG only.
+
+Passed: song-info checks, real `01. Plazma.flac` temp-copy `Cover 02.jpg` -> `Cover 01.jpg` roundtrip, track-display, track-identity, playback-restore, AI track search, FLAC metadata, build, prompt checks, all-target AI assets, custom images, theme colors, elevated `dist:release`, DMG verify, read-only DMG checks, and Windows NSIS static check. Real Windows QA and signing remain open.
+
+## 2026-07-02 0.1.21 hotfix 發行狀態（歷史）
+
+0.1.21 修正歌曲顯示排序、封面更換後播放清單遺失、封面 cover02 改回 cover01 的回寫驗證、啟動恢復逐首讀取 metadata / cover 過慢，以及 AI 助手建立播放清單時缺少等待提示。歌曲顯示現在優先使用檔名，沒有檔名才使用歌曲標題；第二行顯示歌手。
+
+Electron 本機歌曲識別改以穩定 `sourcePath` 為主，不再把 mtime / size 放進主要 track id。這可避免原始檔寫回封面後，檔案大小或修改時間改變導致重開後播放清單找不到同一首歌。載入曲庫時也會依保存的 `sourcePath` 將舊播放清單 id remap 到目前 id。
+
+啟動 auto-restore 會跳過逐首 taglib metadata / cover 讀取，先用 IndexedDB 保存的 metadata 快速還原；需要重讀原始檔時再走明確重新讀取。AI 助手建立播放清單期間會顯示等待狀態，並暫時停用輸入與建立按鈕。
+
+通過：`npm run check:track-display`、`npm run check:track-identity`、`npm run check:playback-restore`、`npm run check:song-info`、真 MP3 fixture cover02 -> cover01 roundtrip、`npm run check:ai-track-search`、`npm run check:flac-metadata`、`npm run build`、`npm run check:prompts`、all-target `check:ai-assets`、`npm run check:custom-images`、`npm run check:theme-colors`、`npm run electron:compile`、升權 `npm run dist:release`、DMG verify、DMG 唯讀掛載版本 / arm64 / app.asar / prompt / runtime 檢查、Windows NSIS static check。Windows 真機與正式簽章仍需驗收。
+
+SHA-256：
+
+- EXE：`f27c6d64a6828283b75c471a7d2d08f39409c3fa8f7f9645114e38baceaa97d5`
+- arm64 DMG：`350ed86187d78279654138bd8f0e9bc069ae8908cc114eafb606371991b04fe5`
+
+### English Summary
+
+0.1.21 fixes track display order, playlist loss after cover writeback, cover02 -> cover01 writeback validation, slow startup restore, and missing AI playlist busy feedback. Track rows and the now-playing card prefer filename first, fall back to title, and show artist on the second line.
+
+Electron local track identity now uses stable `sourcePath` first instead of mtime / size, so cover writeback no longer makes the same file look like a different track after restart. Stored playlist ids are remapped through `sourcePath` during library restore.
+
+Startup restore skips full taglib metadata / cover reads per file and restores from IndexedDB metadata first. AI playlist creation shows a waiting state and temporarily disables input / create controls.
+
+Passed: track-display, track-identity, playback-restore, song-info, real MP3 cover roundtrip, AI track search, FLAC metadata, build, prompt checks, all-target AI assets, custom images, theme colors, Electron compile, elevated `dist:release`, DMG verify, read-only DMG checks, and Windows NSIS static check. Real Windows QA and signing remain open.
+
+## 2026-07-02 0.1.20 hotfix 發行狀態（歷史）
+
+0.1.20 修正播放音樂卡頓、播放後按暫停沒有停下、播放狀態閃爍，以及 Electron 選擇新資料夾後下次啟動未優先恢復最後資料夾。播放 source 同步只依賴 `localUrl` / `mediaVersion`；play/pause 由獨立 effect 同步，暫停會明確呼叫 `audio.pause()`。
+
+Electron 手動選資料夾時會將該次 `sourcePath[]` 寫入既有 IndexedDB settings；啟動 auto-restore 優先使用最後手動選擇的來源清單，沒有才退回 tracks metadata。空 selection 不覆蓋最後成功來源。
+
+通過：`npm run check:playback-restore`、`npm run check:song-info`、`npm run check:flac-metadata`、`npm run build`、`npm run electron:compile`、升權 `npm run dist:release`、DMG verify、Windows NSIS static check。DMG 唯讀掛載版本 / 架構讀回本輪因使用限制未完成；Windows 真機與正式簽章仍需驗收。
+
+SHA-256：
+
+- EXE：`a22876f29dc2f6128066bbe6292412723942e9f6b88f25c71e49dc396012fdda`
+- arm64 DMG：`36c52a05f47405fb7b2073b689527534873372fa7f6cb0cf57a0f67d58ed80f7`
+
+### English Summary
+
+0.1.20 fixes playback stutter, unreliable pause, flashing playback state, and latest-folder restore. Audio source sync now depends only on `localUrl` / `mediaVersion`; play/pause sync is separate and explicitly pauses when `isPlaying` is false.
+
+Electron folder selection saves the latest selected `sourcePath[]` in the existing IndexedDB settings store. Auto-restore prefers that latest manual selection before falling back to track metadata.
+
+Passed: playback-restore, song-info, FLAC metadata, build, Electron compile, elevated `dist:release`, DMG verify, and Windows NSIS static check. DMG read-only mount readback, real Windows QA, and signing remain open.
+
+## 2026-07-02 0.1.19 hotfix 發行狀態（歷史）
+
+0.1.19 hotfix 收斂歌曲資訊保存流程，只保留「套用到原始檔」，移除「保存到播放器」與重複封面入口。寫回成功後重新讀取原始檔 metadata 並清除 override，避免播放器內 metadata 與原始檔標籤互相覆寫造成資訊區塊跳動。Electron 選擇大型音樂資料夾時不再讀整個音檔進 IPC，而是以 `file://` URL 與 source metadata 播放及識別檔案。
+
+原始檔寫回改用 `taglib-wasm` 的 `TagLib.copyWithTags(source, temp, tags)` 暫存檔流程；真 MP3 fixture 複本寫回與讀回已通過。一般沙盒打包在 `hdiutil create` 失敗後，升權重跑同一 `npm run dist:release` 成功。
+
+通過：`npm run check:song-info`、真 MP3 fixture `SONG_INFO_FIXTURE_PATH=... npm run check:song-info`、`npm run check:flac-metadata`、`npm run build`、`npm run electron:compile`、升權 `npm run dist:release`、DMG verify、DMG 唯讀掛載版本 / arm64 架構檢查、Windows NSIS static check。Windows 真機與正式簽章仍需驗收。
+
+SHA-256：
+
+- EXE：`a66b024b68c84f1a1cb94cdaa22210ad12a84f0f2f4ce5481216785e4869d1dc`
+- arm64 DMG：`cbb66a0efe8b59d6efd835f375399ec2731bb4db3ff34e23fda86df17e6ac37c`
+
+### English Summary
+
+0.1.19 hotfix keeps original-file writeback as the only song-info save path, removes player-local saving and the duplicate cover button, reloads metadata from the original file after writeback, and avoids sending whole audio `ArrayBuffer`s through Electron IPC for file/folder selection.
+
+Writeback now uses `TagLib.copyWithTags(source, temp, tags)` before optional cover writing and rename. A real MP3 fixture copy write/read check passed. Passed checks include song-info, real fixture write/read, FLAC metadata, build, Electron compile, elevated `dist:release`, DMG verify, read-only DMG version / arm64 checks, and Windows NSIS static check. Real Windows QA and signing remain open.
+
+## 2026-07-02 0.1.19 初版發行狀態（歷史）
+
+0.1.19 新增歌曲資訊面板與目前播放卡「更多」選單，可編輯標題、歌手、專輯、專輯歌手、年份、類型、曲目、光碟、備註、作曲與單曲封面。桌面版支援 MP3、FLAC、M4A 原始檔標籤寫回；寫回前要求使用者確認，且只處理已加入播放器的本機原始檔。重新讀取標籤在 Electron 版由主程序讀原始檔，避免寫回 FLAC/M4A 後畫面 metadata 不同步。
+
+`npm run check:song-info`、`npm run check:prompts`、AI track search/schema check、AI assets、all-target AI assets、playlist logic、FLAC metadata、custom images、theme colors、build、Electron compile、升權 `npm run dist:release` 均通過。DMG verify VALID；唯讀掛載後封裝版本為 0.1.19，執行檔為 arm64，包內只有三份 prompt `.txt`，無 prompt `.bin`，packaged `app.asar` 含 `taglib-wasm` 與 `dist-electron/songInfoWriter.js`。EXE 為 Windows NSIS installer；Windows 真機與正式簽章仍需驗收。
+
+SHA-256：
+
+- EXE：`e6552d58b6c15606bb70e1574e7c66345172c7d8896879e249ae829e30e93bc0`
+- arm64 DMG：`4d513162387539f5dcc51eb159ffe77d7ab4cb42ac5c63b02f81e979bbb75cf5`
+
+### English Summary
+
+0.1.19 adds a song info panel and current-track More menu for editing title, artist, album, album artist, year, genre, track/disc numbers, comment, composer, and per-track cover art. The desktop app can write MP3/FLAC/M4A tags back to original local files after explicit confirmation. Electron reloads metadata from the original file after writeback so FLAC/M4A stay in sync.
+
+Passed: `npm run check:song-info`, prompt checks, AI track search/schema checks, AI assets, all-target AI assets, playlist logic, FLAC metadata, custom images, theme colors, build, Electron compile, elevated `npm run dist:release`, DMG verify, packaged version/architecture checks, and Windows NSIS static check. Real Windows QA and signing remain open.
 
 ## 2026-06-29 0.1.18 最新發行狀態
 

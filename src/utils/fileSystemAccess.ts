@@ -37,10 +37,13 @@ export async function pickDirectoryWithFileSystemAccess() {
 export function filesFromElectronSelection(selection: Array<{
   name: string;
   type: string;
-  buffer: ArrayBuffer;
+  buffer?: ArrayBuffer;
+  localUrl?: string;
+  size?: number;
   sourcePath?: string;
   lastModified?: number;
   relativePath?: string;
+  metadata?: unknown;
 }>) {
   return selection.map((item) => {
     const options: FilePropertyBag = { type: item.type };
@@ -49,7 +52,19 @@ export function filesFromElectronSelection(selection: Array<{
       options.lastModified = item.lastModified;
     }
 
-    const file = new File([item.buffer], item.name, options);
+    const file = new File(item.buffer ? [item.buffer] : [], item.name, options);
+    if (item.localUrl) {
+      Object.defineProperty(file, "localUrl", {
+        value: item.localUrl,
+        configurable: true,
+      });
+    }
+    if (typeof item.size === "number") {
+      Object.defineProperty(file, "sourceSize", {
+        value: item.size,
+        configurable: true,
+      });
+    }
     if (item.sourcePath) {
       Object.defineProperty(file, "sourcePath", {
         value: item.sourcePath,
@@ -59,6 +74,12 @@ export function filesFromElectronSelection(selection: Array<{
     if (item.relativePath) {
       Object.defineProperty(file, "webkitRelativePath", {
         value: item.relativePath,
+        configurable: true,
+      });
+    }
+    if (item.metadata) {
+      Object.defineProperty(file, "songInfo", {
+        value: item.metadata,
         configurable: true,
       });
     }

@@ -1,5 +1,187 @@
 # Installer 狀態
 
+## 2026-07-03 0.1.26 最新狀態（單曲寫回後 DB 立即保存）
+
+本輪把版本更新為 0.1.26，重點是補完 0.1.24 / 0.1.25 同族殘留：原始檔封面 / 歌曲資訊寫回後，UI 可能已更新，但播放器 IndexedDB 尚未完成保存；若快速重開，第一次仍可能從 DB 還原舊 cover02。這次不清空整個音樂資料庫，而是只重讀被寫回的那一首並等待該 tracks snapshot 保存完成。
+
+- `Aquariusgirl Music Room Setup 0.1.26.exe`：667,496,468 bytes，SHA-256 `0486767f4ebf7cf4d0adb233f62bd1d62da0c53709895d00e1a3fc50ce94dc5d`
+- `Aquariusgirl Music Room-0.1.26-arm64.dmg`：684,434,117 bytes，SHA-256 `16acf709838b2fc1831227693aba133e47d5979ee0dc580865734d3038a2be91`
+
+模型仍為 `resources/ai/models/qwen3.5-0.8b.gguf`，532,517,120 bytes，SHA-256 `bd258782e35f7f458f8aced1adc053e6e92e89bc735ba3be89d38a06121dc517`。
+
+驗收：`npm run check:playback-restore`、真實 Plazma fixture `npm run check:song-info`、`npm run check:track-display`、`npm run check:track-identity`、`npm run check:ai-track-search`、`npm run check:flac-metadata`、`npm run check:prompts`、`npm run check:theme-colors`、`npm run check:custom-images`、all-target `check:ai-assets`、`npm run build`、`npm run electron:compile`、升權 `npm run dist:release` 均通過。DMG `hdiutil verify` VALID；唯讀掛載後版本為 0.1.26、執行檔為 Mach-O arm64、`app.asar` 與 mac AI model/runtime 存在。EXE static check 為 Windows NSIS installer；`release/` 暫存輸出已移除，唯一交付位置是 `release-delivery/installers/`。Codex 沙盒拒絕直接啟動 Electron GUI，未標記滑鼠實機操作 PASS；未在 Windows 真機執行。
+
+### English Status
+
+0.1.26 fixes the remaining original-file writeback persistence race. After writeback, the app now reloads only the edited track and waits for the updated IndexedDB snapshot before reporting success.
+
+- `Aquariusgirl Music Room Setup 0.1.26.exe`: 667,496,468 bytes, SHA-256 `0486767f4ebf7cf4d0adb233f62bd1d62da0c53709895d00e1a3fc50ce94dc5d`
+- `Aquariusgirl Music Room-0.1.26-arm64.dmg`: 684,434,117 bytes, SHA-256 `16acf709838b2fc1831227693aba133e47d5979ee0dc580865734d3038a2be91`
+
+Passed: playback-restore, real Plazma song-info / cover roundtrip, track-display, track-identity, AI track search, FLAC metadata, prompt checks, theme colors, custom images, all-target AI assets, build, Electron compile, elevated `dist:release`, DMG verify, read-only DMG checks, and Windows NSIS static check. GUI mouse validation, real Windows QA, signing, and notarization remain open.
+
+## 2026-07-03 0.1.25 狀態（歷史：audio source 誤重載修正）
+
+本輪把版本更新為 0.1.25，重點是補完 0.1.24 同族殘留：播放中更換封面 / 歌曲資訊後，切歌再切回同一首仍可能短暫卡住。精確殘留路徑是 `audio.src` 回讀值已被瀏覽器正規化，不能直接和原始 `currentTrackSource` 比較；duration 更新也不應觸發 audio source reload。
+
+- `Aquariusgirl Music Room Setup 0.1.25.exe`：667,496,304 bytes，SHA-256 `591442e89c863405e59666b1aa19372927f909b02f3a55eaa47a1d06f9984442`
+- `Aquariusgirl Music Room-0.1.25-arm64.dmg`：684,416,581 bytes，SHA-256 `dac596ee8df1b54103984d6b292d6d74f4f9c19ce52350efc90c9a736924e1c4`
+
+模型仍為 `resources/ai/models/qwen3.5-0.8b.gguf`，532,517,120 bytes，SHA-256 `bd258782e35f7f458f8aced1adc053e6e92e89bc735ba3be89d38a06121dc517`。
+
+驗收：`npm run check:playback-restore`、`npm run check:track-display`、`npm run check:track-identity`、真實 Plazma fixture `npm run check:song-info`、`npm run check:ai-track-search`、`npm run check:flac-metadata`、`npm run check:prompts`、`npm run check:theme-colors`、`npm run check:custom-images`、all-target `check:ai-assets`、`npm run build`、`npm run electron:compile`、升權 `npm run dist:release` 均通過。DMG `hdiutil verify` VALID；EXE static check 為 Windows NSIS installer；`release/` 暫存輸出已移除，唯一交付位置是 `release-delivery/installers/`。本輪 `hdiutil attach` / `imageinfo` 因裝置權限與用量限制未完成，未標記 DMG 唯讀掛載讀回 PASS；Codex 沙盒拒絕直接啟動 Electron GUI，未標記滑鼠實機操作 PASS；未在 Windows 真機執行。
+
+### English Status
+
+0.1.25 fixes the remaining 0.1.24-family same-source audio reload. The precise path was comparing browser-normalized `audio.src` with raw `currentTrackSource`, plus duration-dependent source loading.
+
+- `Aquariusgirl Music Room Setup 0.1.25.exe`: 667,496,304 bytes, SHA-256 `591442e89c863405e59666b1aa19372927f909b02f3a55eaa47a1d06f9984442`
+- `Aquariusgirl Music Room-0.1.25-arm64.dmg`: 684,416,581 bytes, SHA-256 `dac596ee8df1b54103984d6b292d6d74f4f9c19ce52350efc90c9a736924e1c4`
+
+Passed: playback-restore, track-display, track-identity, real Plazma song-info / cover roundtrip, AI track search, FLAC metadata, prompt checks, theme colors, custom images, all-target AI assets, build, Electron compile, elevated `dist:release`, DMG verify, and Windows NSIS static check. GUI mouse validation, DMG mount readback, real Windows QA, signing, and skill update remain open.
+
+## 2026-07-03 0.1.24 狀態（歷史：封面寫回播放卡頓修正）
+
+本輪把版本更新為 0.1.24，重點是修正播放中更換封面後切歌再切回會短暫卡住，以及 cover02 -> cover01 後第一次重開仍顯示舊封面、第二次重開才更新的保存順序問題。這是 metadata / cover 寫回後狀態打架的同族問題，但精確路徑是 metadata-only `mediaVersion` 造成 audio source 重載，以及 IndexedDB track metadata save 順序競賽。
+
+- `Aquariusgirl Music Room Setup 0.1.24.exe`：667,496,263 bytes，SHA-256 `648e1283bcdb299f284026c1e312692ee98a12f2fd53acd9ba28f8aec3c8447e`
+- `Aquariusgirl Music Room-0.1.24-arm64.dmg`：684,416,368 bytes，SHA-256 `dd42b468718c12dcb3d585f582c896263ba45fdc111a16d846bb702e91adf603`
+
+模型仍為 `resources/ai/models/qwen3.5-0.8b.gguf`，532,517,120 bytes，SHA-256 `bd258782e35f7f458f8aced1adc053e6e92e89bc735ba3be89d38a06121dc517`。
+
+驗收：`npm run check:playback-restore`、`npm run check:track-display`、`npm run check:track-identity`、`npm run check:song-info`、`npm run check:ai-track-search`、`npm run check:flac-metadata`、`npm run check:prompts`、`npm run check:theme-colors`、`npm run check:custom-images`、all-target `check:ai-assets`、`npm run build`、`npm run electron:compile`、升權 `npm run dist:release` 均通過。DMG `hdiutil verify` VALID；唯讀掛載後版本為 0.1.24、執行檔為 Mach-O arm64、`app.asar` package version 為 0.1.24 / 未含 0.1.23、prompt 只有三份 `.txt` 且無 `.bin`、AI runtime 只保留 `darwin-arm64`。EXE static check 為 Windows NSIS installer；未在 Windows 真機執行。`release/` 暫存輸出已移除，唯一交付位置是 `release-delivery/installers/`。
+
+### English Status
+
+0.1.24 fixes playback stalling after cover writeback when switching away and back, plus the first-restart-old-cover / second-restart-new-cover persistence race. The precise path was metadata-only `mediaVersion` audio reload plus unordered IndexedDB track metadata saves.
+
+- `Aquariusgirl Music Room Setup 0.1.24.exe`: 667,496,263 bytes, SHA-256 `648e1283bcdb299f284026c1e312692ee98a12f2fd53acd9ba28f8aec3c8447e`
+- `Aquariusgirl Music Room-0.1.24-arm64.dmg`: 684,416,368 bytes, SHA-256 `dd42b468718c12dcb3d585f582c896263ba45fdc111a16d846bb702e91adf603`
+
+Passed: playback-restore, track-display, track-identity, song-info, AI track search, FLAC metadata, prompt checks, theme colors, custom images, all-target AI assets, build, Electron compile, elevated `dist:release`, DMG verify, read-only DMG checks, and Windows NSIS static check. Real Windows QA and signing remain open.
+
+## 2026-07-03 0.1.23 狀態（歷史：歌手欄位閃爍修正）
+
+本輪把版本更新為 0.1.23，重點是修正歌手欄位在「米津玄師」與「未知歌手」之間反覆切換造成的閃爍。這是 metadata 來源打架的同族問題，但精確路徑是 `storedTracks` 同時作為開機舊資料與目前 `tracks` 即時鏡像，弱 metadata 可能蓋掉已回灌的真實歌手。
+
+- `Aquariusgirl Music Room Setup 0.1.23.exe`：667,496,298 bytes，SHA-256 `8bd5a6a0114c8b405cea373a0a74fddaebb0df263c837cd6172628fec754e259`
+- `Aquariusgirl Music Room-0.1.23-arm64.dmg`：684,416,209 bytes，SHA-256 `7d0ecf5d3f842ce2712f3ca5f0f27b17158f5caf33c71b15d7f80b9cebe3f21a`
+
+模型仍為 `resources/ai/models/qwen3.5-0.8b.gguf`，532,517,120 bytes，SHA-256 `bd258782e35f7f458f8aced1adc053e6e92e89bc735ba3be89d38a06121dc517`。
+
+驗收：`npm run check:playback-restore`、`npm run check:track-display`、`npm run check:track-identity`、`npm run check:song-info`、`npm run check:ai-track-search`、`npm run check:flac-metadata`、`npm run build`、`npm run electron:compile`、`npm run check:prompts`、all-target `check:ai-assets`、`npm run check:custom-images`、`npm run check:theme-colors`、升權 `npm run dist:release` 均通過。DMG `hdiutil verify` VALID；唯讀掛載後版本為 0.1.23、執行檔為 Mach-O arm64、`app.asar` 存在且含 0.1.23 / 未含 0.1.22、prompt 只有三份 `.txt`、AI runtime 只保留 `darwin-arm64`。EXE static check 為 Windows NSIS installer；未在 Windows 真機執行。`release/` 暫存輸出已移除，唯一交付位置是 `release-delivery/installers/`。
+
+### English Status
+
+0.1.23 fixes artist field flicker between real artist text and `未知歌手`. The precise path was `storedTracks` acting as both startup snapshot and live `tracks` mirror, allowing weak metadata to overwrite restored real artist text.
+
+- `Aquariusgirl Music Room Setup 0.1.23.exe`: 667,496,298 bytes, SHA-256 `8bd5a6a0114c8b405cea373a0a74fddaebb0df263c837cd6172628fec754e259`
+- `Aquariusgirl Music Room-0.1.23-arm64.dmg`: 684,416,209 bytes, SHA-256 `7d0ecf5d3f842ce2712f3ca5f0f27b17158f5caf33c71b15d7f80b9cebe3f21a`
+
+Passed: playback-restore, track-display, track-identity, song-info, AI track search, FLAC metadata, build, Electron compile, prompt checks, all-target AI assets, custom images, theme colors, elevated `dist:release`, DMG verify, read-only DMG checks, and Windows NSIS static check. Real Windows QA and signing remain open.
+
+## 2026-07-03 0.1.22 狀態（歷史：Cover 01 封面回改修正）
+
+本輪把版本更新為 0.1.22，重點是修正米津玄師 `Cover 01.jpg` 選回封面失敗。該圖是正常 JPEG/Exif，1500×1500、4,342,414 bytes；舊 3 MB 封面上限造成它被擋在預覽與保存前。本版提高上限到 5 MB，並對超過上限的圖片顯示明確過大提示。
+
+- `Aquariusgirl Music Room Setup 0.1.22.exe`：667,496,050 bytes，SHA-256 `c0ae948862958ba50cfd9984d6b2df475a528b306d116a1691683d3fb585c7b3`
+- `Aquariusgirl Music Room-0.1.22-arm64.dmg`：684,416,428 bytes，SHA-256 `341198490334adfb712cd831aa89f6e0c256d8c74b509138a352c522bca4e3b4`
+
+修改時間：2026-07-03 08:56 CST。模型仍為 `resources/ai/models/qwen3.5-0.8b.gguf`，532,517,120 bytes，SHA-256 `bd258782e35f7f458f8aced1adc053e6e92e89bc735ba3be89d38a06121dc517`。
+
+驗收：`npm run check:song-info`、真實 `01. Plazma.flac` 暫存複本 cover02 -> cover01 roundtrip、`npm run check:track-display`、`npm run check:track-identity`、`npm run check:playback-restore`、`npm run check:ai-track-search`、`npm run check:flac-metadata`、`npm run build`、`npm run check:prompts`、all-target `check:ai-assets`、`npm run check:custom-images`、`npm run check:theme-colors`、升權 `npm run dist:release` 均通過。DMG `hdiutil verify` VALID；唯讀掛載後版本為 0.1.22、執行檔為 Mach-O arm64、`app.asar` 存在且含 0.1.22 / 未含 0.1.21、prompt 只有三份 `.txt`、AI runtime 只保留 `darwin-arm64`。EXE static check 為 Windows NSIS installer；未在 Windows 真機執行。`release/` 暫存輸出已移除，唯一交付位置是 `release-delivery/installers/`。
+
+### English Status
+
+0.1.22 fixes the `Cover 01.jpg` revert case. The file is a valid JPEG/Exif image, 1500x1500 and 4,342,414 bytes; the old 3 MB cover limit blocked it before preview/writeback. The cover limit is now 5 MB, and oversized images show a clear too-large message.
+
+- `Aquariusgirl Music Room Setup 0.1.22.exe`: 667,496,050 bytes, SHA-256 `c0ae948862958ba50cfd9984d6b2df475a528b306d116a1691683d3fb585c7b3`
+- `Aquariusgirl Music Room-0.1.22-arm64.dmg`: 684,416,428 bytes, SHA-256 `341198490334adfb712cd831aa89f6e0c256d8c74b509138a352c522bca4e3b4`
+
+Passed: song-info, real FLAC cover roundtrip, track-display, track-identity, playback-restore, AI track search, FLAC metadata, build, prompt checks, all-target AI assets, custom images, theme colors, elevated `dist:release`, DMG verify, read-only DMG checks, and Windows NSIS static check. Real Windows QA and signing remain open.
+
+## 2026-07-02 0.1.21 狀態（歷史：顯示、封面、啟動效能修正）
+
+本輪把版本更新為 0.1.21，重點是歌曲第一行優先顯示檔名、第二行顯示歌手；修正封面寫回後因 size / mtime 改變造成播放清單下次重開掉歌；驗證真 MP3 暫存複本 cover02 -> cover01 可以改回；啟動 auto-restore 不再逐首重讀完整 taglib metadata / cover；AI 建立播放清單時會顯示等待並暫停輸入。
+
+- `Aquariusgirl Music Room Setup 0.1.21.exe`：667,496,033 bytes，SHA-256 `f27c6d64a6828283b75c471a7d2d08f39409c3fa8f7f9645114e38baceaa97d5`
+- `Aquariusgirl Music Room-0.1.21-arm64.dmg`：684,415,979 bytes，SHA-256 `350ed86187d78279654138bd8f0e9bc069ae8908cc114eafb606371991b04fe5`
+
+修改時間：2026-07-02 23:44 CST。模型仍為 `resources/ai/models/qwen3.5-0.8b.gguf`，532,517,120 bytes，SHA-256 `bd258782e35f7f458f8aced1adc053e6e92e89bc735ba3be89d38a06121dc517`。
+
+驗收：`npm run check:track-display`、`npm run check:track-identity`、`npm run check:playback-restore`、`npm run check:song-info`、真 MP3 cover02 -> cover01 fixture roundtrip、`npm run check:ai-track-search`、`npm run check:flac-metadata`、`npm run build`、`npm run check:prompts`、all-target `check:ai-assets`、`npm run check:custom-images`、`npm run check:theme-colors`、`npm run electron:compile`、升權 `npm run dist:release` 均通過。DMG `hdiutil verify` VALID；唯讀掛載後版本為 0.1.21、執行檔為 Mach-O arm64、`app.asar` 存在、prompt 只有三份 `.txt`、AI runtime 只保留 `darwin-arm64`。EXE static check 為 Windows NSIS installer；未在 Windows 真機執行。`release/` 暫存輸出已移除，唯一交付位置是 `release-delivery/installers/`。
+
+### English Status
+
+0.1.21 fixes filename-first display, playlist loss after cover writeback, real MP3 cover02 -> cover01 roundtrip, slow startup restore, and AI playlist busy feedback.
+
+- `Aquariusgirl Music Room Setup 0.1.21.exe`: 667,496,033 bytes, SHA-256 `f27c6d64a6828283b75c471a7d2d08f39409c3fa8f7f9645114e38baceaa97d5`
+- `Aquariusgirl Music Room-0.1.21-arm64.dmg`: 684,415,979 bytes, SHA-256 `350ed86187d78279654138bd8f0e9bc069ae8908cc114eafb606371991b04fe5`
+
+Passed: track-display, track-identity, playback-restore, song-info, real MP3 cover roundtrip, AI track search, FLAC metadata, build, prompt checks, all-target AI assets, custom images, theme colors, Electron compile, elevated `dist:release`, DMG verify, read-only DMG checks, and Windows NSIS static check. Real Windows QA and signing remain open.
+
+## 2026-07-02 0.1.20 狀態（歷史：播放暫停與資料夾恢復修正）
+
+本輪把版本更新為 0.1.20，重點是修正播放卡頓、暫停停不下來、播放狀態閃爍，以及 Electron 選擇新音樂資料夾後下次啟動未優先恢復新資料夾。播放 source 只在 `localUrl` / `mediaVersion` 改變時重設；play/pause 改由獨立 effect 同步。Electron 手動選資料夾會把最新 `sourcePath[]` 寫入既有 IndexedDB settings，auto-restore 優先用最後手動選擇。
+
+- `Aquariusgirl Music Room Setup 0.1.20.exe`：667,495,541 bytes，SHA-256 `a22876f29dc2f6128066bbe6292412723942e9f6b88f25c71e49dc396012fdda`
+- `Aquariusgirl Music Room-0.1.20-arm64.dmg`：684,478,119 bytes，SHA-256 `36c52a05f47405fb7b2073b689527534873372fa7f6cb0cf57a0f67d58ed80f7`
+
+修改時間：2026-07-02 19:23:43 CST。模型仍為 `resources/ai/models/qwen3.5-0.8b.gguf`，532,517,120 bytes，SHA-256 `bd258782e35f7f458f8aced1adc053e6e92e89bc735ba3be89d38a06121dc517`。
+
+驗收：`npm run check:playback-restore`、`npm run check:song-info`、`npm run check:flac-metadata`、`npm run build`、`npm run electron:compile`、升權 `npm run dist:release` 均通過。DMG `hdiutil verify` VALID；EXE static check 為 Windows NSIS installer，builder log 顯示 x64 target。DMG 唯讀掛載版本 / 架構讀回本輪因使用限制未完成；未在 Windows 真機執行。`release/` 暫存輸出已移除，唯一交付位置是 `release-delivery/installers/`。
+
+### English Status
+
+0.1.20 fixes playback stutter, unreliable pause, flashing playback state, and latest-folder restore. Audio source sync now depends only on `localUrl` / `mediaVersion`; play/pause sync is separate. Electron folder selection saves the latest selected `sourcePath[]` in the existing IndexedDB settings store, and auto-restore prefers that latest manual selection.
+
+- `Aquariusgirl Music Room Setup 0.1.20.exe`: 667,495,541 bytes, SHA-256 `a22876f29dc2f6128066bbe6292412723942e9f6b88f25c71e49dc396012fdda`
+- `Aquariusgirl Music Room-0.1.20-arm64.dmg`: 684,478,119 bytes, SHA-256 `36c52a05f47405fb7b2073b689527534873372fa7f6cb0cf57a0f67d58ed80f7`
+
+Passed: playback-restore, song-info, FLAC metadata, build, Electron compile, elevated `npm run dist:release`, DMG verify, and Windows NSIS static check. Real Windows QA, DMG read-only mount readback, and signing remain open.
+
+## 2026-07-02 0.1.19 hotfix 狀態（歷史：歌曲資訊保存收斂與大資料夾載入修正）
+
+本輪延續 0.1.19 初版，修正歌曲資訊保存流程打架與大型資料夾載入風險。播放器不再提供「保存到播放器」路徑，只保留「套用到原始檔」；寫回後重新讀取原始檔 metadata，並清除播放器內 metadata override。Electron 選擇檔案 / 資料夾時不再把音檔本體讀成 `ArrayBuffer` 經 IPC 傳給 renderer，改用 `file://` URL、source path、真實 size、mtime、relative path 與必要 metadata。
+
+原始檔寫回改用 `TagLib.copyWithTags(source, temp, tags)` 產生同副檔名暫存檔，封面也在暫存檔完成後才 rename 覆蓋原檔。真 MP3 fixture 複本寫回 title / artist / album 並讀回 PASS；避免使用臨時生成的極短 m4a 當作 release writeback 判準。
+
+- `Aquariusgirl Music Room Setup 0.1.19.exe`：667,495,272 bytes，SHA-256 `a66b024b68c84f1a1cb94cdaa22210ad12a84f0f2f4ce5481216785e4869d1dc`
+- `Aquariusgirl Music Room-0.1.19-arm64.dmg`：684,463,396 bytes，SHA-256 `cbb66a0efe8b59d6efd835f375399ec2731bb4db3ff34e23fda86df17e6ac37c`
+
+修改時間：2026-07-02 18:47:47–18:47:48 CST。模型仍為 `resources/ai/models/qwen3.5-0.8b.gguf`，532,517,120 bytes，SHA-256 `bd258782e35f7f458f8aced1adc053e6e92e89bc735ba3be89d38a06121dc517`。
+
+驗收：`npm run check:song-info`、真 MP3 fixture 複本 `SONG_INFO_FIXTURE_PATH=... npm run check:song-info`、`npm run check:flac-metadata`、`npm run build`、`npm run electron:compile`、升權 `npm run dist:release` 均通過。DMG `hdiutil verify` VALID；唯讀掛載後版本為 0.1.19、執行檔為 Mach-O arm64、`Contents/Resources` 含 `app.asar`、AI 與 prompts。EXE static check 為 Windows NSIS installer，builder log 顯示 x64 target；未在 Windows 真機執行。`release/` 暫存輸出已移除，唯一交付位置是 `release-delivery/installers/`。
+
+### English Status
+
+This hotfix continues the 0.1.19 release. It removes player-local song-info saving, keeps original-file writeback as the only save path, reloads metadata from the original file after success, and clears metadata override state. Electron file/folder selection no longer sends whole audio `ArrayBuffer`s through IPC; it returns `file://`, source path, real size, mtime, relative path, and metadata.
+
+- `Aquariusgirl Music Room Setup 0.1.19.exe`: 667,495,272 bytes, SHA-256 `a66b024b68c84f1a1cb94cdaa22210ad12a84f0f2f4ce5481216785e4869d1dc`
+- `Aquariusgirl Music Room-0.1.19-arm64.dmg`: 684,463,396 bytes, SHA-256 `cbb66a0efe8b59d6efd835f375399ec2731bb4db3ff34e23fda86df17e6ac37c`
+
+Passed: song-info checks, real MP3 fixture copy write/read check, FLAC metadata check, build, Electron compile, elevated `npm run dist:release`, DMG verify, read-only DMG version / arm64 checks, and Windows NSIS static check. Real Windows QA and signing remain open.
+
+## 2026-07-02 0.1.19 初版狀態（歷史：歌曲資訊、封面與原始檔標籤寫回）
+
+本輪把版本更新為 0.1.19，重點是讓目前播放歌曲可以在播放器內編輯 metadata 與單曲封面，並在桌面版支援將 MP3、FLAC、M4A 標籤寫回使用者明確加入的原始音樂檔。寫回前會要求確認；程式先產生修改後 bytes，再用 temporary file + rename 寫回，失敗時回報原始檔未修改。
+
+- `Aquariusgirl Music Room Setup 0.1.19.exe`：667,494,676 bytes，SHA-256 `e6552d58b6c15606bb70e1574e7c66345172c7d8896879e249ae829e30e93bc0`
+- `Aquariusgirl Music Room-0.1.19-arm64.dmg`：684,445,307 bytes，SHA-256 `4d513162387539f5dcc51eb159ffe77d7ab4cb42ac5c63b02f81e979bbb75cf5`
+
+模型：`resources/ai/models/qwen3.5-0.8b.gguf`，532,517,120 bytes，SHA-256 `bd258782e35f7f458f8aced1adc053e6e92e89bc735ba3be89d38a06121dc517`。Prompt：`character_prompt.txt`、`ai_router_prompt.txt`、`ai_reply_prompt.txt` 以明文打包到 `Contents/Resources/prompts/`，未偵測到 prompt `.bin`。
+
+驗收：`check:song-info`、`check:prompts`、AI track search/schema check、playlist logic、FLAC metadata、custom images、theme colors、all-target `check:ai-assets`、`npm run build`、`npm run electron:compile`、升權 `npm run dist:release` 均通過。DMG `hdiutil verify` VALID；唯讀掛載後版本為 0.1.19，執行檔為 arm64，packaged `app.asar` 含 `taglib-wasm` 與 `dist-electron/songInfoWriter.js`，AI runtime 在 DMG 只保留 `darwin-arm64` 目錄。EXE static check 為 Windows NSIS installer；未在 Windows 真機執行，macOS notarization、Apple Developer ID 與 Windows code signing 尚未設定。
+
+### English Status
+
+0.1.19 adds song metadata editing, per-track cover changes, and desktop MP3/FLAC/M4A original-file tag writeback for local files explicitly added by the user. Writeback requires confirmation, produces modified bytes first, then writes through a temporary file and rename; failures report that the original file was not modified.
+
+- `Aquariusgirl Music Room Setup 0.1.19.exe`: 667,494,676 bytes, SHA-256 `e6552d58b6c15606bb70e1574e7c66345172c7d8896879e249ae829e30e93bc0`
+- `Aquariusgirl Music Room-0.1.19-arm64.dmg`: 684,445,307 bytes, SHA-256 `4d513162387539f5dcc51eb159ffe77d7ab4cb42ac5c63b02f81e979bbb75cf5`
+
+Passed: song-info checks, prompt checks, AI track search/schema checks, playlist logic, FLAC metadata, custom images, theme colors, all-target AI assets, build, Electron compile, elevated `npm run dist:release`, DMG verify, packaged version/architecture checks, and Windows NSIS static check. Real Windows QA and signing remain open.
+
 ## 2026-06-29 0.1.18 最新狀態（AI schema、Result Guard、Safe Reply）
 
 本輪把版本更新為 0.1.18，重點是讓 AI playlist 穩定性靠程式層保證：router schema 會補預設值並強制工具任務 summary-only；result guard 會攔截模型歌曲清單、候選 track title 與不可信回覆；safe reply 只回覆歌單名稱、歌曲數量與狀態。歌曲列表仍只能由播放器 UI 依 `playlist.trackIds` 顯示。
