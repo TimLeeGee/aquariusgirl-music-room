@@ -14,7 +14,7 @@
 - 測試：先新增 `scripts/metadata-save-loop-check.mjs`，舊程式因缺少單曲 API 與仍有全庫保存入口紅燈；修正後 PASS。新增 npm 指令：`check:metadata-save-loop`、`check:no-track-save-loop`、`check:no-full-db-save-on-playback`、`check:cover-update-five-times`、`check:playlist-song-info-restart`、`check:no-audio-load-on-cover-only-update`。這些是 source-level regression guard，不是 packaged GUI 壓力測試。
 - 檢查：`npm run check:no-track-save-loop` PASS；`npm run check:no-full-db-save-on-playback` PASS；`npm run check:cover-update-five-times` PASS；`npm run check:playlist-song-info-restart` PASS；`npm run check:no-audio-load-on-cover-only-update` PASS；`npm run check:playback-restore` PASS；`npm run check:song-info` PASS；`npm run check:track-display` PASS；`npm run check:track-identity` PASS；`npm run check:ai-track-search` PASS；`npm run check:flac-metadata` PASS；`npm run check:prompts` PASS；`npm run check:theme-colors` PASS；`npm run check:custom-images` PASS；all-target `check:ai-assets` PASS；`npm run build` PASS；`npm run electron:compile` PASS。
 - 打包：一般沙盒 `npm run dist:release` 在 `hdiutil create` 失敗；升權重跑同一 `npm run dist:release` PASS，同步兩個 installer 到 `release-delivery/installers/`，暫存 `release/` 已移除。
-- DMG / EXE：DMG `hdiutil verify` VALID；EXE static check PASS，辨識為 Windows NSIS installer。DMG 唯讀掛載版本 / arm64 / app.asar 讀回因外部用量限制被拒絕，本輪不標記 PASS；未在 Windows 真機執行。
+- DMG / EXE：DMG `hdiutil verify` VALID；唯讀掛載讀回 `CFBundleShortVersionString` / `CFBundleVersion` 均為 0.1.28，執行檔為 Mach-O arm64，`app.asar` package version 為 0.1.28，mac AI runtime `darwin-arm64/llama-server` 存在，掛載點已卸載。EXE static check PASS，辨識為 Windows NSIS installer；未在 Windows 真機執行。
 
 0.1.28 最新 installer：
 
@@ -28,8 +28,8 @@
 - Scope: fixes the metadata save loop and full-library IndexedDB rewrites.
 - Root cause: arbitrary `tracks` changes triggered `saveTracksNow(tracks)`, and `saveTrackMetadata()` cleared and rewrote the entire tracks store, including large cover payloads.
 - Fix: removed the arbitrary autosave effect and added explicit single-track put/patch/delete APIs. Playback and duration updates no longer write cover data or replace all metadata.
-- Passed checks: metadata-save-loop source guards, playback-restore, song-info, track-display, track-identity, AI track search, FLAC metadata, prompt checks, theme colors, custom images, all-target AI assets, build, Electron compile, elevated `dist:release`, DMG verify, and Windows NSIS static check.
-- Limits: packaged GUI stress QA, DMG mount readback, real Windows install, large-folder QA, signing, and notarization remain open.
+- Passed checks: metadata-save-loop source guards, playback-restore, song-info, track-display, track-identity, AI track search, FLAC metadata, prompt checks, theme colors, custom images, all-target AI assets, build, Electron compile, elevated `dist:release`, DMG verify, read-only DMG version / arm64 / app.asar / AI runtime checks, and Windows NSIS static check.
+- Limits: packaged GUI stress QA, real Windows install, large-folder QA, signing, and notarization remain open.
 
 ## 2026-07-04 歌曲資訊面板二次寫回 hotfix 0.1.27
 

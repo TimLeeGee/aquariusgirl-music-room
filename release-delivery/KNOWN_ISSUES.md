@@ -7,7 +7,7 @@
 
 - Windows 真機尚未安裝 `Aquariusgirl Music Room Setup 0.1.28.exe` 驗證 fresh install、啟動、播放含大型封面的歌曲不卡、連續更換同一首封面 5 次不卡、播放清單歌曲資訊寫回後強制重開仍顯示最新 metadata / cover、播放/暫停連點、選擇新資料夾後重開恢復最後來源、約 4 GB / 20+ 首音樂資料夾、AI 聊天與 AI 建歌單。
 - Windows EXE 目前只有 NSIS / x64 target static check，不能宣稱 Windows 實機 PASS。
-- macOS DMG 已完成 verify；本輪唯讀掛載版本 / arm64 / app.asar 讀回因外部用量限制未完成，不能宣稱該項 PASS。
+- macOS DMG 已完成 verify 與唯讀掛載版本 / arm64 / app.asar / AI runtime 檢查；但未做 Apple Developer ID 簽章與 notarization。
 - 本輪新增的 `check:cover-update-five-times`、`check:playlist-song-info-restart` 等是 source-level regression guard，不是完整 packaged GUI 壓力測試。
 - macOS packaged GUI 滑鼠流程仍需用暫存音樂複本與隔離 profile 補驗，不可打開或修改使用者原始 Music 資料夾。
 - Windows EXE 未做 code signing，SmartScreen 提醒仍屬預期；macOS DMG 未做 Apple Developer ID 簽章與 notarization。
@@ -145,7 +145,7 @@ Document update: 2026-07-04
 
 - `Aquariusgirl Music Room Setup 0.1.28.exe` has not been installed on a real Windows machine for fresh install, launch, large-cover playback, five repeated cover updates, playlist song-info restart persistence, playback/pause click testing, latest-folder restore, a roughly 4 GB / 20+ song folder, AI chat, and AI playlist creation.
 - The Windows EXE has only NSIS / x64 target static checks, so Windows runtime behavior is not marked PASS.
-- The macOS DMG passed verify, but DMG read-only mount / arm64 / app.asar readback was blocked by external usage limits this round.
+- The macOS DMG passed verify and read-only version / arm64 / app.asar / AI runtime checks. Developer ID signing and notarization are not configured.
 - The new cover-update and playlist-restart checks are source-level regression guards, not full packaged GUI stress tests.
 - Packaged macOS GUI stress QA still needs a temp music copy and isolated profile.
 - The Windows EXE is unsigned, so SmartScreen warnings are expected. Developer ID signing and notarization are not configured for macOS.

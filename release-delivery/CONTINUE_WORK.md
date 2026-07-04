@@ -17,7 +17,7 @@ release-delivery/installers/Aquariusgirl Music Room-0.1.28-arm64.dmg
 
 - SHA-256：EXE `360394b2f88998ebfdf910d38e3a16a3be5b49be3eb92b2f548dbe7f9ce6aea6`；DMG `0f132b187542f28fbc3c614522bd337234efecbdc9a40c709b7020a760ec5913`。
 - 已通過 metadata-save-loop checks、playback-restore、song-info、track-display、track-identity、AI track search、FLAC metadata、prompt、AI assets、custom images、theme colors、build、Electron compile、升權 `npm run dist:release`、DMG verify、Windows NSIS static check。
-- 驗收限制：DMG 唯讀掛載版本 / arm64 / app.asar 讀回因外部用量限制未完成；本輪未做 packaged GUI 壓力測試與 Windows 真機。
+- 驗收限制：本輪未做 packaged GUI 壓力測試與 Windows 真機。
 
 ### 接續給下一輪 Codex
 
@@ -28,7 +28,7 @@ release-delivery/installers/Aquariusgirl Music Room-0.1.28-arm64.dmg
 - Removed arbitrary `tracks` -> full-library saves and replaced playback / duration / song-info persistence with single-track writes.
 - Latest installers are in `release-delivery/installers/`.
 - SHA-256: EXE `360394b2f88998ebfdf910d38e3a16a3be5b49be3eb92b2f548dbe7f9ce6aea6`; DMG `0f132b187542f28fbc3c614522bd337234efecbdc9a40c709b7020a760ec5913`.
-- Passed source guards, build, package, DMG verify, and Windows NSIS static check. DMG mount readback, packaged GUI stress QA, and real Windows QA remain open.
+- Passed source guards, build, package, DMG verify, read-only DMG version / arm64 / app.asar / AI runtime checks, and Windows NSIS static check. Packaged GUI stress QA and real Windows QA remain open.
 
 ## 2026-07-04 歌曲資訊面板二次寫回 hotfix 0.1.27 完成
 

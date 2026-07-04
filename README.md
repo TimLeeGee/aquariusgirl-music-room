@@ -10,7 +10,7 @@ English version: see [English Version](#english-version).
 
 本版將 `saveTrackMetadata()` 限縮為僅限整庫重建的歷史相容入口，新增 `putTrackMetadata`、`putManyTrackMetadata`、`patchTrackPlayback`、`patchTrackDuration`、`deleteTrackMetadata` 與 `replaceAllTrackMetadata`。`applyStoredTrackMetadata` 在同一次 App 執行中只做啟動補救一次；執行中由事件直接更新全域 tracks 與 IndexedDB 單曲，不再用 `storedTracks` 回灌形成循環。播放流程仍只在音訊來源真的改變時 `audio.load()`，封面 / metadata-only 更新不改 `localUrl` 或 `mediaVersion`。
 
-新增 source-level 回歸指令：`check:metadata-save-loop`、`check:no-track-save-loop`、`check:no-full-db-save-on-playback`、`check:cover-update-five-times`、`check:playlist-song-info-restart`、`check:no-audio-load-on-cover-only-update`。0.1.28 已通過這些檢查、既有 playback-restore、song-info、track-display、track-identity、AI track search、FLAC metadata、prompt、theme、custom images、all-target AI assets、build、Electron compile、升權 `dist:release`、DMG verify 與 Windows NSIS static check。DMG 唯讀掛載版本 / app.asar 讀回本輪因外部用量限制未完成；Windows 真機與 packaged GUI 壓力測試仍待補。
+新增 source-level 回歸指令：`check:metadata-save-loop`、`check:no-track-save-loop`、`check:no-full-db-save-on-playback`、`check:cover-update-five-times`、`check:playlist-song-info-restart`、`check:no-audio-load-on-cover-only-update`。0.1.28 已通過這些檢查、既有 playback-restore、song-info、track-display、track-identity、AI track search、FLAC metadata、prompt、theme、custom images、all-target AI assets、build、Electron compile、升權 `dist:release`、DMG verify、DMG 唯讀掛載版本 / arm64 / app.asar / AI runtime 檢查與 Windows NSIS static check。Windows 真機與 packaged GUI 壓力測試仍待補。
 
 0.1.27 修正版補完歌曲資訊 / 封面寫回 / IndexedDB / 播放卡頓同族問題：第一次更換封面並「套用到原始檔」後，下一次再開歌曲資訊面板可能沿用舊 draft / saving 狀態，導致第二次按鈕無反應或狀態異常；也可能讓使用者誤以為封面已保存，但重開後仍看到舊封面。
 
@@ -575,7 +575,7 @@ Aquariusgirl Music Room is a local-first music player. It can run as a Vite web 
 
 This release limits `saveTrackMetadata()` to whole-library rebuild compatibility and adds explicit single-track APIs: `putTrackMetadata`, `putManyTrackMetadata`, `patchTrackPlayback`, `patchTrackDuration`, `deleteTrackMetadata`, and `replaceAllTrackMetadata`. `applyStoredTrackMetadata` is now a one-time startup recovery path, not a live mirror from `storedTracks` back into `tracks`.
 
-0.1.28 passed source-level metadata-save-loop guards, playback-restore, song-info, track-display, track-identity, AI track search, FLAC metadata, prompt, theme, custom images, all-target AI assets, build, Electron compile, elevated `dist:release`, DMG verify, and Windows NSIS static check. DMG read-only mount / app.asar readback was blocked by external usage limits this round; real Windows and packaged GUI stress QA remain open.
+0.1.28 passed source-level metadata-save-loop guards, playback-restore, song-info, track-display, track-identity, AI track search, FLAC metadata, prompt, theme, custom images, all-target AI assets, build, Electron compile, elevated `dist:release`, DMG verify, read-only DMG version / arm64 / app.asar / AI runtime checks, and Windows NSIS static check. Real Windows and packaged GUI stress QA remain open.
 
 0.1.27 completes the song-info / cover writeback / IndexedDB / playback-stall family. After the first successful cover writeback, reopening the song-info panel could keep stale draft or saving state, so the second writeback button could appear disabled or do nothing. That could make the UI look saved while a restart still restored the previous artwork.
 
@@ -626,10 +626,8 @@ release-delivery/installers/
 
 SHA-256:
 
-- EXE: `c39676a14ce17931d20b21e22b2c9fba5239d16e43a6f449fd59b7188d67d937`
-- arm64 DMG: `6a4100871195db1e2b0c17c87b2af8fb640a5d865bfccc0765fba2e0216fcf19`
-
-0.1.28 SHA-256: EXE `360394b2f88998ebfdf910d38e3a16a3be5b49be3eb92b2f548dbe7f9ce6aea6`; arm64 DMG `0f132b187542f28fbc3c614522bd337234efecbdc9a40c709b7020a760ec5913`.
+- EXE: `360394b2f88998ebfdf910d38e3a16a3be5b49be3eb92b2f548dbe7f9ce6aea6`
+- arm64 DMG: `0f132b187542f28fbc3c614522bd337234efecbdc9a40c709b7020a760ec5913`
 
 0.1.27 historical hotfix SHA-256: EXE `c39676a14ce17931d20b21e22b2c9fba5239d16e43a6f449fd59b7188d67d937`; arm64 DMG `6a4100871195db1e2b0c17c87b2af8fb640a5d865bfccc0765fba2e0216fcf19`.
 

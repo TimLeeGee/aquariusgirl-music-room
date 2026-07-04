@@ -25,7 +25,7 @@ Gatekeeper 提醒通常是因為測試版尚未做 Apple Developer ID 簽章與 
 
 0.1.28 解除安裝方式與下方歷史說明相同；解除安裝 App 不會刪除使用者原始音樂檔。
 
-0.1.28 已完成 DMG verify；本輪唯讀掛載讀回版本 / arm64 / app.asar 因外部用量限制未完成。下一輪 packaged GUI 驗收仍須使用暫存音樂複本與隔離 profile，不可打開或修改使用者原始 Music 資料夾。
+0.1.28 已完成 DMG verify 與唯讀掛載讀回版本 / arm64 / app.asar / AI runtime 檢查。下一輪 packaged GUI 驗收仍須使用暫存音樂複本與隔離 profile，不可打開或修改使用者原始 Music 資料夾。
 
 歌曲資訊保存只保留「套用到原始檔」。寫回會修改使用者選取的原始 MP3/FLAC/M4A；操作前請確認內容正確，必要時先保留音樂檔備份。
 
@@ -175,7 +175,7 @@ Gatekeeper warnings are expected until Developer ID signing and notarization are
 
 0.1.28 uses the same uninstall steps as the historical notes below. Uninstalling the app does not delete original music files.
 
-0.1.28 passed DMG verify. DMG read-only mount / app.asar readback was blocked by external usage limits this round. Packaged GUI stress QA still needs a temp music copy and isolated profile; do not open or modify the user's original Music folder.
+0.1.28 passed DMG verify and read-only DMG version / arm64 / app.asar / AI runtime checks. Packaged GUI stress QA still needs a temp music copy and isolated profile; do not open or modify the user's original Music folder.
 
 ## 0.1.27 Historical Install Notes
 

@@ -9,7 +9,7 @@
 - 新增檢查：`check:metadata-save-loop`、`check:no-track-save-loop`、`check:no-full-db-save-on-playback`、`check:cover-update-five-times`、`check:playlist-song-info-restart`、`check:no-audio-load-on-cover-only-update`。這些是 source-level regression guard，不是完整 packaged GUI 壓力測試。
 - 驗收：上述新檢查、`check:playback-restore`、`check:song-info`、`check:track-display`、`check:track-identity`、`check:ai-track-search`、`check:flac-metadata`、`check:prompts`、`check:theme-colors`、`check:custom-images`、all-target `check:ai-assets`、`npm run build`、`npm run electron:compile`、升權 `npm run dist:release` 均通過。
 - 打包：一般沙盒 `npm run dist:release` 在 `hdiutil create` 失敗；升權重跑同一命令 PASS，已同步兩個 installer 到 `release-delivery/installers/`，暫存 `release/` 已移除。
-- DMG `hdiutil verify` VALID；EXE static check 為 NSIS installer。DMG 唯讀掛載版本 / arm64 / app.asar 讀回因外部用量限制未完成；Windows 真機與 packaged GUI 壓力測試仍未完成。
+- DMG `hdiutil verify` VALID；唯讀掛載讀回版本為 0.1.28、CFBundleVersion 為 0.1.28、執行檔為 Mach-O arm64、`app.asar` package version 為 0.1.28、mac AI runtime 存在。EXE static check 為 NSIS installer；Windows 真機與 packaged GUI 壓力測試仍未完成。
 - 最新 installer：`Aquariusgirl Music Room Setup 0.1.28.exe`、`Aquariusgirl Music Room-0.1.28-arm64.dmg`。
 - SHA-256：EXE `360394b2f88998ebfdf910d38e3a16a3be5b49be3eb92b2f548dbe7f9ce6aea6`；DMG `0f132b187542f28fbc3c614522bd337234efecbdc9a40c709b7020a760ec5913`。
 
@@ -23,7 +23,7 @@
 - Playback stats, duration, and song-info / cover edits now use single-track IndexedDB `put` / `patch` calls.
 - Latest installers are in `release-delivery/installers/`.
 - SHA-256: EXE `360394b2f88998ebfdf910d38e3a16a3be5b49be3eb92b2f548dbe7f9ce6aea6`; DMG `0f132b187542f28fbc3c614522bd337234efecbdc9a40c709b7020a760ec5913`.
-- Passed source guards, build, package, DMG verify, and Windows NSIS static check. DMG mount readback, packaged GUI stress QA, real Windows QA, signing, and notarization remain open.
+- Passed source guards, build, package, DMG verify, read-only DMG version / arm64 / app.asar / AI runtime checks, and Windows NSIS static check. Packaged GUI stress QA, real Windows QA, signing, and notarization remain open.
 
 ## 2026-07-04 歌曲資訊面板二次寫回 hotfix 0.1.27 完成
 
