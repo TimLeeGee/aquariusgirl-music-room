@@ -6,11 +6,11 @@ English version: see [English Version](#english-version).
 
 ## 目前最新版本
 
-0.1.28 修正版「Kill Metadata Save Loop / 停止歌曲資料保存迴圈」補完嚴重效能與資料同步問題：`tracks` 任意變動不再自動全庫保存，播放統計、duration、歌曲資訊 / 封面寫回都改成單曲 `put` / `patch`，避免每次播放或改封面都清空 IndexedDB tracks store 並重寫所有大型 `coverDataUrl`。
+0.1.28 修正版「Kill Metadata Save Loop / 停止歌曲資料保存迴圈」補完嚴重效能與資料同步問題：`tracks` 任意變動不再自動全庫保存，播放統計、duration、歌曲資訊 / 封面保存都改成單曲 `put` / `patch`，避免每次播放或改封面都清空 IndexedDB tracks store 並重寫所有大型 `coverDataUrl`。本版也修正播放順序：播放核心會照目前歌曲清單排序由上到下播放，手動排序與檔名排序都會一致。
 
-本版將 `saveTrackMetadata()` 限縮為僅限整庫重建的歷史相容入口，新增 `putTrackMetadata`、`putManyTrackMetadata`、`patchTrackPlayback`、`patchTrackDuration`、`deleteTrackMetadata` 與 `replaceAllTrackMetadata`。`applyStoredTrackMetadata` 在同一次 App 執行中只做啟動補救一次；執行中由事件直接更新全域 tracks 與 IndexedDB 單曲，不再用 `storedTracks` 回灌形成循環。播放流程仍只在音訊來源真的改變時 `audio.load()`，封面 / metadata-only 更新不改 `localUrl` 或 `mediaVersion`。
+本版將 `saveTrackMetadata()` 限縮為僅限整庫重建的歷史相容入口，新增 `putTrackMetadata`、`putManyTrackMetadata`、`patchTrackPlayback`、`patchTrackDuration`、`deleteTrackMetadata` 與 `replaceAllTrackMetadata`。`applyStoredTrackMetadata` 在同一次 App 執行中只做啟動補救一次；執行中由事件直接更新全域 tracks 與 IndexedDB 單曲，不再用 `storedTracks` 回灌形成循環。歌曲資訊面板現在提供「儲存到播放器」與「套用到原始檔」：前者只更新全域 tracks 與 IndexedDB 單曲、標記本地 metadata override，不修改原始音樂檔；後者仍會寫回原始檔並重新讀回該首歌。播放流程仍只在音訊來源真的改變時 `audio.load()`，封面 / metadata-only 更新不改 `localUrl` 或 `mediaVersion`；播放佇列則使用目前清單排序，不再吃未排序的原始 active track id 序列。
 
-新增 source-level 回歸指令：`check:metadata-save-loop`、`check:no-track-save-loop`、`check:no-full-db-save-on-playback`、`check:cover-update-five-times`、`check:playlist-song-info-restart`、`check:no-audio-load-on-cover-only-update`。本輪也補上 dev guard：重複 `applyStoredTrackMetadata`、播放中非預期 `readSongInfoFromOriginalFile`、同 track source 變動造成 `audio.load()` 都會 console warn。0.1.28 已通過這些檢查、既有 playback-restore、song-info、track-display、track-identity、AI track search、FLAC metadata、prompt、theme、custom images、all-target AI assets、build、Electron compile、升權 `dist:release`、DMG verify、DMG 唯讀掛載版本 / arm64 / app.asar / AI runtime 檢查與 Windows NSIS static check。Windows 真機與 packaged GUI 壓力測試仍待補。
+新增 source-level 回歸指令：`check:playback-order`、`check:metadata-save-loop`、`check:no-track-save-loop`、`check:no-full-db-save-on-playback`、`check:cover-update-five-times`、`check:playlist-song-info-restart`、`check:no-audio-load-on-cover-only-update`。本輪也補上 dev guard：重複 `applyStoredTrackMetadata`、播放中非預期 `readSongInfoFromOriginalFile`、同 track source 變動造成 `audio.load()` 都會 console warn。0.1.28 已通過這些檢查、既有 playback-restore、song-info、track-display、track-identity、AI track search、FLAC metadata、prompt、theme、custom images、all-target AI assets、build、Electron compile、升權 `dist:release`、DMG verify、DMG 唯讀掛載版本 / arm64 / app.asar / AI runtime 檢查與 Windows NSIS static check。Windows 真機與 packaged GUI 壓力測試仍待補。
 
 0.1.27 修正版補完歌曲資訊 / 封面寫回 / IndexedDB / 播放卡頓同族問題：第一次更換封面並「套用到原始檔」後，下一次再開歌曲資訊面板可能沿用舊 draft / saving 狀態，導致第二次按鈕無反應或狀態異常；也可能讓使用者誤以為封面已保存，但重開後仍看到舊封面。
 
@@ -63,8 +63,8 @@ release-delivery/installers/
 
 SHA-256：
 
-- EXE：`a0ddca439295dbc11c9f2f237d049be19875bdc8996dc4b91cdc814c2d70140a`
-- arm64 DMG：`d890f56f0c933d772735c12a6891b99257355eeffa0a742a0877507468c8bf2b`
+- EXE：`17e96d8a1a18f8e1519acafa0ee9e672da9291d8d86847c2d6d1b0e4997844c7`
+- arm64 DMG：`4002abe74b4b606290ab887b782cd646fdd0c1927295f88c2d37c2bfb5a65828`
 
 0.1.27 歷史 hotfix：修正歌曲資訊面板二次寫回 draft / saving 狀態。0.1.27 hotfix SHA-256：EXE `c39676a14ce17931d20b21e22b2c9fba5239d16e43a6f449fd59b7188d67d937`；arm64 DMG `6a4100871195db1e2b0c17c87b2af8fb640a5d865bfccc0765fba2e0216fcf19`。
 
@@ -109,7 +109,7 @@ SHA-256：
 - 拖曳音樂檔加入歌單
 - HTMLAudioElement 播放、暫停、切歌、音量、靜音、進度拖曳
 - ID3v2 metadata 與專輯封面讀取，失敗時 fallback 檔名解析
-- 歌曲資訊編輯、單曲封面更換，以及桌面版 MP3/FLAC/M4A 原始檔標籤寫回；不再提供播放器內 metadata 另存入口
+- 歌曲資訊編輯、單曲封面更換、播放器內單曲 metadata 保存，以及桌面版 MP3/FLAC/M4A 原始檔標籤寫回
 - 睡前定時停止，支援 15/30/60 分鐘、自訂分鐘、播完本首
 - Web Audio API 音樂頻譜，可關閉
 - IndexedDB 保存歌曲 metadata 與歌單資料，不保存音樂檔本體
@@ -571,9 +571,9 @@ Aquariusgirl Music Room is a local-first music player. It can run as a Vite web 
 
 ## Current Version
 
-0.1.28 "Kill Metadata Save Loop" fixes the remaining severe performance and sync path: arbitrary `tracks` changes no longer trigger full-library IndexedDB saves. Playback stats, duration updates, and song-info / cover writeback now use single-track `put` / `patch` operations instead of clearing and rewriting the whole tracks store with large `coverDataUrl` payloads.
+0.1.28 "Kill Metadata Save Loop" fixes the remaining severe performance and sync path: arbitrary `tracks` changes no longer trigger full-library IndexedDB saves. Playback stats, duration updates, and song-info / cover saves now use single-track `put` / `patch` operations instead of clearing and rewriting the whole tracks store with large `coverDataUrl` payloads.
 
-This release limits `saveTrackMetadata()` to whole-library rebuild compatibility and adds explicit single-track APIs: `putTrackMetadata`, `putManyTrackMetadata`, `patchTrackPlayback`, `patchTrackDuration`, `deleteTrackMetadata`, and `replaceAllTrackMetadata`. `applyStoredTrackMetadata` is now a one-time startup recovery path, not a live mirror from `storedTracks` back into `tracks`.
+This release limits `saveTrackMetadata()` to whole-library rebuild compatibility and adds explicit single-track APIs: `putTrackMetadata`, `putManyTrackMetadata`, `patchTrackPlayback`, `patchTrackDuration`, `deleteTrackMetadata`, and `replaceAllTrackMetadata`. The song-info panel now offers both player-local save and original-file writeback: player-local save updates global tracks plus IndexedDB only and marks metadata override, while original-file writeback reloads and saves only the edited track. `applyStoredTrackMetadata` is now a one-time startup recovery path, not a live mirror from `storedTracks` back into `tracks`.
 
 0.1.28 passed source-level metadata-save-loop guards, playback-restore, song-info, track-display, track-identity, AI track search, FLAC metadata, prompt, theme, custom images, all-target AI assets, build, Electron compile, elevated `dist:release`, DMG verify, read-only DMG version / arm64 / app.asar / AI runtime checks, and Windows NSIS static check. Real Windows and packaged GUI stress QA remain open.
 
@@ -626,8 +626,8 @@ release-delivery/installers/
 
 SHA-256:
 
-- EXE: `a0ddca439295dbc11c9f2f237d049be19875bdc8996dc4b91cdc814c2d70140a`
-- arm64 DMG: `d890f56f0c933d772735c12a6891b99257355eeffa0a742a0877507468c8bf2b`
+- EXE: `17e96d8a1a18f8e1519acafa0ee9e672da9291d8d86847c2d6d1b0e4997844c7`
+- arm64 DMG: `4002abe74b4b606290ab887b782cd646fdd0c1927295f88c2d37c2bfb5a65828`
 
 0.1.27 historical hotfix SHA-256: EXE `c39676a14ce17931d20b21e22b2c9fba5239d16e43a6f449fd59b7188d67d937`; arm64 DMG `6a4100871195db1e2b0c17c87b2af8fb640a5d865bfccc0765fba2e0216fcf19`.
 

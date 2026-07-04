@@ -7,22 +7,22 @@
 
 ## 2026-07-04 0.1.28 hotfix 發行狀態
 
-0.1.28「Kill Metadata Save Loop / 停止歌曲資料保存迴圈」修正嚴重效能與資料同步問題：播放次數、上次播放時間、duration、歌曲資訊 / 封面更新不再觸發全曲庫保存，也不再清空 tracks store 後重寫所有大型 coverDataUrl。
+0.1.28「Kill Metadata Save Loop / 停止歌曲資料保存迴圈」修正嚴重效能與資料同步問題：播放次數、上次播放時間、duration、歌曲資訊 / 封面保存不再觸發全曲庫保存，也不再清空 tracks store 後重寫所有大型 coverDataUrl。本版也修正播放順序，讓播放核心照目前歌曲清單排序由上到下播放。
 
-本版移除 `tracks` 任意變動就整庫保存的 effect，將 IndexedDB API 拆成 `putTrackMetadata`、`putManyTrackMetadata`、`patchTrackPlayback`、`patchTrackDuration`、`deleteTrackMetadata` 與 `replaceAllTrackMetadata`。`saveTrackMetadata()` 只保留為整庫重建相容入口；`applyStoredTrackMetadata` 只做啟動補救一次，不再監聽每次 `storedTracks` 更新反向覆蓋 `tracks`。2026-07-04 追加 dev guard：重複 `applyStoredTrackMetadata`、播放中非預期 `readSongInfoFromOriginalFile`、同 track source 變動造成 `audio.load()` 都會 console warn。
+本版移除 `tracks` 任意變動就整庫保存的 effect，將 IndexedDB API 拆成 `putTrackMetadata`、`putManyTrackMetadata`、`patchTrackPlayback`、`patchTrackDuration`、`deleteTrackMetadata` 與 `replaceAllTrackMetadata`。歌曲資訊面板現在提供「儲存到播放器」與「套用到原始檔」：前者只保存全域 tracks 與 IndexedDB 單曲並標記本地 metadata override，不修改原始音樂檔；後者寫回原始檔後只刷新該首歌。`saveTrackMetadata()` 只保留為整庫重建相容入口；`applyStoredTrackMetadata` 只做啟動補救一次，不再監聽每次 `storedTracks` 更新反向覆蓋 `tracks`。播放佇列改用目前排序後的 `orderedPlaybackTracks`，手動排序與檔名排序都會照畫面播放。2026-07-04 追加 dev guard：重複 `applyStoredTrackMetadata`、播放中非預期 `readSongInfoFromOriginalFile`、同 track source 變動造成 `audio.load()` 都會 console warn。
 
-通過：`check:metadata-save-loop`、`check:no-track-save-loop`、`check:no-full-db-save-on-playback`、`check:cover-update-five-times`、`check:playlist-song-info-restart`、`check:no-audio-load-on-cover-only-update`、`check:playback-restore`、`check:song-info`、`check:track-display`、`check:track-identity`、`check:ai-track-search`、`check:flac-metadata`、`check:prompts`、`check:theme-colors`、`check:custom-images`、all-target `check:ai-assets`、`npm run build`、`npm run electron:compile`、升權 `npm run dist:release`、DMG verify、DMG 唯讀掛載版本 / arm64 / app.asar / AI runtime 檢查、Windows NSIS static check。Windows 真機與 packaged GUI 壓力測試仍需驗收。
+通過：`check:playback-order`、`check:metadata-save-loop`、`check:no-track-save-loop`、`check:no-full-db-save-on-playback`、`check:cover-update-five-times`、`check:playlist-song-info-restart`、`check:no-audio-load-on-cover-only-update`、`check:playback-restore`、`check:song-info`、`check:track-display`、`check:track-identity`、`check:ai-track-search`、`check:flac-metadata`、`check:prompts`、`check:theme-colors`、`check:custom-images`、all-target `check:ai-assets`、`npm run build`、`npm run electron:compile`、升權 `npm run dist:release`、DMG verify、DMG 唯讀掛載版本 / arm64 / app.asar / AI runtime 檢查、Windows NSIS static check。Windows 真機與 packaged GUI 壓力測試仍需驗收。
 
 SHA-256：
 
-- EXE：`a0ddca439295dbc11c9f2f237d049be19875bdc8996dc4b91cdc814c2d70140a`
-- arm64 DMG：`d890f56f0c933d772735c12a6891b99257355eeffa0a742a0877507468c8bf2b`
+- EXE：`17e96d8a1a18f8e1519acafa0ee9e672da9291d8d86847c2d6d1b0e4997844c7`
+- arm64 DMG：`4002abe74b4b606290ab887b782cd646fdd0c1927295f88c2d37c2bfb5a65828`
 
 ### English Summary
 
-0.1.28 fixes the metadata save loop. Playback stats, duration updates, and song-info / cover edits now use explicit single-track IndexedDB writes instead of full-library clear-and-rewrite saves.
+0.1.28 fixes the metadata save loop. Playback stats, duration updates, and song-info / cover edits now use explicit single-track IndexedDB writes instead of full-library clear-and-rewrite saves. The song-info panel includes both player-local save and original-file writeback paths. Playback now follows the current list order for manual and filename sorts.
 
-Passed: metadata-save-loop source guards, playback-restore, song-info, track-display, track-identity, AI track search, FLAC metadata, prompt checks, theme colors, custom images, all-target AI assets, build, Electron compile, elevated `dist:release`, DMG verify, read-only DMG version / arm64 / app.asar / AI runtime checks, and Windows NSIS static check. Real Windows QA, packaged GUI stress QA, signing, and notarization remain open.
+Passed: playback-order, metadata-save-loop source guards, playback-restore, song-info, track-display, track-identity, AI track search, FLAC metadata, prompt checks, theme colors, custom images, all-target AI assets, build, Electron compile, elevated `dist:release`, DMG verify, read-only DMG version / arm64 / app.asar / AI runtime checks, and Windows NSIS static check. Real Windows QA, packaged GUI stress QA, signing, and notarization remain open.
 
 ## 2026-07-04 0.1.27 hotfix 發行狀態
 

@@ -16,6 +16,7 @@ type SongInfoPanelProps = {
   track: Track | null;
   isDesktopApp: boolean;
   onClose: () => void;
+  onSaveToPlayer: (trackId: string, draft: SongInfoDraft) => Promise<boolean>;
   onApplyToOriginal: (trackId: string, draft: SongInfoDraft) => Promise<boolean>;
   onError: (message: string) => void;
 };
@@ -69,6 +70,7 @@ export function SongInfoPanel({
   track,
   isDesktopApp,
   onClose,
+  onSaveToPlayer,
   onApplyToOriginal,
   onError,
 }: SongInfoPanelProps) {
@@ -232,6 +234,28 @@ export function SongInfoPanel({
     }
   };
 
+  const handleSaveToPlayer = async () => {
+    if (!dirty || busy || savingRef.current) return;
+
+    const validDraft = getValidDraft();
+    if (!validDraft) return;
+
+    savingRef.current = true;
+    setBusy(true);
+    try {
+      const ok = await onSaveToPlayer(track.id, validDraft);
+      if (ok) {
+        resetDraftState(createSongInfoDraft(null));
+        onClose();
+      }
+    } catch {
+      onError("儲存失敗，請稍後再試");
+    } finally {
+      savingRef.current = false;
+      setBusy(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[80] bg-aquarius-navy/60 backdrop-blur-sm">
       <aside className="ml-auto flex h-full w-full max-w-xl flex-col border-l border-white/[0.12] bg-aquarius-navy/[0.96] shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
@@ -317,6 +341,14 @@ export function SongInfoPanel({
             onClick={closePanel}
           >
             取消
+          </button>
+          <button
+            type="button"
+            className="rounded-lg border border-aquarius-pink/[0.36] bg-aquarius-pink/[0.12] px-4 py-2 text-sm font-bold text-white transition hover:bg-aquarius-pink/[0.2] disabled:cursor-not-allowed disabled:opacity-40"
+            disabled={!dirty || busy}
+            onClick={() => void handleSaveToPlayer()}
+          >
+            儲存到播放器
           </button>
           <button
             type="button"

@@ -202,7 +202,11 @@ export function useLocalTracks({
   }, [onTrackMetadataLoaded, revokeTrackArtworkUrls]);
 
   const replaceTrackSongInfo = useCallback(
-    (trackId: string, draft: SongInfoDraft) => {
+    (
+      trackId: string,
+      draft: SongInfoDraft,
+      options: { metadataOverride?: boolean } = {},
+    ) => {
       const normalized = normalizeSongInfoDraft(draft);
       const createNextTrack = (track: Track): Track => {
         const parsed = parseTrackName(track.file?.name ?? track.name);
@@ -225,7 +229,7 @@ export function useLocalTracks({
           coverMimeType: normalized.coverMimeType,
           metadataLoaded: true,
           metadataError: undefined,
-          metadataOverride: false,
+          metadataOverride: options.metadataOverride ?? false,
         };
       };
       const currentTrack = tracksRef.current.find((track) => track.id === trackId);

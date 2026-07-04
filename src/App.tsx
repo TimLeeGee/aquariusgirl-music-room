@@ -547,6 +547,13 @@ export default function App() {
     () => makeTrackSequence(playlistsState.activeTrackIds, tracks),
     [playlistsState.activeTrackIds, tracks],
   );
+  const orderedPlaybackTracks = useMemo(() => {
+    if (sortMode === "addedAt" && playlistsState.activePlaylist?.type === "normal") {
+      return playbackTracks;
+    }
+
+    return sortTracks(playbackTracks, sortMode);
+  }, [playbackTracks, playlistsState.activePlaylist, sortMode]);
   const songInfoTrack = useMemo(
     () => tracks.find((track) => track.id === songInfoTrackId) ?? null,
     [songInfoTrackId, tracks],
@@ -561,7 +568,7 @@ export default function App() {
   );
 
   const player = useAudioPlayer({
-    tracks: playbackTracks,
+    tracks: orderedPlaybackTracks,
     onInfo: showInfo,
     onError: showError,
     onTrackDuration: handleTrackDuration,
@@ -861,7 +868,7 @@ export default function App() {
 
   const filteredTracks = useMemo(() => {
     const keyword = searchKeyword.trim().toLocaleLowerCase();
-    const playlistTracks = playbackTracks;
+    const playlistTracks = orderedPlaybackTracks;
     const visibleTracks = keyword
       ? playlistTracks.filter((track) => {
           const searchable = [track.title, track.artist, track.name]
@@ -872,12 +879,8 @@ export default function App() {
         })
       : playlistTracks;
 
-    if (sortMode === "addedAt" && playlistsState.activePlaylist?.type === "normal") {
-      return visibleTracks;
-    }
-
-    return sortTracks(visibleTracks, sortMode);
-  }, [playbackTracks, playlistsState.activePlaylist, searchKeyword, sortMode]);
+    return visibleTracks;
+  }, [orderedPlaybackTracks, searchKeyword]);
 
   const getPlaylistOccurrenceIndex = useCallback(
     (trackId: string, visibleIndex: number) => {
@@ -1174,6 +1177,36 @@ export default function App() {
       showError("顯示檔案位置失敗。");
     }
   }, [player.currentTrack, showError, showInfo]);
+
+  const handleSaveSongInfoToPlayer = useCallback(
+    async (trackId: string, draft: SongInfoDraft) => {
+      const track = tracks.find((item) => item.id === trackId);
+
+      if (!track) {
+        showError("目前沒有選取歌曲。");
+        return false;
+      }
+
+      const validDraft = draft;
+      const savedTrack = replaceTrackSongInfo(track.id, validDraft, { metadataOverride: true });
+
+      if (!savedTrack) {
+        showError("儲存失敗，請稍後再試");
+        return false;
+      }
+
+      try {
+        await libraryDb.putTrackMetadata(savedTrack);
+      } catch {
+        showError("儲存失敗，請稍後再試");
+        return false;
+      }
+
+      showInfo("已儲存到播放器");
+      return true;
+    },
+    [libraryDb, replaceTrackSongInfo, showError, showInfo, tracks],
+  );
 
   const handleApplySongInfoToOriginal = useCallback(
     async (trackId: string, draft: SongInfoDraft) => {
@@ -1849,6 +1882,7 @@ export default function App() {
         track={songInfoTrack}
         isDesktopApp={isDesktopApp}
         onClose={() => setSongInfoTrackId(null)}
+        onSaveToPlayer={handleSaveSongInfoToPlayer}
         onApplyToOriginal={handleApplySongInfoToOriginal}
         onError={showError}
       />
