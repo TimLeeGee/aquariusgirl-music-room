@@ -10,6 +10,8 @@ English version: see [English Version](#english-version).
 
 這次不採用「每次歌曲資訊更新就清掉整個音樂資料庫再重載」；那會在 99 首還可忍、上萬首會變成災難。最小修法是只刷新並等待保存「剛寫回的那一首」：原始檔寫回後，播放器會重新讀回該曲 metadata，取得新的 track snapshot，並 `await` IndexedDB 立即保存完成後才顯示成功。這等於把使用者手動清庫重加會成功的原因，縮小成單曲級精準刷新，不動整個曲庫與播放清單。
 
+2026-07-03 已補完 packaged macOS 隔離驗收：先卸載並重新掛載 0.1.26 DMG，使用 `/private/tmp/aquariusgirl-0.1.26-mouse-profile` 隔離 profile，只載入 `/private/tmp/aquariusgirl-0.1.26-mouse/Plazma-test` 暫存複本，不打開使用者原始 Music 資料夾。Plazma 播放中先設為 Cover 02，再改回 Cover 01 並「套用到原始檔」；UI 顯示成功，原始 FLAC 讀回為 Cover 01（Cover 01 data URL 長度 `5789911`，Cover 02 為 `1347951`），切到 `02. BOW AND ARROW.flac` 再切回 `01. Plazma.flac` 會繼續播放且不卡，重開同隔離 profile 後 `0.1.26 Cover QA` 播放清單仍保留 Plazma。macOS 原生對話框因 `/private/tmp` 隱藏路徑與無輔助使用權限無法完整滑鼠自動選檔，資料夾與封面檔選擇使用限制在暫存路徑的本機 harness；播放、編輯面板、套用確認、切歌、重開與播放清單觀察皆在 packaged app UI 驗收。
+
 0.1.25 修正版補完 0.1.24 同族殘留：播放中更換封面或歌曲資訊後，切歌再切回同一首仍可能短暫卡住。這次不是新的功能需求，而是 `useAudioPlayer` 仍用瀏覽器正規化後的 `audio.src` 回讀值，和原始 `currentTrackSource` 比較；再加上來源 effect 依賴 duration，metadata / duration 更新可能誤判成新來源並觸發 `audio.load()`。
 
 本版改用 `loadedTrackSourceRef` 記住播放器最後指定給 audio element 的來源字串，source effect 只在 `currentTrackSource` 真的改變時重載音訊，duration 更新不再重載播放來源。`check:playback-restore` 已新增防回歸檢查，禁止 `audio.src !== currentTrackSource` 與 duration 依賴重回程式。封面寫回檢查也用真實 Plazma 暫存複本讀取 `Cover 02.jpg` 再寫回 `Cover 01.jpg`，確認 4.3 MB JPEG 可完整 roundtrip。
@@ -556,6 +558,8 @@ Aquariusgirl Music Room is a local-first music player. It can run as a Vite web 
 0.1.26 completes the remaining 0.1.24 / 0.1.25-family persistence issue. While Plazma is playing, changing its cover from cover02 back to cover01, switching to another track, and switching back could still briefly stall; after restart, the first launch could also show the old cover02 before the next launch showed cover01.
 
 This release does not clear and reload the whole music database after every song-info edit. That would work around the symptom for small libraries, but it would be the wrong design for 10k tracks. Instead, original-file writeback reloads only the edited track, gets the updated track snapshot, and waits for IndexedDB to save that exact snapshot before reporting success.
+
+Packaged macOS isolated QA was completed on 2026-07-03. The 0.1.26 DMG was remounted, the app used `/private/tmp/aquariusgirl-0.1.26-mouse-profile`, and only the temp copy at `/private/tmp/aquariusgirl-0.1.26-mouse/Plazma-test` was loaded. While Plazma was playing, Cover 02 was changed back to Cover 01 and applied to the original temp FLAC; readback confirmed Cover 01 (`5789911` data URL chars versus Cover 02 `1347951`), switching to `02. BOW AND ARROW.flac` and back kept playback moving, and after restart the `0.1.26 Cover QA` playlist still kept Plazma. Native macOS file dialogs could not be fully mouse-driven to hidden `/private/tmp` paths without accessibility permission, so folder and cover-file selection used a local temp-path harness; playback, edit-panel apply/confirm, switching, restart, and playlist observation were verified in the packaged app UI.
 
 0.1.25 completes the remaining 0.1.24-family playback stall. After changing cover art or song info while playing, switching away and back could still briefly stall because `useAudioPlayer` compared the browser-normalized `audio.src` value with the raw `currentTrackSource`, and the source effect also depended on duration updates. Metadata / duration updates could therefore look like a new source and call `audio.load()`.
 

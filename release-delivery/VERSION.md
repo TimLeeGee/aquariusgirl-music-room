@@ -11,7 +11,7 @@
 
 本版不清空整個音樂資料庫，也不為每次歌曲資訊更新重載所有歌曲。`replaceTrackSongInfo` 會回傳更新後的 `Track`；`useMusicLibraryDb.saveTracksNow()` 會沿用保存 queue 立即保存指定 snapshot；App 端在顯示成功前會等待單曲 metadata 重讀與 IndexedDB 保存完成。這是對 M1 MacBook Air 8GB 與未來上萬首曲庫較穩的最小修法。
 
-通過：先讓 `npm run check:playback-restore` 因缺少 `saveTracksNow` / 未等待 DB 保存失敗，再修到 PASS；真實 Plazma fixture `npm run check:song-info`、`npm run check:track-display`、`npm run check:track-identity`、`npm run check:ai-track-search`、`npm run check:flac-metadata`、`npm run check:prompts`、`npm run check:theme-colors`、`npm run check:custom-images`、all-target `check:ai-assets`、`npm run build`、`npm run electron:compile`、升權 `npm run dist:release`、DMG verify、DMG 唯讀掛載版本 / arm64 / app.asar / AI runtime 檢查、packaged macOS 滑鼠播放 / 切歌 / 暫停 smoke、Windows NSIS static check。封面寫回滑鼠驗收、Windows 真機與正式簽章仍需驗收。
+通過：先讓 `npm run check:playback-restore` 因缺少 `saveTracksNow` / 未等待 DB 保存失敗，再修到 PASS；真實 Plazma fixture `npm run check:song-info`、`npm run check:track-display`、`npm run check:track-identity`、`npm run check:ai-track-search`、`npm run check:flac-metadata`、`npm run check:prompts`、`npm run check:theme-colors`、`npm run check:custom-images`、all-target `check:ai-assets`、`npm run build`、`npm run electron:compile`、升權 `npm run dist:release`、DMG verify、DMG 唯讀掛載版本 / arm64 / app.asar / AI runtime 檢查、packaged macOS 隔離封面寫回 / 切歌 / 重開 / 播放清單驗收、Windows NSIS static check。macOS native dialog 選取 `/private/tmp` 暫存路徑使用 harness；Windows 真機與正式簽章仍需驗收。
 
 SHA-256：
 
@@ -22,7 +22,7 @@ SHA-256：
 
 0.1.26 fixes the remaining original-file writeback persistence race. After writeback, the app now reloads only the edited track and waits for the updated IndexedDB snapshot before reporting success. It does not clear or reload the whole music database.
 
-Passed: red/green playback-restore regression check, real Plazma song-info / cover roundtrip, track-display, track-identity, AI track search, FLAC metadata, prompt checks, theme colors, custom images, all-target AI assets, build, Electron compile, elevated `dist:release`, DMG verify, read-only DMG checks, packaged macOS mouse playback / switch-track / pause smoke, and Windows NSIS static check. Cover-writeback mouse validation, real Windows QA, and signing remain open.
+Passed: red/green playback-restore regression check, real Plazma song-info / cover roundtrip, track-display, track-identity, AI track search, FLAC metadata, prompt checks, theme colors, custom images, all-target AI assets, build, Electron compile, elevated `dist:release`, DMG verify, read-only DMG checks, packaged macOS isolated cover-writeback / switch-track / restart / playlist QA, and Windows NSIS static check. Native macOS file-dialog selection used a constrained temp-path harness; real Windows QA and signing remain open.
 
 ## 2026-07-03 0.1.25 hotfix 發行狀態
 

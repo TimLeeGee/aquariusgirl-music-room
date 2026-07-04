@@ -11,12 +11,12 @@
 - DMG `hdiutil verify` VALID；升權唯讀掛載讀回版本 `0.1.26`、CFBundleVersion `0.1.26`、Mach-O arm64、`app.asar` 存在、mac AI model/runtime 存在；Windows EXE static check 為 NSIS installer；`release/` 暫存輸出已移除。
 - 最新 installer 位於 `release-delivery/installers/`：`Aquariusgirl Music Room Setup 0.1.26.exe`、`Aquariusgirl Music Room-0.1.26-arm64.dmg`。
 - SHA-256：EXE `0486767f4ebf7cf4d0adb233f62bd1d62da0c53709895d00e1a3fc50ce94dc5d`；DMG `16acf709838b2fc1831227693aba133e47d5979ee0dc580865734d3038a2be91`。
-- GUI 驗收補做：升權掛載 0.1.26 DMG 並開啟 packaged app；用滑鼠點選 `01. Plazma.flac`、播放、切到 `02. BOW AND ARROW.flac`、再切回 `01. Plazma.flac`，進度可從 0:00 前進到 0:07，沒有卡死；再點暫停後按鈕回到「播放」。未做封面寫回滑鼠驗收，因為目前自動載入的是 `/Users/aquariusgril/Music/...` 原始音樂，不是暫存複本。
-- 限制：Windows 真機安裝與實際封面寫回 UX 仍需人工驗收。
+- GUI 驗收補做：已卸載 / 重新掛載 0.1.26 DMG，使用 `/private/tmp/aquariusgirl-0.1.26-mouse-profile` 隔離 profile，只載入 `/private/tmp/aquariusgirl-0.1.26-mouse/Plazma-test` 暫存複本。Plazma 播放中 Cover 02 -> Cover 01 套用到原始檔成功；原始 FLAC 讀回為 Cover 01（data URL 長度 `5789911`，Cover 02 為 `1347951`）；切到 `02. BOW AND ARROW.flac` 再切回 `01. Plazma.flac` 仍會播放且不卡；重開同 profile 後 `0.1.26 Cover QA` 播放清單仍保留 Plazma。
+- 驗收限制：macOS 原生對話框因 `/private/tmp` 隱藏路徑與無輔助使用權限無法完整滑鼠自動選檔，資料夾與封面檔選擇使用限制在暫存路徑的本機 harness；播放、編輯面板、套用確認、切歌、重開與播放清單觀察皆在 packaged app UI 完成。Windows 真機安裝、4 GB 資料夾與簽章仍需人工驗收。
 
 ### 接續提示詞
 
-請接續 Aquariusgirl Music Room 0.1.26 實機驗收。最新版 installer 位於 `release-delivery/installers/`，SHA-256 應為 EXE `0486767f4ebf7cf4d0adb233f62bd1d62da0c53709895d00e1a3fc50ce94dc5d`、DMG `16acf709838b2fc1831227693aba133e47d5979ee0dc580865734d3038a2be91`。先讀 `release-delivery/QA_REPORT.md`、`release-delivery/INSTALLER_STATUS.md`、`release-delivery/KNOWN_ISSUES.md`。重點驗收：播放中 Plazma cover02 -> cover01 後切歌再切回不卡、第一次重開就保留 cover01、播放清單不掉歌、播放/暫停、最後資料夾恢復、4 GB / 20+ 首資料夾、歌曲資訊寫回、AI、Mini/dialog focus。不要清整個曲庫當修法；0.1.26 正確方向是單曲寫回後 await IndexedDB 保存。文件更新只追加新版紀錄，不刪舊歷史。
+請接續 Aquariusgirl Music Room 0.1.26 Windows / 大資料夾驗收。最新版 installer 位於 `release-delivery/installers/`，SHA-256 應為 EXE `0486767f4ebf7cf4d0adb233f62bd1d62da0c53709895d00e1a3fc50ce94dc5d`、DMG `16acf709838b2fc1831227693aba133e47d5979ee0dc580865734d3038a2be91`。先讀 `release-delivery/QA_REPORT.md`、`release-delivery/INSTALLER_STATUS.md`、`release-delivery/KNOWN_ISSUES.md`。macOS packaged 隔離 profile 已驗證 Plazma cover02 -> cover01 寫回、切歌再切回不卡、第一次重開仍保留 Cover 01、播放清單不掉歌；但 native dialog 選檔使用暫存 harness。下一步重點：Windows fresh install、播放/暫停、最後資料夾恢復、4 GB / 20+ 首資料夾、AI、Mini/dialog focus、簽章。不要清整個曲庫當修法；0.1.26 正確方向是單曲寫回後 await IndexedDB 保存。文件更新只追加新版紀錄，不刪舊歷史。
 
 ## 2026-07-03 Single-Track Writeback Persistence Hotfix 0.1.26 Complete
 
@@ -25,7 +25,7 @@
 - Fix: original-file writeback now reloads only the edited track and awaits `libraryDb.saveTracksNow(...)` before showing success.
 - Latest installers: `Aquariusgirl Music Room Setup 0.1.26.exe`, `Aquariusgirl Music Room-0.1.26-arm64.dmg`.
 - SHA-256: EXE `0486767f4ebf7cf4d0adb233f62bd1d62da0c53709895d00e1a3fc50ce94dc5d`; DMG `16acf709838b2fc1831227693aba133e47d5979ee0dc580865734d3038a2be91`.
-- Passed source checks, build, package, DMG verify, read-only DMG metadata checks, packaged macOS mouse playback / switch-track / pause smoke, and Windows NSIS static check. Cover-writeback mouse validation and real Windows QA remain open.
+- Passed source checks, build, package, DMG verify, read-only DMG metadata checks, packaged macOS isolated cover-writeback / switch-track / restart / playlist QA, and Windows NSIS static check. Native macOS file-dialog selection used a temp-path harness; real Windows QA remains open.
 
 ## 2026-07-03 audio source 誤重載 hotfix 0.1.25 完成
 

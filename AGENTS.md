@@ -2,7 +2,7 @@
 
 ## 快速接手
 
-- Aquariusgirl Music Room 是 React + TypeScript + Vite + Electron 的本地音樂播放器，目前版本是 `0.1.18`。
+- Aquariusgirl Music Room 是 React + TypeScript + Vite + Electron 的本地音樂播放器，目前版本是 `0.1.26`。
 - 主程式在 `src/`，Electron main/preload 在 `electron/`，打包與檢查腳本在 `scripts/`。
 - 發行與驗收紀錄在 `release-delivery/`；改版前先讀 `release-delivery/QA_REPORT.md` 與 `release-delivery/README.md`。
 - AI prompt 在 `private/prompts/`，GGUF 模型與 llama.cpp runtime 放在 `resources/ai/`；大型模型與 installer 不進 Git。
@@ -29,3 +29,5 @@
 - 程式修改：至少跑 `npm run build` 與 `npm run electron:compile`，再依改動範圍跑相關 `check:*`。
 - 只有 app code、資源、版本或打包設定變更，或使用者明確要求時，才重打 installer。
 - macOS 可驗 DMG；在 macOS 上只能做 Windows EXE static check，不可宣稱 Windows 真機已驗證。
+- 封面 / 歌曲資訊寫回驗收必須使用暫存音樂複本與隔離 profile，不可打開或修改使用者原始 Music 資料夾；若 macOS 原生檔案對話框無法自動操作，需明確記錄哪些步驟使用受限 harness、哪些步驟由 packaged UI 滑鼠完成。
+- 發佈到 GitHub main 前，根目錄 `README.md` / `CONTINUE_WORK.md` / `AGENTS.md` 與 `release-delivery/*.md` 都要補最新紀錄，保留舊歷史，再 push 並讀回 `origin/main` 確認。

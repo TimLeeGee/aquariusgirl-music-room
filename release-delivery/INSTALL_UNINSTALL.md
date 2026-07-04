@@ -25,6 +25,8 @@ Gatekeeper 提醒通常是因為測試版尚未做 Apple Developer ID 簽章與 
 
 0.1.26 解除安裝方式與下方歷史說明相同；解除安裝 App 不會刪除使用者原始音樂檔。
 
+0.1.26 packaged macOS 隔離驗收已用暫存 Plazma 複本確認封面 Cover 02 -> Cover 01 寫回、切歌再切回、重開後封面保留與播放清單保留；驗收未打開使用者原始 Music 資料夾。macOS native dialog 選取 `/private/tmp` 暫存路徑時使用 harness，Windows 真機仍需另驗。
+
 歌曲資訊保存只保留「套用到原始檔」。寫回會修改使用者選取的原始 MP3/FLAC/M4A；操作前請確認內容正確，必要時先保留音樂檔備份。
 
 ## 0.1.25 歷史安裝說明
@@ -138,6 +140,8 @@ SmartScreen warnings are expected for unsigned test builds.
 Gatekeeper warnings are expected until Developer ID signing and notarization are configured.
 
 0.1.26 uses the same uninstall steps as the historical notes below. Uninstalling the app does not delete original music files.
+
+0.1.26 packaged macOS isolated QA used a temp Plazma copy and confirmed Cover 02 -> Cover 01 writeback, switching away and back, restart cover persistence, and playlist retention without opening the user's original Music folder. Native macOS dialog selection for `/private/tmp` used a harness; real Windows QA remains separate.
 
 Song info saving now only writes back to the original file. Writeback modifies the selected original MP3/FLAC/M4A, so verify the edit first and keep a backup when needed.
 

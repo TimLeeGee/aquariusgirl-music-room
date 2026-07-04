@@ -9,7 +9,7 @@
 
 模型仍為 `resources/ai/models/qwen3.5-0.8b.gguf`，532,517,120 bytes，SHA-256 `bd258782e35f7f458f8aced1adc053e6e92e89bc735ba3be89d38a06121dc517`。
 
-驗收：`npm run check:playback-restore`、真實 Plazma fixture `npm run check:song-info`、`npm run check:track-display`、`npm run check:track-identity`、`npm run check:ai-track-search`、`npm run check:flac-metadata`、`npm run check:prompts`、`npm run check:theme-colors`、`npm run check:custom-images`、all-target `check:ai-assets`、`npm run build`、`npm run electron:compile`、升權 `npm run dist:release` 均通過。DMG `hdiutil verify` VALID；唯讀掛載後版本為 0.1.26、執行檔為 Mach-O arm64、`app.asar` 與 mac AI model/runtime 存在。packaged macOS 滑鼠 smoke 已補做：播放 `01. Plazma.flac`、切到 `02. BOW AND ARROW.flac`、切回 `01. Plazma.flac` 後進度前進且暫停可用。EXE static check 為 Windows NSIS installer；`release/` 暫存輸出已移除，唯一交付位置是 `release-delivery/installers/`。封面寫回滑鼠驗收未做，因為載入來源是使用者原始 Music 路徑；未在 Windows 真機執行。
+驗收：`npm run check:playback-restore`、真實 Plazma fixture `npm run check:song-info`、`npm run check:track-display`、`npm run check:track-identity`、`npm run check:ai-track-search`、`npm run check:flac-metadata`、`npm run check:prompts`、`npm run check:theme-colors`、`npm run check:custom-images`、all-target `check:ai-assets`、`npm run build`、`npm run electron:compile`、升權 `npm run dist:release` 均通過。DMG `hdiutil verify` VALID；唯讀掛載後版本為 0.1.26、執行檔為 Mach-O arm64、`app.asar` 與 mac AI model/runtime 存在。packaged macOS 隔離驗收已補做：只載入 `/private/tmp/aquariusgirl-0.1.26-mouse/Plazma-test` 暫存複本，Plazma 播放中 Cover 02 -> Cover 01 套用到原始檔成功，外部讀回原始 FLAC 為 Cover 01（data URL 長度 `5789911`；Cover 02 為 `1347951`），切到 `02. BOW AND ARROW.flac` 再切回不卡，重開同 profile 後 `0.1.26 Cover QA` 播放清單仍保留 Plazma。macOS native dialog 選取 `/private/tmp` 暫存路徑使用 harness；EXE static check 為 Windows NSIS installer；`release/` 暫存輸出已移除，唯一交付位置是 `release-delivery/installers/`；未在 Windows 真機執行。
 
 ### English Status
 
@@ -18,7 +18,7 @@
 - `Aquariusgirl Music Room Setup 0.1.26.exe`: 667,496,468 bytes, SHA-256 `0486767f4ebf7cf4d0adb233f62bd1d62da0c53709895d00e1a3fc50ce94dc5d`
 - `Aquariusgirl Music Room-0.1.26-arm64.dmg`: 684,434,117 bytes, SHA-256 `16acf709838b2fc1831227693aba133e47d5979ee0dc580865734d3038a2be91`
 
-Passed: playback-restore, real Plazma song-info / cover roundtrip, track-display, track-identity, AI track search, FLAC metadata, prompt checks, theme colors, custom images, all-target AI assets, build, Electron compile, elevated `dist:release`, DMG verify, read-only DMG checks, packaged macOS mouse playback / switch-track / pause smoke, and Windows NSIS static check. Cover-writeback mouse validation, real Windows QA, signing, and notarization remain open.
+Passed: playback-restore, real Plazma song-info / cover roundtrip, track-display, track-identity, AI track search, FLAC metadata, prompt checks, theme colors, custom images, all-target AI assets, build, Electron compile, elevated `dist:release`, DMG verify, read-only DMG checks, packaged macOS isolated cover-writeback / switch-track / restart / playlist QA, and Windows NSIS static check. Native macOS file-dialog selection used a constrained temp-path harness; real Windows QA, signing, and notarization remain open.
 
 ## 2026-07-03 0.1.25 狀態（歷史：audio source 誤重載修正）
 
