@@ -8,7 +8,8 @@
 - `src/storage/indexedDb.ts` 新增單曲 API：`putTrackMetadata`、`putManyTrackMetadata`、`patchTrackPlayback`、`patchTrackDuration`、`deleteTrackMetadata`、`replaceAllTrackMetadata`。`saveTrackMetadata()` 僅限整庫重建相容入口。
 - `src/App.tsx` 啟動回灌 `applyStoredTrackMetadata` 同一次執行只做一次；執行中「儲存到播放器」會更新 tracks state 並 `await putTrackMetadata(savedTrack)`，不修改原始音樂檔；「套用到原始檔」會寫回原檔、重讀單曲，再 `await putTrackMetadata(reloadedTrack)`。
 - 播放順序修正：`src/App.tsx` 會先依目前排序產生 `orderedPlaybackTracks` 再交給 `useAudioPlayer`；手動排序與檔名排序都照畫面由上到下播放，搜尋只篩選畫面，不縮短播放核心佇列。
-- 新增 source-level regression scripts：`check:playback-order`、`check:metadata-save-loop`、`check:no-track-save-loop`、`check:no-full-db-save-on-playback`、`check:cover-update-five-times`、`check:playlist-song-info-restart`、`check:no-audio-load-on-cover-only-update`；`check:playback-restore` 也防守「儲存到播放器」單曲保存流程。
+- `TrackList` 改成只 render 可見窗口與 overscan，避免上萬首曲庫一次產生上萬個 DOM row。
+- 新增 source-level regression scripts：`check:playback-order`、`check:track-list-virtualization`、`check:metadata-save-loop`、`check:no-track-save-loop`、`check:no-full-db-save-on-playback`、`check:cover-update-five-times`、`check:playlist-song-info-restart`、`check:no-audio-load-on-cover-only-update`；`check:playback-restore` 也防守「儲存到播放器」單曲保存流程。
 - 追加 dev guard：重複 `applyStoredTrackMetadata`、播放中非預期 `readSongInfoFromOriginalFile`、同 track source 變動造成 `audio.load()` 都會 console warn，並由 `check:metadata-save-loop` 防回歸。
 - 0.1.28 installer 位於：
 
@@ -17,22 +18,23 @@ release-delivery/installers/Aquariusgirl Music Room Setup 0.1.28.exe
 release-delivery/installers/Aquariusgirl Music Room-0.1.28-arm64.dmg
 ```
 
-- SHA-256：EXE `17e96d8a1a18f8e1519acafa0ee9e672da9291d8d86847c2d6d1b0e4997844c7`；DMG `4002abe74b4b606290ab887b782cd646fdd0c1927295f88c2d37c2bfb5a65828`。
-- 已通過 playback-order、metadata-save-loop checks、playback-restore、song-info、track-display、track-identity、AI track search、FLAC metadata、prompt、AI assets、custom images、theme colors、build、Electron compile、升權 `npm run dist:release`、DMG verify、Windows NSIS static check。
+- SHA-256：EXE `bf58e089f85d0653336e017dc5ec2425200639f7b89eb4363a95349875ece141`；DMG `246562abf9eaed00e456ff92f9e8222932ff6a08a393b73daa32dde6639ad8a6`。
+- 已通過 playback-order、track-list-virtualization、metadata-save-loop checks、playback-restore、song-info、track-display、track-identity、AI track search、FLAC metadata、prompt、AI assets、custom images、theme colors、build、Electron compile、升權 `npm run dist:release`、DMG verify、DMG 唯讀掛載版本 / arm64 / app.asar / AI model / prompts / runtime 檢查、Windows NSIS static check。
 - 驗收限制：本輪未做 packaged GUI 壓力測試與 Windows 真機。
 
 ### 接續給下一輪 Codex
 
-請接續 Aquariusgirl Music Room 0.1.28 packaged GUI / Windows 驗收。最新版 installer 位於 `release-delivery/installers/`，SHA-256 應為 EXE `17e96d8a1a18f8e1519acafa0ee9e672da9291d8d86847c2d6d1b0e4997844c7`、DMG `4002abe74b4b606290ab887b782cd646fdd0c1927295f88c2d37c2bfb5a65828`。先讀 `release-delivery/QA_REPORT.md`、`release-delivery/INSTALLER_STATUS.md`、`release-delivery/KNOWN_ISSUES.md`。重點驗證：手動排序與檔名排序播放都照目前歌曲清單由上到下；連續換同一首封面 5 次不卡；播放大型封面歌曲不全庫保存；播放清單中歌曲資訊 / 封面本機保存或原始檔寫回後強制重開仍顯示最新資料；封面更新不觸發同來源 `audio.load()`。使用暫存音樂複本與隔離 profile，不可打開或修改使用者原始 Music 資料夾。
+請接續 Aquariusgirl Music Room 0.1.28 packaged GUI / Windows 驗收。最新版 installer 位於 `release-delivery/installers/`，SHA-256 應為 EXE `bf58e089f85d0653336e017dc5ec2425200639f7b89eb4363a95349875ece141`、DMG `246562abf9eaed00e456ff92f9e8222932ff6a08a393b73daa32dde6639ad8a6`。先讀 `release-delivery/QA_REPORT.md`、`release-delivery/INSTALLER_STATUS.md`、`release-delivery/KNOWN_ISSUES.md`。重點驗證：手動排序與檔名排序播放都照目前歌曲清單由上到下；大清單滑動只 render 可見窗口且不卡；連續換同一首封面 5 次不卡；播放大型封面歌曲不全庫保存；播放清單中歌曲資訊 / 封面本機保存或原始檔寫回後強制重開仍顯示最新資料；封面更新不觸發同來源 `audio.load()`。使用暫存音樂複本與隔離 profile，不可打開或修改使用者原始 Music 資料夾。
 
 ## 2026-07-04 Kill Metadata Save Loop Hotfix 0.1.28 Complete
 
 - Removed arbitrary `tracks` -> full-library saves and replaced playback / duration / song-info persistence with single-track writes.
 - The song-info panel includes player-local save, which writes only global tracks plus IndexedDB and does not touch the original file.
 - Playback now follows the current list order for manual and filename sorts.
+- TrackList now renders only the visible window plus overscan for large libraries.
 - Latest installers are in `release-delivery/installers/`.
-- SHA-256: EXE `17e96d8a1a18f8e1519acafa0ee9e672da9291d8d86847c2d6d1b0e4997844c7`; DMG `4002abe74b4b606290ab887b782cd646fdd0c1927295f88c2d37c2bfb5a65828`.
-- Passed source guards, build, package, DMG verify, read-only DMG version / arm64 / app.asar / AI runtime checks, and Windows NSIS static check. Packaged GUI stress QA and real Windows QA remain open.
+- SHA-256: EXE `bf58e089f85d0653336e017dc5ec2425200639f7b89eb4363a95349875ece141`; DMG `246562abf9eaed00e456ff92f9e8222932ff6a08a393b73daa32dde6639ad8a6`.
+- Passed source guards, TrackList windowing check, build, package, DMG verify, read-only DMG version / arm64 / app.asar / AI model / prompts / runtime checks, and Windows NSIS static check. Packaged GUI stress QA and real Windows QA remain open.
 
 ## 2026-07-04 歌曲資訊面板二次寫回 hotfix 0.1.27 完成
 

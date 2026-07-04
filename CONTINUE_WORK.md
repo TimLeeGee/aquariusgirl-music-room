@@ -8,17 +8,18 @@
 - 歌曲資訊面板補回「儲存到播放器」：只保存全域 tracks 與 IndexedDB 單曲並標記本地 metadata override，不修改原始音樂檔；「套用到原始檔」仍需寫回原檔、重新讀回該首歌並完成單曲 IndexedDB 保存後才顯示成功。
 - 播放流程：播放只 patch playCount / lastPlayedAt；loadedmetadata 只 patch duration；封面 / metadata-only 更新不改 `localUrl`、不改 `mediaVersion`、不觸發同來源 `audio.load()`。
 - 播放順序修正：播放器核心現在使用目前歌曲清單排序後的 `orderedPlaybackTracks`；手動排序與檔名排序都會照畫面由上到下播放，搜尋只篩選畫面，不縮短播放核心佇列。
-- 新增檢查：`check:playback-order`、`check:metadata-save-loop`、`check:no-track-save-loop`、`check:no-full-db-save-on-playback`、`check:cover-update-five-times`、`check:playlist-song-info-restart`、`check:no-audio-load-on-cover-only-update`；`check:playback-restore` 也會確認「儲存到播放器」使用 `replaceTrackSongInfo(..., { metadataOverride: true })` 後 `await putTrackMetadata(savedTrack)`。這些是 source-level regression guard，不是完整 packaged GUI 壓力測試。
+- 歌曲清單效能修正：`TrackList` 改成只 render 目前可見窗口與 overscan，不再對上萬首曲庫一次 `tracks.map` 產生上萬個 DOM row。
+- 新增檢查：`check:playback-order`、`check:track-list-virtualization`、`check:metadata-save-loop`、`check:no-track-save-loop`、`check:no-full-db-save-on-playback`、`check:cover-update-five-times`、`check:playlist-song-info-restart`、`check:no-audio-load-on-cover-only-update`；`check:playback-restore` 也會確認「儲存到播放器」使用 `replaceTrackSongInfo(..., { metadataOverride: true })` 後 `await putTrackMetadata(savedTrack)`。這些是 source-level regression guard，不是完整 packaged GUI 壓力測試。
 - 追加 dev guard：重複 `applyStoredTrackMetadata`、播放中非預期 `readSongInfoFromOriginalFile`、同 track source 變動造成 `audio.load()` 都會 console warn，並由 `check:metadata-save-loop` 防回歸。
-- 驗收：上述新檢查、`check:playback-order`、`check:playback-restore`、`check:song-info`、`check:track-display`、`check:track-identity`、`check:ai-track-search`、`check:flac-metadata`、`check:prompts`、`check:theme-colors`、`check:custom-images`、all-target `check:ai-assets`、`npm run build`、`npm run electron:compile`、升權 `npm run dist:release` 均通過。
+- 驗收：上述新檢查、`check:playback-order`、`check:track-list-virtualization`、`check:playback-restore`、`check:song-info`、`check:track-display`、`check:track-identity`、`check:ai-track-search`、`check:flac-metadata`、`check:prompts`、`check:theme-colors`、`check:custom-images`、all-target `check:ai-assets`、`npm run build`、`npm run electron:compile`、升權 `npm run dist:release` 均通過。
 - 打包：一般沙盒 `npm run dist:release` 在 `hdiutil create` 失敗；升權重跑同一命令 PASS，已同步兩個 installer 到 `release-delivery/installers/`，暫存 `release/` 已移除。
-- DMG `hdiutil verify` VALID；唯讀掛載讀回版本為 0.1.28、CFBundleVersion 為 0.1.28、執行檔為 Mach-O arm64、`app.asar` package version 為 0.1.28、mac AI runtime 存在。EXE static check 為 NSIS installer；Windows 真機與 packaged GUI 壓力測試仍未完成。
+- DMG `hdiutil verify` VALID；唯讀掛載讀回版本為 0.1.28、CFBundleVersion 為 0.1.28、執行檔為 Mach-O arm64、`app.asar` package version 為 0.1.28、mac AI model / prompts / runtime 存在。EXE static check 為 NSIS installer；Windows 真機與 packaged GUI 壓力測試仍未完成。
 - 最新 installer：`Aquariusgirl Music Room Setup 0.1.28.exe`、`Aquariusgirl Music Room-0.1.28-arm64.dmg`。
-- SHA-256：EXE `17e96d8a1a18f8e1519acafa0ee9e672da9291d8d86847c2d6d1b0e4997844c7`；DMG `4002abe74b4b606290ab887b782cd646fdd0c1927295f88c2d37c2bfb5a65828`。
+- SHA-256：EXE `bf58e089f85d0653336e017dc5ec2425200639f7b89eb4363a95349875ece141`；DMG `246562abf9eaed00e456ff92f9e8222932ff6a08a393b73daa32dde6639ad8a6`。
 
 ### 接續提示詞
 
-請接續 Aquariusgirl Music Room 0.1.28 packaged GUI / Windows 驗收。最新版 installer 位於 `release-delivery/installers/`，SHA-256 應為 EXE `17e96d8a1a18f8e1519acafa0ee9e672da9291d8d86847c2d6d1b0e4997844c7`、DMG `4002abe74b4b606290ab887b782cd646fdd0c1927295f88c2d37c2bfb5a65828`。先讀 `release-delivery/QA_REPORT.md`、`release-delivery/INSTALLER_STATUS.md`、`release-delivery/KNOWN_ISSUES.md`。重點驗證：手動排序與檔名排序播放都照目前歌曲清單由上到下；同一首連續換封面 5 次不卡；播放含大型 coverDataUrl 的歌曲不整庫保存；播放清單歌曲資訊 / 封面本機保存或原始檔寫回後強制重開仍顯示最新資料；封面更新不觸發同來源 `audio.load()`。使用暫存音樂複本與隔離 profile，不可打開或修改使用者原始 Music 資料夾。不要用清 IndexedDB、重掃全曲庫或 debounce 當修法。
+請接續 Aquariusgirl Music Room 0.1.28 packaged GUI / Windows 驗收。最新版 installer 位於 `release-delivery/installers/`，SHA-256 應為 EXE `bf58e089f85d0653336e017dc5ec2425200639f7b89eb4363a95349875ece141`、DMG `246562abf9eaed00e456ff92f9e8222932ff6a08a393b73daa32dde6639ad8a6`。先讀 `release-delivery/QA_REPORT.md`、`release-delivery/INSTALLER_STATUS.md`、`release-delivery/KNOWN_ISSUES.md`。重點驗證：手動排序與檔名排序播放都照目前歌曲清單由上到下；大清單滑動時只需 render 可見窗口且不卡；同一首連續換封面 5 次不卡；播放含大型 coverDataUrl 的歌曲不整庫保存；播放清單歌曲資訊 / 封面本機保存或原始檔寫回後強制重開仍顯示最新資料；封面更新不觸發同來源 `audio.load()`。使用暫存音樂複本與隔離 profile，不可打開或修改使用者原始 Music 資料夾。不要用清 IndexedDB、重掃全曲庫或 debounce 當修法。
 
 ## 2026-07-04 Kill Metadata Save Loop Hotfix 0.1.28 Complete
 
@@ -26,9 +27,10 @@
 - Playback stats, duration, and song-info / cover edits now use single-track IndexedDB `put` / `patch` calls.
 - The song-info panel now includes player-local save, which updates global tracks plus IndexedDB only and does not touch the original file.
 - Playback now follows the current list order for manual and filename sorts.
+- TrackList now renders only the visible window plus overscan, so large libraries do not create one DOM row per track.
 - Latest installers are in `release-delivery/installers/`.
-- SHA-256: EXE `17e96d8a1a18f8e1519acafa0ee9e672da9291d8d86847c2d6d1b0e4997844c7`; DMG `4002abe74b4b606290ab887b782cd646fdd0c1927295f88c2d37c2bfb5a65828`.
-- Passed source guards, build, package, DMG verify, read-only DMG version / arm64 / app.asar / AI runtime checks, and Windows NSIS static check. Packaged GUI stress QA, real Windows QA, signing, and notarization remain open.
+- SHA-256: EXE `bf58e089f85d0653336e017dc5ec2425200639f7b89eb4363a95349875ece141`; DMG `246562abf9eaed00e456ff92f9e8222932ff6a08a393b73daa32dde6639ad8a6`.
+- Passed source guards, TrackList windowing check, build, package, DMG verify, read-only DMG version / arm64 / app.asar / AI model / prompts / runtime checks, and Windows NSIS static check. Packaged GUI stress QA, real Windows QA, signing, and notarization remain open.
 
 ## 2026-07-04 歌曲資訊面板二次寫回 hotfix 0.1.27 完成
 

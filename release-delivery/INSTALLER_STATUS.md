@@ -2,23 +2,23 @@
 
 ## 2026-07-04 0.1.28 最新狀態（Kill Metadata Save Loop / 停止歌曲資料保存迴圈）
 
-本輪把版本更新為 0.1.28，重點是停止 tracks 任意變動造成的全曲庫 IndexedDB 保存迴圈。播放統計、duration、歌曲資訊 / 封面保存都改為單曲 `put` / `patch`，不再每次播放或換封面就清空 tracks store 並重寫所有大型 coverDataUrl。歌曲資訊面板補回「儲存到播放器」入口，只保存全域 tracks 與 IndexedDB 單曲並標記本地 metadata override，不修改原始音樂檔。本輪也修正播放佇列未跟隨畫面排序的問題；手動排序與檔名排序都會照目前歌曲清單由上到下播放。
+本輪把版本更新為 0.1.28，重點是停止 tracks 任意變動造成的全曲庫 IndexedDB 保存迴圈。播放統計、duration、歌曲資訊 / 封面保存都改為單曲 `put` / `patch`，不再每次播放或換封面就清空 tracks store 並重寫所有大型 coverDataUrl。歌曲資訊面板補回「儲存到播放器」入口，只保存全域 tracks 與 IndexedDB 單曲並標記本地 metadata override，不修改原始音樂檔。本輪也修正播放佇列未跟隨畫面排序的問題；手動排序與檔名排序都會照目前歌曲清單由上到下播放。`TrackList` 只 render 可見窗口與 overscan，避免上萬首曲庫一次產生上萬個 DOM row。
 
-- `Aquariusgirl Music Room Setup 0.1.28.exe`：667,497,659 bytes，SHA-256 `17e96d8a1a18f8e1519acafa0ee9e672da9291d8d86847c2d6d1b0e4997844c7`
-- `Aquariusgirl Music Room-0.1.28-arm64.dmg`：684,453,285 bytes，SHA-256 `4002abe74b4b606290ab887b782cd646fdd0c1927295f88c2d37c2bfb5a65828`
+- `Aquariusgirl Music Room Setup 0.1.28.exe`：667,497,666 bytes，SHA-256 `bf58e089f85d0653336e017dc5ec2425200639f7b89eb4363a95349875ece141`
+- `Aquariusgirl Music Room-0.1.28-arm64.dmg`：684,468,066 bytes，SHA-256 `246562abf9eaed00e456ff92f9e8222932ff6a08a393b73daa32dde6639ad8a6`
 
 模型仍為 `resources/ai/models/qwen3.5-0.8b.gguf`，532,517,120 bytes，SHA-256 `bd258782e35f7f458f8aced1adc053e6e92e89bc735ba3be89d38a06121dc517`。
 
-驗收：`npm run check:playback-order`、`npm run check:metadata-save-loop`、`npm run check:no-track-save-loop`、`npm run check:no-full-db-save-on-playback`、`npm run check:cover-update-five-times`、`npm run check:playlist-song-info-restart`、`npm run check:no-audio-load-on-cover-only-update`、`npm run check:playback-restore`、`npm run check:song-info`、`npm run check:track-display`、`npm run check:track-identity`、`npm run check:ai-track-search`、`npm run check:flac-metadata`、`npm run check:prompts`、`npm run check:theme-colors`、`npm run check:custom-images`、all-target `check:ai-assets`、`npm run build`、`npm run electron:compile`、升權 `npm run dist:release` 均通過。新增 dev guard：重複 `applyStoredTrackMetadata`、播放中非預期 `readSongInfoFromOriginalFile`、同 track source 變動造成 `audio.load()` 都會 console warn。DMG `hdiutil verify` VALID；唯讀掛載後版本為 0.1.28、CFBundleVersion 為 0.1.28、執行檔為 Mach-O arm64、`app.asar` package version 為 0.1.28、mac AI runtime 存在。EXE static check 為 Windows NSIS installer；`release/` 暫存輸出已移除，唯一交付位置是 `release-delivery/installers/`；未在 Windows 真機執行。
+驗收：`npm run check:playback-order`、`npm run check:track-list-virtualization`、`npm run check:metadata-save-loop`、`npm run check:no-track-save-loop`、`npm run check:no-full-db-save-on-playback`、`npm run check:cover-update-five-times`、`npm run check:playlist-song-info-restart`、`npm run check:no-audio-load-on-cover-only-update`、`npm run check:playback-restore`、`npm run check:song-info`、`npm run check:track-display`、`npm run check:track-identity`、`npm run check:ai-track-search`、`npm run check:flac-metadata`、`npm run check:prompts`、`npm run check:theme-colors`、`npm run check:custom-images`、all-target `check:ai-assets`、`npm run build`、`npm run electron:compile`、升權 `npm run dist:release` 均通過。新增 dev guard：重複 `applyStoredTrackMetadata`、播放中非預期 `readSongInfoFromOriginalFile`、同 track source 變動造成 `audio.load()` 都會 console warn。DMG `hdiutil verify` VALID；唯讀掛載後版本為 0.1.28、CFBundleVersion 為 0.1.28、執行檔為 Mach-O arm64、`app.asar` package version 為 0.1.28、mac AI model / prompts / runtime 存在。EXE static check 為 Windows NSIS installer；`release/` 暫存輸出已移除，唯一交付位置是 `release-delivery/installers/`；未在 Windows 真機執行。
 
 ### English Status
 
-0.1.28 fixes the metadata save loop. Playback stats, duration updates, and song-info / cover edits now use single-track `put` / `patch` writes instead of clearing and rewriting the full tracks store. The song-info panel now also has a player-local save path that updates global tracks plus IndexedDB only, without touching the original audio file. Playback now follows the current list order for manual and filename sorts.
+0.1.28 fixes the metadata save loop. Playback stats, duration updates, and song-info / cover edits now use single-track `put` / `patch` writes instead of clearing and rewriting the full tracks store. The song-info panel now also has a player-local save path that updates global tracks plus IndexedDB only, without touching the original audio file. Playback now follows the current list order for manual and filename sorts. TrackList renders only the visible window plus overscan for large libraries.
 
-- `Aquariusgirl Music Room Setup 0.1.28.exe`: 667,497,659 bytes, SHA-256 `17e96d8a1a18f8e1519acafa0ee9e672da9291d8d86847c2d6d1b0e4997844c7`
-- `Aquariusgirl Music Room-0.1.28-arm64.dmg`: 684,453,285 bytes, SHA-256 `4002abe74b4b606290ab887b782cd646fdd0c1927295f88c2d37c2bfb5a65828`
+- `Aquariusgirl Music Room Setup 0.1.28.exe`: 667,497,666 bytes, SHA-256 `bf58e089f85d0653336e017dc5ec2425200639f7b89eb4363a95349875ece141`
+- `Aquariusgirl Music Room-0.1.28-arm64.dmg`: 684,468,066 bytes, SHA-256 `246562abf9eaed00e456ff92f9e8222932ff6a08a393b73daa32dde6639ad8a6`
 
-Passed: playback-order, metadata-save-loop guards, playback-restore, song-info, track-display, track-identity, AI track search, FLAC metadata, prompt checks, theme colors, custom images, all-target AI assets, build, Electron compile, elevated `dist:release`, DMG verify, read-only DMG version / arm64 / app.asar / AI runtime checks, and Windows NSIS static check. Packaged GUI stress QA, real Windows QA, signing, and notarization remain open.
+Passed: playback-order, track-list windowing, metadata-save-loop guards, playback-restore, song-info, track-display, track-identity, AI track search, FLAC metadata, prompt checks, theme colors, custom images, all-target AI assets, build, Electron compile, elevated `dist:release`, DMG verify, read-only DMG version / arm64 / app.asar / AI model / prompts / runtime checks, and Windows NSIS static check. Packaged GUI stress QA, real Windows QA, signing, and notarization remain open.
 
 ## 2026-07-04 0.1.27 最新狀態（歌曲資訊面板二次寫回修正）
 

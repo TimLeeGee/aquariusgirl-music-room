@@ -5,16 +5,16 @@
 
 ## 0.1.28 仍需人工驗收
 
-- Windows 真機尚未安裝 `Aquariusgirl Music Room Setup 0.1.28.exe` 驗證 fresh install、啟動、手動排序 / 檔名排序播放都照目前歌曲清單由上到下、播放含大型封面的歌曲不卡、連續更換同一首封面 5 次不卡、播放清單歌曲資訊寫回後強制重開仍顯示最新 metadata / cover、播放/暫停連點、選擇新資料夾後重開恢復最後來源、約 4 GB / 20+ 首音樂資料夾、AI 聊天與 AI 建歌單。
+- Windows 真機尚未安裝 `Aquariusgirl Music Room Setup 0.1.28.exe` 驗證 fresh install、啟動、手動排序 / 檔名排序播放都照目前歌曲清單由上到下、大清單滑動只 render 可見窗口且不卡、播放含大型封面的歌曲不卡、連續更換同一首封面 5 次不卡、播放清單歌曲資訊寫回後強制重開仍顯示最新 metadata / cover、播放/暫停連點、選擇新資料夾後重開恢復最後來源、約 4 GB / 20+ 首音樂資料夾、AI 聊天與 AI 建歌單。
 - Windows EXE 目前只有 NSIS / x64 target static check，不能宣稱 Windows 實機 PASS。
 - macOS DMG 已完成 verify 與唯讀掛載版本 / arm64 / app.asar / AI runtime 檢查；但未做 Apple Developer ID 簽章與 notarization。
-- 本輪新增的 `check:playback-order`、`check:cover-update-five-times`、`check:playlist-song-info-restart` 等是 source-level regression guard，不是完整 packaged GUI 壓力測試。
+- 本輪新增的 `check:playback-order`、`check:track-list-virtualization`、`check:cover-update-five-times`、`check:playlist-song-info-restart` 等是 source-level regression guard，不是完整 packaged GUI 壓力測試。
 - 本輪新增的 console warn guard 只在開發診斷中標出可疑迴圈或同來源 reload；是否在 packaged GUI 大量操作下完全不卡，仍需用暫存音樂複本與隔離 profile 驗收。
 - macOS packaged GUI 滑鼠流程仍需用暫存音樂複本與隔離 profile 補驗，不可打開或修改使用者原始 Music 資料夾。
 - Windows EXE 未做 code signing，SmartScreen 提醒仍屬預期；macOS DMG 未做 Apple Developer ID 簽章與 notarization。
 - 0.1.28 修正的是 metadata 保存迴圈與全庫重寫；若使用者在播放器外修改原始檔 tag，仍需要用明確重新讀取 / 重新選擇來源讓 metadata 更新。
 - 原始檔寫回目前只支援 MP3、FLAC、M4A；「儲存到播放器」可作為播放器本機 metadata 保存路徑，但不會修改原始音樂檔。
-- 0.1.28 不拆封面到獨立 object store；這次先停止全庫保存與播放中重寫 coverDataUrl。若未來上萬首壓力測試仍不足，再另開縮圖 / cover store 設計。
+- 0.1.28 不拆封面到獨立 object store；這次先停止全庫保存、播放中重寫 coverDataUrl，並讓清單只 render 可見窗口。若未來上萬首壓力測試仍不足，再另開縮圖 / cover store 設計。
 - 0.1.28 內建模型、llama.cpp runtime 與 `taglib-wasm`，installer 體積比純播放器版本大。
 
 ## 0.1.27 仍需人工驗收

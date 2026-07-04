@@ -12,7 +12,7 @@
 
 SmartScreen 提醒通常是因為測試版尚未做 Windows code signing。確認檔案來源可信後，可選擇繼續執行。
 
-0.1.28 修正 metadata 保存迴圈、全庫重寫問題與播放順序未跟隨目前歌曲清單排序的問題。仍建議首次在 Windows 真機驗證手動排序 / 檔名排序播放順序、播放含大型封面的歌曲、連續更換封面、播放清單歌曲資訊寫回後重開、播放/暫停、資料夾恢復、歌曲資訊與封面寫回。
+0.1.28 修正 metadata 保存迴圈、全庫重寫問題、播放順序未跟隨目前歌曲清單排序，以及大清單一次 render 全部列的問題。仍建議首次在 Windows 真機驗證手動排序 / 檔名排序播放順序、大清單滑動、播放含大型封面的歌曲、連續更換封面、播放清單歌曲資訊寫回後重開、播放/暫停、資料夾恢復、歌曲資訊與封面寫回。
 
 ## 0.1.28 macOS 安裝
 
@@ -25,7 +25,7 @@ Gatekeeper 提醒通常是因為測試版尚未做 Apple Developer ID 簽章與 
 
 0.1.28 解除安裝方式與下方歷史說明相同；解除安裝 App 不會刪除使用者原始音樂檔。
 
-0.1.28 已完成 DMG verify 與唯讀掛載讀回版本 / arm64 / app.asar / AI runtime 檢查。下一輪 packaged GUI 驗收仍須使用暫存音樂複本與隔離 profile，補驗手動排序 / 檔名排序的實機播放順序，不可打開或修改使用者原始 Music 資料夾。
+0.1.28 已完成 DMG verify 與唯讀掛載讀回版本 / arm64 / app.asar / AI model / prompts / runtime 檢查。下一輪 packaged GUI 驗收仍須使用暫存音樂複本與隔離 profile，補驗手動排序 / 檔名排序的實機播放順序與大清單滑動，不可打開或修改使用者原始 Music 資料夾。
 
 歌曲資訊面板提供「儲存到播放器」與「套用到原始檔」。「儲存到播放器」只保存播放器本機 metadata，不修改原始音樂檔；「套用到原始檔」會修改使用者選取的原始 MP3/FLAC/M4A，操作前請確認內容正確，必要時先保留音樂檔備份。
 
@@ -175,7 +175,7 @@ Gatekeeper warnings are expected until Developer ID signing and notarization are
 
 0.1.28 uses the same uninstall steps as the historical notes below. Uninstalling the app does not delete original music files.
 
-0.1.28 passed DMG verify and read-only DMG version / arm64 / app.asar / AI runtime checks. Packaged GUI stress QA still needs a temp music copy and isolated profile; do not open or modify the user's original Music folder.
+0.1.28 passed DMG verify and read-only DMG version / arm64 / app.asar / AI model / prompts / runtime checks. Packaged GUI stress QA and large-list scroll QA still need a temp music copy and isolated profile; do not open or modify the user's original Music folder.
 
 The song-info panel has both player-local save and original-file writeback. Player-local save only updates local player metadata; original-file writeback modifies the selected MP3/FLAC/M4A, so keep a backup when needed.
 
