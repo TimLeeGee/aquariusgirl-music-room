@@ -58,6 +58,7 @@ export function PlaylistPanel({
       : "請到全部歌曲移除";
   const totalDuration = tracks.reduce((sum, track) => sum + (track.duration ?? 0), 0);
 
+  // ponytail: Native scroll bounds plus the existing windowed TrackList are enough until real large-library QA proves a heavier virtualizer is needed.
   return (
     <aside className="glass-panel flex min-h-[520px] flex-col overflow-hidden p-4 sm:p-5 lg:sticky lg:top-5 lg:min-h-0 lg:flex-1">
       <div className="mb-4 flex items-center justify-between gap-3">
