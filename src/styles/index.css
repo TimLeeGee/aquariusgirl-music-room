@@ -197,6 +197,32 @@
     appearance: none;
   }
 
+  .playlist-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--color-aquarius-blue-hsl) / 0.58) transparent;
+    scrollbar-gutter: stable;
+  }
+
+  .playlist-scrollbar::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .playlist-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .playlist-scrollbar::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background: hsl(var(--color-aquarius-blue-hsl) / 0.46);
+    background-clip: content-box;
+  }
+
+  .playlist-scrollbar:hover::-webkit-scrollbar-thumb {
+    background: hsl(var(--color-aquarius-blue-hsl) / 0.7);
+    background-clip: content-box;
+  }
+
   .background-aura-gradient {
     /* ponytail: 半透明色調已能保留可讀性；只有背景干擾文字時才加亮度控制。 */
     background:

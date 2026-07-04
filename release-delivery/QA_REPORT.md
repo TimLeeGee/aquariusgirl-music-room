@@ -1,9 +1,36 @@
 # QA 驗收報告
 
 產品：Aquariusgirl Music Room / 水瓶罐子的音樂小水池
-版本：0.1.29
-日期：2026-07-04
+版本：0.1.30
+日期：2026-07-05
 驗收角色：PM / QA / Electron 發行工程師
+
+## 2026-07-05 Playlist Edge Scrollbar hotfix 0.1.30
+
+- 範圍：修正使用者截圖回報的右側歌曲列表捲軸不夠明確、未貼近播放清單面板最外緣，以及最後歌曲可能被底部 mini player 覆蓋的版面問題。
+- 判斷：這個捲軸需要存在；播放清單會有大量歌曲，應使用右側清單自己的 bounded native scroll container，不讓 body、左側播放器、視覺頻譜或睡眠定時跟著捲。
+- 根因：0.1.29 已補右欄 flex 高度，但實際 scrollbar 仍在 `TrackList` 內層並吃掉面板右側 padding，視覺上不像使用者截圖紅圈的外緣捲軸；`TrackList` 仍用固定 520px 估算可視窗口，未跟實際 flex scroll 高度連動；清單底部沒有明確 mini player safe space。
+- 修正：`src/components/TrackList.tsx` 用原生 `ResizeObserver` 量測自身 viewport，依實際高度計算 visible window，保留 overscan；scroll container 加 `playlist-scrollbar`、`overflow-x-hidden`、`scrollbar-gutter: stable` 與 144px bottom safe space。`src/components/PlaylistPanel.tsx` 的 list wrapper 加 `-mr-3 pr-1`，讓捲軸靠近右側面板外緣；`src/components/TrackItem.tsx` 固定卡片高度為 80px；`src/styles/index.css` 新增柔和半透明細捲軸樣式。
+- 效能：沿用 0.1.28 的 TrackList visible-window render，不新增套件、不一次 render 上萬個 DOM row，不在捲動時讀 metadata、寫 IndexedDB 或觸發 `audio.load()`。
+- 防回歸：`scripts/track-list-virtualization-check.mjs` 已補檢查 `ResizeObserver`、dynamic `viewportHeight`、`TRACK_LIST_BOTTOM_SAFE_SPACE`、`playlist-scrollbar`、`overflow-x-hidden`、`-mr-3 pr-1`、`h-20` 卡片高度與 CSS `scrollbar-gutter: stable`。
+- 檢查：`npm run check:track-list-virtualization` PASS；`npm run build` PASS；`npm run electron:compile` PASS；`npm run check:metadata-save-loop` PASS；`npm run check:playback-restore` PASS；`npm run check:playback-order` PASS；升權 `npm run dist:release` PASS。`dist:release` 內通過 `check:prompts`、`check:track-display`、`check:track-identity`、`check:playback-order`、`check:track-list-virtualization`、`check:playback-restore`、`check:metadata-save-loop`、all-target `check:ai-assets`、build、Electron compile。
+- 打包：一般沙盒 `npm run dist:release` 在 `hdiutil create` 失敗；升權重跑同一 `npm run dist:release` PASS，同步兩個 installer 到 `release-delivery/installers/`，暫存 `release/` 已移除。
+- DMG / EXE：DMG `hdiutil verify` VALID；升權唯讀掛載讀回 `CFBundleShortVersionString` / `CFBundleVersion` 均為 0.1.30，執行檔為 Mach-O arm64，`app.asar` package version 為 0.1.30，mac AI model `qwen3.5-0.8b.gguf`、三份 prompts 與 runtime `darwin-arm64/llama-server` 存在，掛載點已卸載。EXE static check PASS，辨識為 Windows NSIS installer；未在 Windows 真機執行。
+
+0.1.30 最新 installer：
+
+- EXE：667,497,902 bytes，SHA-256 `0a5a3db85a22841b44421fc2d9a312ef298e561006af49c5dca832fd7f8a48ba`
+- arm64 DMG：684,484,571 bytes，SHA-256 `82fc07094b8efb051dd76fcd310305e1c7281fe22e85e22a48acd6aa46339872`
+
+限制：本輪未在 Windows 真機安裝；尚未以 packaged GUI 載入真實大曲庫做滑鼠 / 觸控板滾動壓力測試；macOS / Windows 仍未簽章與 notarization；GitHub Releases 是否附上 0.1.30 installer 仍需發布頁面人工確認。
+
+### English QA Summary
+
+- Scope: makes the right song-list scrollbar visible near the playlist panel's outer edge, keeps search/sort fixed above the list, and adds bottom safe space so the mini player does not cover the last tracks.
+- Root cause: 0.1.29 fixed the parent flex height, but the real scrollbar still lived inside TrackList's inner padded area; TrackList also used a fixed 520px viewport estimate instead of the real flex height.
+- Fix: TrackList now measures its own viewport with native `ResizeObserver`, keeps windowed rendering, hides horizontal overflow, uses a stable slim scrollbar, and adds bottom safe space. Track cards are fixed at 80px.
+- Passed checks: track-list-virtualization / edge-scrollbar guard, build, Electron compile, metadata-save-loop, playback-restore, playback-order, elevated `dist:release`, DMG verify, read-only DMG version / arm64 / app.asar / AI model / prompts / runtime checks, and Windows NSIS static check.
+- Limits: real Windows install, real large-library packaged GUI scroll QA, signing, notarization, and GitHub Release artifact attachment remain open.
 
 ## 2026-07-04 Playlist Scroll Bounds hotfix 0.1.29
 

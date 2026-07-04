@@ -6,6 +6,10 @@ English version: see [English Version](#english-version).
 
 ## 目前最新版本
 
+0.1.30 修正版「Playlist Edge Scrollbar / 播放清單外緣捲軸」把右側歌曲列表的捲軸調整到播放清單面板最右側外緣附近，讓搜尋 / 排序列固定在上方，真正捲動的是下方歌曲卡片列表。這次仍沿用瀏覽器原生 scroll container 與 0.1.28 的 TrackList windowing，不新增套件、不重做清單資料流。
+
+本版最小修法是讓 `TrackList` 量測自己的可視高度，依實際 viewport 計算 visible window；scroll area 加上 `overflow-x-hidden`、`scrollbar-gutter: stable` 與 Apple 風格細捲軸，並用底部安全 padding 避開 mini player。歌曲卡片固定為 80px 高度，搭配 8px 間距，封面、歌名、歌手、時長與操作按鈕維持垂直置中。`check:track-list-virtualization` 已補上捲軸外緣、bottom safe space、動態 viewport 與卡片高度防回歸。0.1.28 的單曲 IndexedDB `put` / `patch`、metadata / cover 不觸發同來源 `audio.load()`、播放清單只保存 trackIds 等資料流防線未改動。
+
 0.1.29 修正版「Playlist Scroll Bounds / 播放清單捲軸邊界」把右側播放清單卡片改回有內部捲軸，並讓播放清單卡片底部與左側「睡前定時停止」卡片底部切齊。這次不是新功能，而是 0.1.28 做 TrackList windowing 後，右欄外層高度邊界沒有跟著補齊：右側 wrapper 不是 `h-full min-h-0`，播放清單卡片又使用 viewport `max-height`，導致 `TrackList` 的 `h-full overflow-y-auto` 沒有穩定父層高度，清單會往底部播放器下方延伸，看起來像捲軸被拿掉。
 
 本版只用既有 CSS flex / overflow 修正，不新增套件、不重做虛擬清單：`AppLayout` 右側 grid item 在桌面版保留 full height，`App.tsx` 右側 wrapper 改為 `flex h-full min-h-0 flex-col`，`PlaylistPanel` 改成桌面版 `lg:flex-1 lg:min-h-0` 並 `overflow-hidden`，移除舊的 viewport `max-height`。`TrackList` 仍沿用 0.1.28 的可見窗口與 overscan，保留上萬首曲庫時避免一次掛載所有 DOM row 的效能防線。
@@ -58,39 +62,18 @@ Electron 桌面版手動選擇音樂資料夾時，會把該次回傳的 `source
 
 歌曲資訊面板可編輯標題、歌手、專輯、專輯歌手、年份、曲目、光碟、類型、作曲與備註，並可更換單曲封面。桌面版支援將 MP3、FLAC、M4A 的標籤與封面寫回原始檔；寫回前會要求使用者確認，且只處理使用者已加入播放器的本機檔案。
 
-最新安裝檔位於：
+## 下載與檔案驗證
+
+安裝檔請至 GitHub Releases 下載；本機交付資料夾仍保留在：
 
 ```text
 release-delivery/installers/
 ```
 
-- `Aquariusgirl Music Room Setup 0.1.29.exe`
-- `Aquariusgirl Music Room-0.1.29-arm64.dmg`
+- `Aquariusgirl Music Room Setup 0.1.30.exe`
+- `Aquariusgirl Music Room-0.1.30-arm64.dmg`
 
-SHA-256：
-
-- EXE：`b774a90ce60d593cdeab9221509d9920cd76940b25043b1025e6af4be19459a1`
-- arm64 DMG：`22752a59b697c9d2d899bb798fe5f175d10bdf1a87d375b9e39b327bca8dd874`
-
-0.1.28 歷史 hotfix：修正 metadata 保存迴圈、播放順序與 TrackList windowing。0.1.28 hotfix SHA-256：EXE `bf58e089f85d0653336e017dc5ec2425200639f7b89eb4363a95349875ece141`；arm64 DMG `246562abf9eaed00e456ff92f9e8222932ff6a08a393b73daa32dde6639ad8a6`。
-
-0.1.27 歷史 hotfix：修正歌曲資訊面板二次寫回 draft / saving 狀態。0.1.27 hotfix SHA-256：EXE `c39676a14ce17931d20b21e22b2c9fba5239d16e43a6f449fd59b7188d67d937`；arm64 DMG `6a4100871195db1e2b0c17c87b2af8fb640a5d865bfccc0765fba2e0216fcf19`。
-
-0.1.26 歷史 hotfix：修正原始檔寫回成功後，播放器資料庫可能還沒保存最新 cover / metadata snapshot，導致快速重開時讀到舊封面。0.1.26 hotfix SHA-256：EXE `0486767f4ebf7cf4d0adb233f62bd1d62da0c53709895d00e1a3fc50ce94dc5d`；arm64 DMG `16acf709838b2fc1831227693aba133e47d5979ee0dc580865734d3038a2be91`。
-
-0.1.25 歷史 hotfix：修正同來源 audio reload 殘留，避免 duration / metadata 更新誤觸 `audio.load()`。0.1.25 hotfix SHA-256：EXE `591442e89c863405e59666b1aa19372927f909b02f3a55eaa47a1d06f9984442`；arm64 DMG `dac596ee8df1b54103984d6b292d6d74f4f9c19ce52350efc90c9a736924e1c4`。
-
-0.1.24 歷史 hotfix：修正播放中更換封面後切歌再切回卡住，以及 cover02 -> cover01 第一次重開舊封面、第二次才新封面的保存順序問題。0.1.24 hotfix SHA-256：EXE `648e1283bcdb299f284026c1e312692ee98a12f2fd53acd9ba28f8aec3c8447e`；arm64 DMG `dd42b468718c12dcb3d585f582c896263ba45fdc111a16d846bb702e91adf603`。
-
-0.1.23 歷史 hotfix：修正歌手欄位在真實歌手與 `未知歌手` 之間反覆切換。0.1.23 hotfix SHA-256：EXE `8bd5a6a0114c8b405cea373a0a74fddaebb0df263c837cd6172628fec754e259`；arm64 DMG `7d0ecf5d3f842ce2712f3ca5f0f27b17158f5caf33c71b15d7f80b9cebe3f21a`。
-
-0.1.22 歷史 hotfix：修正 `Cover 01.jpg` 因舊 3 MB 封面上限無法預覽與寫回，將封面上限調整為 5 MB 並新增過大提示。0.1.22 hotfix SHA-256：EXE `c0ae948862958ba50cfd9984d6b2df475a528b306d116a1691683d3fb585c7b3`；arm64 DMG `341198490334adfb712cd831aa89f6e0c256d8c74b509138a352c522bca4e3b4`。
-
-0.1.21 歷史 hotfix：修正歌曲顯示排序、封面更換後播放清單遺失、封面 cover02 改回 cover01 的回寫驗證、啟動載入資料庫過慢，以及 AI 助手建立播放清單時缺少等待提示。0.1.21 hotfix SHA-256：EXE `f27c6d64a6828283b75c471a7d2d08f39409c3fa8f7f9645114e38baceaa97d5`；arm64 DMG `350ed86187d78279654138bd8f0e9bc069ae8908cc114eafb606371991b04fe5`。
-
-0.1.20 歷史 hotfix：修正播放卡頓、按播放後再按暫停仍停不下來，以及畫面播放狀態閃爍。播放器只在 `localUrl` / `mediaVersion` 改變時重設 `HTMLAudioElement` source，播放與暫停由獨立 effect 同步；Electron 手動選擇資料夾後會保存最後一次 `sourcePath[]` 供下次啟動恢復。0.1.20 hotfix SHA-256：EXE `a22876f29dc2f6128066bbe6292412723942e9f6b88f25c71e49dc396012fdda`；arm64 DMG `36c52a05f47405fb7b2073b689527534873372fa7f6cb0cf57a0f67d58ed80f7`。
-
-0.1.19 歷史 hotfix：收斂歌曲資訊保存流程，移除「保存到播放器」，只保留「套用到原始檔」作為唯一保存入口，避免播放器內 metadata 與原始檔標籤互相覆寫。Electron 選擇大型音樂資料夾時不再把整個音檔 `ArrayBuffer` 傳進 renderer，改用 `file://`、source path、大小與必要 metadata，降低 Windows EXE 選擇數 GB 資料夾時閃退風險。0.1.19 hotfix SHA-256：EXE `a66b024b68c84f1a1cb94cdaa22210ad12a84f0f2f4ce5481216785e4869d1dc`；arm64 DMG `cbb66a0efe8b59d6efd835f375399ec2731bb4db3ff34e23fda86df17e6ac37c`。
+若需要驗證檔案完整性，請查看 [docs/releases/0.1.30-checksums.md](docs/releases/0.1.30-checksums.md)。0.1.29 checksum 仍保留在 [docs/releases/0.1.29-checksums.md](docs/releases/0.1.29-checksums.md) 作為歷史資料。完整版本歷史與詳細驗收紀錄請看 [release-delivery/VERSION.md](release-delivery/VERSION.md)。
 
 ## 交付檔案索引
 
@@ -579,6 +562,10 @@ Aquariusgirl Music Room is a local-first music player. It can run as a Vite web 
 
 ## Current Version
 
+0.1.30 "Playlist Edge Scrollbar" moves the right song-list scrollbar close to the outer edge of the playlist panel. The search and sort controls stay fixed at the top, while only the song-card list scrolls. This still uses the browser's native scroll container and the existing 0.1.28 TrackList windowing; no dependency or list rewrite was added.
+
+The minimal fix lets `TrackList` measure its own viewport height, compute the visible window from the real scroll area, and keep `overflow-x-hidden`, `scrollbar-gutter: stable`, and a slim Apple-style scrollbar. The list also keeps bottom safe padding so the bottom mini player does not cover the last tracks. Track cards now have a fixed 80px height plus 8px spacing, keeping artwork, title, artist, duration, and actions vertically centered. `check:track-list-virtualization` now guards the edge scrollbar, bottom safe space, dynamic viewport measurement, and card height. The 0.1.28 single-track IndexedDB `put` / `patch`, metadata / cover no-audio-reload, and playlist trackId-only data flow were not changed.
+
 0.1.29 "Playlist Scroll Bounds" restores the right playlist card's internal scroll and aligns the playlist card bottom with the left Sleep Timer card bottom. This is not a new feature; 0.1.28 already added TrackList windowing, but the right column did not give the list a stable flex height boundary. The right wrapper lacked `h-full min-h-0`, and the playlist card used a viewport `max-height`, so `TrackList`'s `h-full overflow-y-auto` had no reliable parent height and the list could extend under the bottom player.
 
 This release uses only existing CSS flex / overflow and the existing TrackList windowing. `AppLayout` gives the desktop right grid item full height, `App.tsx` makes the right wrapper `flex h-full min-h-0 flex-col`, and `PlaylistPanel` uses `lg:flex-1 lg:min-h-0` with `overflow-hidden` instead of the old viewport `max-height`. No package, new virtualizer, or list rewrite was added.
@@ -629,33 +616,18 @@ Startup restore skips full taglib metadata / cover reads per file and uses store
 
 0.1.19 historical hotfix added the single original-file song-info save path and large-folder IPC fix. The desktop app can write MP3, FLAC, and M4A tags and cover art back to the original file after confirmation.
 
-Latest installers:
+## Download And Checksums
+
+Download installers from GitHub Releases. Local delivery artifacts are kept in:
 
 ```text
 release-delivery/installers/
 ```
 
-- `Aquariusgirl Music Room Setup 0.1.29.exe`
-- `Aquariusgirl Music Room-0.1.29-arm64.dmg`
+- `Aquariusgirl Music Room Setup 0.1.30.exe`
+- `Aquariusgirl Music Room-0.1.30-arm64.dmg`
 
-SHA-256:
-
-- EXE: `b774a90ce60d593cdeab9221509d9920cd76940b25043b1025e6af4be19459a1`
-- arm64 DMG: `22752a59b697c9d2d899bb798fe5f175d10bdf1a87d375b9e39b327bca8dd874`
-
-0.1.28 historical hotfix SHA-256: EXE `bf58e089f85d0653336e017dc5ec2425200639f7b89eb4363a95349875ece141`; arm64 DMG `246562abf9eaed00e456ff92f9e8222932ff6a08a393b73daa32dde6639ad8a6`.
-
-0.1.27 historical hotfix SHA-256: EXE `c39676a14ce17931d20b21e22b2c9fba5239d16e43a6f449fd59b7188d67d937`; arm64 DMG `6a4100871195db1e2b0c17c87b2af8fb640a5d865bfccc0765fba2e0216fcf19`.
-
-0.1.26 historical hotfix SHA-256: EXE `0486767f4ebf7cf4d0adb233f62bd1d62da0c53709895d00e1a3fc50ce94dc5d`; arm64 DMG `16acf709838b2fc1831227693aba133e47d5979ee0dc580865734d3038a2be91`.
-
-0.1.25 historical hotfix SHA-256: EXE `591442e89c863405e59666b1aa19372927f909b02f3a55eaa47a1d06f9984442`; arm64 DMG `dac596ee8df1b54103984d6b292d6d74f4f9c19ce52350efc90c9a736924e1c4`.
-
-0.1.24 historical hotfix SHA-256: EXE `648e1283bcdb299f284026c1e312692ee98a12f2fd53acd9ba28f8aec3c8447e`; arm64 DMG `dd42b468718c12dcb3d585f582c896263ba45fdc111a16d846bb702e91adf603`.
-
-0.1.23 historical hotfix SHA-256: EXE `8bd5a6a0114c8b405cea373a0a74fddaebb0df263c837cd6172628fec754e259`; arm64 DMG `7d0ecf5d3f842ce2712f3ca5f0f27b17158f5caf33c71b15d7f80b9cebe3f21a`.
-
-0.1.22 historical hotfix SHA-256: EXE `c0ae948862958ba50cfd9984d6b2df475a528b306d116a1691683d3fb585c7b3`; arm64 DMG `341198490334adfb712cd831aa89f6e0c256d8c74b509138a352c522bca4e3b4`.
+For file integrity verification, see [docs/releases/0.1.30-checksums.md](docs/releases/0.1.30-checksums.md). The 0.1.29 checksum file remains at [docs/releases/0.1.29-checksums.md](docs/releases/0.1.29-checksums.md) as history. Full version history and detailed QA notes live in [release-delivery/VERSION.md](release-delivery/VERSION.md).
 
 ## Delivery File Index
 

@@ -1,6 +1,35 @@
 # 接續工作狀態
 
-最後更新：2026-07-04 CST
+最後更新：2026-07-05 CST
+
+## 2026-07-05 Playlist Edge Scrollbar hotfix 0.1.30 完成
+
+- 已修正右側歌曲列表捲軸不夠明確、未貼近面板最外緣的 UI 回歸。
+- 根因：0.1.29 補了右欄高度邊界，但 scrollbar 仍在 `TrackList` 內層並吃到右側 padding；`TrackList` 也仍用固定 520px 估算 viewport，沒有跟實際 flex scroll 高度連動。
+- 修正：`TrackList` 改用原生 `ResizeObserver` 量測自己的可視高度，保留 visible-window + overscan；scroll container 加 `playlist-scrollbar`、`overflow-x-hidden`、`scrollbar-gutter: stable` 與 144px bottom safe space。`PlaylistPanel` 的 list wrapper 用 `-mr-3 pr-1` 讓捲軸靠近右側面板外緣；`TrackItem` 固定 80px 高度。
+- 防回歸：`check:track-list-virtualization` 已補動態 viewport、bottom safe space、外緣捲軸、禁止水平捲軸、卡片高度與 CSS `scrollbar-gutter` 檢查。
+- 驗收：`check:track-list-virtualization`、`npm run build`、`npm run electron:compile`、`check:metadata-save-loop`、`check:playback-restore`、`check:playback-order`、升權 `npm run dist:release` 通過。`dist:release` 內也通過 prompts、track-display、track-identity、playback-order、track-list-virtualization、playback-restore、metadata-save-loop、all-target AI assets、build、Electron compile。
+- DMG `hdiutil verify` VALID；升權唯讀掛載讀回版本 `0.1.30`、CFBundleVersion `0.1.30`、Mach-O arm64、`app.asar` package version `0.1.30`、mac AI model / prompts / `darwin-arm64/llama-server` 存在。EXE static check 為 NSIS installer。
+- 0.1.30 installer 位於：
+
+```text
+release-delivery/installers/Aquariusgirl Music Room Setup 0.1.30.exe
+release-delivery/installers/Aquariusgirl Music Room-0.1.30-arm64.dmg
+```
+
+- SHA-256：EXE `0a5a3db85a22841b44421fc2d9a312ef298e561006af49c5dca832fd7f8a48ba`；DMG `82fc07094b8efb051dd76fcd310305e1c7281fe22e85e22a48acd6aa46339872`。根 README 不內嵌長 hash，請看 `docs/releases/0.1.30-checksums.md`。
+- 驗收限制：本輪未在 Windows 真機安裝；未做 packaged GUI 真實大曲庫滑動與觸控板實測；macOS / Windows 仍未簽章。
+
+### 接續給下一輪 Codex
+
+請接續 Aquariusgirl Music Room 0.1.30 Windows / 大曲庫 GUI 驗收。最新版 installer 位於 `release-delivery/installers/`，SHA-256 請以 `docs/releases/0.1.30-checksums.md` 為準。先讀 `release-delivery/QA_REPORT.md`、`release-delivery/INSTALLER_STATUS.md`、`release-delivery/KNOWN_ISSUES.md`。重點驗證：右側歌曲列表捲軸位於清單最外緣、搜尋 / 排序 header 固定、左側播放器 / 視覺頻譜 / 睡眠定時不跟著捲、最後幾首歌不被 mini player 蓋住、沒有水平捲軸、大清單滑動仍只 render 可見窗口且順暢、Windows fresh install、播放/暫停、資料夾恢復、AI、Mini/dialog focus。不可打開或修改使用者原始 Music 資料夾，使用暫存音樂複本與隔離 profile。
+
+## 2026-07-05 Playlist Edge Scrollbar Hotfix 0.1.30 Complete
+
+- Moved the right song-list scrollbar close to the playlist panel's outer edge and kept search/sort fixed above the scrolling list.
+- Kept the fix minimal: native scroll styling, dynamic TrackList viewport measurement, bottom safe space for the mini player, and fixed 80px cards.
+- Latest installers are in `release-delivery/installers/`; SHA-256 lives in `docs/releases/0.1.30-checksums.md`.
+- Passed source guards, build, package, DMG verify, read-only DMG version / arm64 / app.asar / AI model / prompts / runtime checks, and Windows NSIS static check. Real Windows QA, real large-library GUI scroll QA, signing, and notarization remain open.
 
 ## 2026-07-04 Playlist Scroll Bounds hotfix 0.1.29 完成
 

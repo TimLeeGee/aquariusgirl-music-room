@@ -1,11 +1,30 @@
 # 版本資訊
 
 產品：Aquariusgirl Music Room / 水瓶罐子的音樂小水池
-版本：0.1.29
-日期：2026-07-04
+版本：0.1.30
+日期：2026-07-05
 平台目標：Windows x64、macOS arm64
 
-## 2026-07-04 0.1.29 hotfix 發行狀態
+## 2026-07-05 0.1.30 hotfix 發行狀態
+
+0.1.30「Playlist Edge Scrollbar / 播放清單外緣捲軸」修正右側歌曲列表捲軸不夠明確、未貼近播放清單面板最外緣，以及底部 mini player 可能遮住最後歌曲的版面問題。
+
+本版不新增套件、不重做清單；它沿用 0.1.28/0.1.29 的 TrackList visible-window render，只補齊實際 scroll container。`TrackList` 用原生 `ResizeObserver` 量測自身可視高度，依實際 viewport 計算 visible window；scroll container 加 `playlist-scrollbar`、`overflow-x-hidden`、`scrollbar-gutter: stable` 與 144px bottom safe space；`PlaylistPanel` list wrapper 讓捲軸靠近右側面板外緣；`TrackItem` 固定 80px 高度。metadata / cover / IndexedDB 與播放資料流未改動。
+
+通過：`npm run check:track-list-virtualization`、`npm run build`、`npm run electron:compile`、`npm run check:metadata-save-loop`、`npm run check:playback-restore`、`npm run check:playback-order`、升權 `npm run dist:release`、DMG verify、DMG 唯讀掛載版本 / arm64 / app.asar / AI model / prompts / runtime 檢查、Windows NSIS static check。`dist:release` 內也通過 prompts、track-display、track-identity、playback-order、track-list-virtualization、playback-restore、metadata-save-loop、all-target AI assets。Windows 真機、真實大曲庫 GUI 滑動、簽章與 notarization 仍需驗收。
+
+SHA-256：
+
+- EXE：`0a5a3db85a22841b44421fc2d9a312ef298e561006af49c5dca832fd7f8a48ba`
+- arm64 DMG：`82fc07094b8efb051dd76fcd310305e1c7281fe22e85e22a48acd6aa46339872`
+
+### English Summary
+
+0.1.30 makes the right song-list scrollbar clearly visible near the playlist panel's outer edge. Search/sort stay fixed above the list, only the song cards scroll, and the scroll area includes bottom safe space for the mini player.
+
+Passed: track-list-virtualization / edge-scrollbar guard, build, Electron compile, metadata-save-loop, playback-restore, playback-order, elevated `dist:release`, DMG verify, read-only DMG version / arm64 / app.asar / AI model / prompts / runtime checks, and Windows NSIS static check. Real Windows QA, real large-library GUI scroll QA, signing, and notarization remain open.
+
+## 2026-07-04 0.1.29 hotfix 發行狀態（歷史）
 
 0.1.29「Playlist Scroll Bounds / 播放清單捲軸邊界」修正右側播放清單卡片沒有內部捲軸、往底部播放器下方延伸的版面回歸，並讓播放清單卡片底部與左側「睡前定時停止」卡片底部切齊。
 

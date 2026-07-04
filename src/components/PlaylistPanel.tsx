@@ -84,7 +84,7 @@ export function PlaylistPanel({
         <SortControls value={sortMode} onChange={onSortModeChange} />
       </div>
 
-      <div className="mt-4 min-h-0 flex-1">
+      <div className="mt-4 min-h-0 flex-1 -mr-3 pr-1">
         <TrackList
           tracks={tracks}
           currentTrackId={currentTrackId}

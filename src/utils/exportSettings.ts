@@ -22,7 +22,7 @@ export type ExportSettingsInput = {
 export function createExportPayload(input: ExportSettingsInput) {
   return {
     app: "Aquariusgirl Music Room",
-    appVersion: "0.1.29",
+    appVersion: "0.1.30",
     exportedAt: new Date().toISOString(),
     playlists: input.playlists,
     trackMetadata: input.tracks.map(toStoredTrackMetadata),

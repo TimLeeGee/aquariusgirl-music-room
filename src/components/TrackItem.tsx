@@ -62,7 +62,7 @@ export function TrackItem({
       <button
         type="button"
         className={[
-          "group grid w-full items-center gap-3 rounded-lg border px-3 py-3 text-left transition",
+          "group grid h-20 w-full items-center gap-3 overflow-hidden rounded-lg border px-3 py-2 text-left transition",
           draggableItem
             ? "grid-cols-[auto_auto_minmax(0,1fr)_auto]"
             : "grid-cols-[auto_minmax(0,1fr)_auto]",

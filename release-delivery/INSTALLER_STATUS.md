@@ -1,6 +1,26 @@
 # Installer 狀態
 
-## 2026-07-04 0.1.29 最新狀態（Playlist Scroll Bounds / 播放清單捲軸邊界）
+## 2026-07-05 0.1.30 最新狀態（Playlist Edge Scrollbar / 播放清單外緣捲軸）
+
+本輪把版本更新為 0.1.30，重點是讓右側歌曲列表捲軸清楚出現在播放清單面板最外緣附近，搜尋 / 排序 header 固定，歌曲卡片列表自己捲動。修法只用原生 scroll、CSS 與既有 TrackList windowing：`TrackList` 用 `ResizeObserver` 量測實際 viewport，scroll container 加 `playlist-scrollbar`、`overflow-x-hidden`、`scrollbar-gutter: stable` 與 bottom safe space，`PlaylistPanel` list wrapper 讓捲軸靠右，`TrackItem` 固定 80px 高度。未新增套件、未改 metadata / cover / IndexedDB 流程。
+
+- `Aquariusgirl Music Room Setup 0.1.30.exe`：667,497,902 bytes，SHA-256 `0a5a3db85a22841b44421fc2d9a312ef298e561006af49c5dca832fd7f8a48ba`
+- `Aquariusgirl Music Room-0.1.30-arm64.dmg`：684,484,571 bytes，SHA-256 `82fc07094b8efb051dd76fcd310305e1c7281fe22e85e22a48acd6aa46339872`
+
+模型仍為 `resources/ai/models/qwen3.5-0.8b.gguf`，532,517,120 bytes，SHA-256 `bd258782e35f7f458f8aced1adc053e6e92e89bc735ba3be89d38a06121dc517`。
+
+驗收：`npm run check:track-list-virtualization`、`npm run build`、`npm run electron:compile`、`npm run check:metadata-save-loop`、`npm run check:playback-restore`、`npm run check:playback-order`、升權 `npm run dist:release` 均通過；`dist:release` 內通過 prompt、track-display、track-identity、playback-order、track-list-virtualization、playback-restore、metadata-save-loop、all-target AI assets、build、Electron compile。DMG `hdiutil verify` VALID；唯讀掛載後版本為 0.1.30、CFBundleVersion 為 0.1.30、執行檔為 Mach-O arm64、`app.asar` package version 為 0.1.30、mac AI model / prompts / `darwin-arm64/llama-server` 存在。EXE static check 為 Windows NSIS installer；`release/` 暫存輸出已移除，唯一交付位置是 `release-delivery/installers/`；未在 Windows 真機執行。
+
+### English Status
+
+0.1.30 makes the right song-list scrollbar visible near the playlist panel's outer edge while keeping search/sort fixed and preserving the existing windowed TrackList. It does not add a dependency or rewrite the list.
+
+- `Aquariusgirl Music Room Setup 0.1.30.exe`: 667,497,902 bytes, SHA-256 `0a5a3db85a22841b44421fc2d9a312ef298e561006af49c5dca832fd7f8a48ba`
+- `Aquariusgirl Music Room-0.1.30-arm64.dmg`: 684,484,571 bytes, SHA-256 `82fc07094b8efb051dd76fcd310305e1c7281fe22e85e22a48acd6aa46339872`
+
+Passed: track-list edge-scrollbar guard, build, Electron compile, metadata-save-loop, playback-restore, playback-order, elevated `dist:release`, DMG verify, read-only DMG version / arm64 / app.asar / AI model / prompts / runtime checks, and Windows NSIS static check. Real Windows QA, real large-library GUI scroll QA, signing, and notarization remain open.
+
+## 2026-07-04 0.1.29 狀態（歷史：Playlist Scroll Bounds / 播放清單捲軸邊界）
 
 本輪把版本更新為 0.1.29，重點是恢復右側播放清單卡片內部捲軸，並讓播放清單卡片底部與左側睡前定時卡片底部切齊。修法只補齊既有 TrackList windowing 的父層高度邊界：`AppLayout` 右側 section 加 `lg:h-full`，`App.tsx` 右側 wrapper 改為 `flex h-full min-h-0 flex-col gap-4`，`PlaylistPanel` 改為 `overflow-hidden lg:min-h-0 lg:flex-1` 並移除舊 viewport max-height。未新增套件、未重做清單。
 

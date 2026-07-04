@@ -1,5 +1,30 @@
 # Aquariusgirl Music Room Continue Work
 
+## 2026-07-05 Playlist Edge Scrollbar hotfix 0.1.30 完成
+
+- 已修正右側歌曲列表捲軸不夠明確、位置不像使用者截圖紅圈所示外緣捲軸的 UI 回歸。
+- 根因：0.1.29 補了右欄 flex 高度，但實際 scrollbar 仍在 `TrackList` 內層，且右側保留卡片 padding，看起來像藏在卡片裡；`TrackList` 也仍用固定 520px 估算可視窗口，沒有跟實際 flex scroll 高度連動。
+- 修正：`TrackList` 用原生 `ResizeObserver` 量測自身可視高度，保留 visible-window + overscan；scroll container 加 `playlist-scrollbar`、`overflow-x-hidden`、`scrollbar-gutter: stable` 與底部 144px safe space，避免最後歌曲被 mini player 蓋住。`PlaylistPanel` 的 list wrapper 用 `-mr-3 pr-1` 讓捲軸靠近右側面板外緣；`TrackItem` 固定 80px 高度，搭配 8px row 間距。
+- 防回歸：`check:track-list-virtualization` 已補動態 viewport、bottom safe space、外緣捲軸、禁止水平捲軸、卡片高度與 CSS scrollbar-gutter 檢查。
+- 驗收：`check:track-list-virtualization`、`npm run build`、`npm run electron:compile`、`check:metadata-save-loop`、`check:playback-restore`、`check:playback-order`、升權 `npm run dist:release` 通過。`dist:release` 內也通過 prompts、track-display、track-identity、playback-order、track-list-virtualization、playback-restore、metadata-save-loop、all-target AI assets、build、Electron compile。
+- 打包：一般沙盒 `npm run dist:release` 在 `hdiutil create` 失敗；升權重跑同一命令 PASS，已同步兩個 installer 到 `release-delivery/installers/`，暫存 `release/` 已移除。
+- DMG `hdiutil verify` VALID；升權唯讀掛載讀回版本 `0.1.30`、CFBundleVersion `0.1.30`、Mach-O arm64、`app.asar` package version `0.1.30`、mac AI model / prompts / `darwin-arm64/llama-server` 存在。EXE static check 為 NSIS installer；未在 Windows 真機執行。
+- 最新 installer：`Aquariusgirl Music Room Setup 0.1.30.exe`、`Aquariusgirl Music Room-0.1.30-arm64.dmg`。
+- SHA-256：EXE `0a5a3db85a22841b44421fc2d9a312ef298e561006af49c5dca832fd7f8a48ba`；DMG `82fc07094b8efb051dd76fcd310305e1c7281fe22e85e22a48acd6aa46339872`。根 README 不再內嵌長 hash，請看 `docs/releases/0.1.30-checksums.md`。
+- 驗收限制：本輪未在 Windows 真機安裝；未做 packaged GUI 真實大曲庫滑動與觸控板實測；macOS / Windows 仍未簽章。
+
+### 接續提示詞
+
+請接續 Aquariusgirl Music Room 0.1.30 Windows / 大曲庫 GUI 驗收。最新版 installer 位於 `release-delivery/installers/`，SHA-256 請以 `docs/releases/0.1.30-checksums.md` 為準。先讀 `release-delivery/QA_REPORT.md`、`release-delivery/INSTALLER_STATUS.md`、`release-delivery/KNOWN_ISSUES.md`。重點驗證：右側歌曲列表捲軸位於清單最外緣、搜尋 / 排序 header 固定、左側播放器 / 視覺頻譜 / 睡眠定時不跟著捲、最後幾首歌不被 mini player 蓋住、沒有水平捲軸、大清單滑動仍只 render 可見窗口且順暢、Windows fresh install、播放/暫停、資料夾恢復、AI、Mini/dialog focus。不可打開或修改使用者原始 Music 資料夾，使用暫存音樂複本與隔離 profile。
+
+## 2026-07-05 Playlist Edge Scrollbar Hotfix 0.1.30 Complete
+
+- Made the right song-list scrollbar visible near the playlist panel's outer edge, while search/sort stay fixed above the scrolling cards.
+- Kept the fix minimal: native scroll styling, dynamic TrackList viewport measurement, bottom safe space for the mini player, and fixed 80px track cards. No new dependency or list rewrite.
+- Latest installers are in `release-delivery/installers/`.
+- SHA-256 lives in `docs/releases/0.1.30-checksums.md`.
+- Passed source guards, build, package, DMG verify, read-only DMG version / arm64 / app.asar / AI model / prompts / runtime checks, and Windows NSIS static check. Real Windows QA, real large-library GUI scroll QA, signing, and notarization remain open.
+
 ## 2026-07-04 Playlist Scroll Bounds hotfix 0.1.29 完成
 
 - 已修正右側播放清單卡片沒有內部捲軸、清單往底部播放器下方延伸的版面回歸。
@@ -11,14 +36,14 @@
 - 瀏覽器版面驗收：dev browser 以 2048×1152 量測，播放清單卡片 bottom 與睡前定時卡片 bottom 均為 `1542px`；右側 wrapper class 為 `flex h-full min-h-0 flex-col gap-4`。
 - 打包：一般沙盒 `npm run dist:release` 在 `hdiutil create` 失敗；升權重跑同一命令 PASS，已同步兩個 installer 到 `release-delivery/installers/`，暫存 `release/` 已移除。
 - DMG `hdiutil verify` VALID；升權唯讀掛載讀回版本 `0.1.29`、CFBundleVersion `0.1.29`、Mach-O arm64、`app.asar` package version `0.1.29`、mac AI model / prompts / `darwin-arm64/llama-server` 存在。EXE static check 為 NSIS installer；未在 Windows 真機執行。
-- 最新 installer：`Aquariusgirl Music Room Setup 0.1.29.exe`、`Aquariusgirl Music Room-0.1.29-arm64.dmg`。
+- 0.1.29 當版 installer：`Aquariusgirl Music Room Setup 0.1.29.exe`、`Aquariusgirl Music Room-0.1.29-arm64.dmg`。
 - SHA-256：EXE `b774a90ce60d593cdeab9221509d9920cd76940b25043b1025e6af4be19459a1`；DMG `22752a59b697c9d2d899bb798fe5f175d10bdf1a87d375b9e39b327bca8dd874`。
 - 驗收限制：本輪未在 Windows 真機安裝；dev browser 沒載入真實大曲庫，真實上萬首 GUI 滑動仍需用暫存資料與隔離 profile 補驗；macOS / Windows 仍未簽章。
 - 技能更新：已把 0.1.29「右欄高度邊界要與 TrackList windowing 一起驗」經驗補進 installed `build-music-player` 技能。
 
 ### 接續提示詞
 
-請接續 Aquariusgirl Music Room 0.1.29 Windows / 大曲庫 GUI 驗收。最新版 installer 位於 `release-delivery/installers/`，SHA-256 應為 EXE `b774a90ce60d593cdeab9221509d9920cd76940b25043b1025e6af4be19459a1`、DMG `22752a59b697c9d2d899bb798fe5f175d10bdf1a87d375b9e39b327bca8dd874`。先讀 `release-delivery/QA_REPORT.md`、`release-delivery/INSTALLER_STATUS.md`、`release-delivery/KNOWN_ISSUES.md`。重點驗證：右側播放清單卡片底部與左側睡前定時卡片底部切齊；播放清單內部可捲動且底部播放器不被清單覆蓋；大清單滑動仍只 render 可見窗口並保持順暢；Windows fresh install、播放/暫停、資料夾恢復、AI、Mini/dialog focus。不可打開或修改使用者原始 Music 資料夾，使用暫存音樂複本與隔離 profile。
+請接續 Aquariusgirl Music Room 0.1.29 Windows / 大曲庫 GUI 驗收。0.1.29 當版 installer 位於 `release-delivery/installers/`，SHA-256 應為 EXE `b774a90ce60d593cdeab9221509d9920cd76940b25043b1025e6af4be19459a1`、DMG `22752a59b697c9d2d899bb798fe5f175d10bdf1a87d375b9e39b327bca8dd874`。先讀 `release-delivery/QA_REPORT.md`、`release-delivery/INSTALLER_STATUS.md`、`release-delivery/KNOWN_ISSUES.md`。重點驗證：右側播放清單卡片底部與左側睡前定時卡片底部切齊；播放清單內部可捲動且底部播放器不被清單覆蓋；大清單滑動仍只 render 可見窗口並保持順暢；Windows fresh install、播放/暫停、資料夾恢復、AI、Mini/dialog focus。不可打開或修改使用者原始 Music 資料夾，使用暫存音樂複本與隔離 profile。
 
 ## 2026-07-04 Playlist Scroll Bounds Hotfix 0.1.29 Complete
 

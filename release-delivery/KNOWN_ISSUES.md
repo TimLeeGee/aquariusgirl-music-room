@@ -1,9 +1,20 @@
 # 已知問題
 
-版本：0.1.29
-文件更新：2026-07-04
+版本：0.1.30
+文件更新：2026-07-05
 
-## 0.1.29 仍需人工驗收
+## 0.1.30 仍需人工驗收
+
+- Windows 真機尚未安裝 `Aquariusgirl Music Room Setup 0.1.30.exe` 驗證 fresh install、啟動、右側歌曲列表捲軸位於清單面板最外緣、搜尋 / 排序 header 固定、左側播放器 / 視覺頻譜 / 睡眠定時不跟著捲、底部 mini player 不遮住最後歌曲、沒有水平捲軸、播放/暫停連點、選擇新資料夾後重開恢復最後來源、約 4 GB / 20+ 首音樂資料夾、AI 聊天與 AI 建歌單。
+- Windows EXE 目前只有 NSIS / x64 target static check，不能宣稱 Windows 實機 PASS。
+- macOS DMG 已完成 verify 與唯讀掛載版本 / arm64 / app.asar / AI runtime 檢查；但未做 Apple Developer ID 簽章與 notarization。
+- 本輪未用 packaged GUI 載入真實大曲庫做滑鼠 / 觸控板滾動壓力測試；仍需用暫存音樂資料與隔離 profile 補驗，不可打開或修改使用者原始 Music 資料夾。
+- 本輪 `check:track-list-virtualization` 是 source-level regression guard，可防止外緣捲軸、動態 viewport、bottom safe space、水平 overflow 與卡片高度回歸，但不是完整 packaged GUI 壓力測試。
+- Windows EXE 未做 code signing，SmartScreen 提醒仍屬預期；macOS DMG 未做 Apple Developer ID 簽章與 notarization。
+- 0.1.30 修正的是右側歌曲列表外緣捲軸與卡片高度；若未來真實上萬首 GUI 滑動仍不足，再評估成熟 virtualization / cover thumbnail cache，不要混進這個 hotfix。
+- 0.1.30 沿用 0.1.28 的 metadata save loop 修正與本機 metadata 保存策略；若使用者在播放器外修改原始檔 tag，仍需要用明確重新讀取 / 重新選擇來源讓 metadata 更新。
+
+## 0.1.29 仍需人工驗收（歷史）
 
 - Windows 真機尚未安裝 `Aquariusgirl Music Room Setup 0.1.29.exe` 驗證 fresh install、啟動、右側播放清單卡片內部捲動、底部播放器不被播放清單覆蓋、手動排序 / 檔名排序播放都照目前歌曲清單由上到下、大清單滑動只 render 可見窗口且不卡、播放/暫停連點、選擇新資料夾後重開恢復最後來源、約 4 GB / 20+ 首音樂資料夾、AI 聊天與 AI 建歌單。
 - Windows EXE 目前只有 NSIS / x64 target static check，不能宣稱 Windows 實機 PASS。
@@ -150,8 +161,16 @@
 
 ## Known Issues
 
-Version: 0.1.29
-Document update: 2026-07-04
+Version: 0.1.30
+Document update: 2026-07-05
+
+## 0.1.30 Manual QA Still Needed
+
+- `Aquariusgirl Music Room Setup 0.1.30.exe` has not been installed on a real Windows machine for fresh install, launch, right-edge playlist scrollbar behavior, fixed search/sort header, no left-column scrolling, no mini-player overlap on the last tracks, no horizontal scrollbar, playback/pause click testing, latest-folder restore, a roughly 4 GB / 20+ song folder, AI chat, and AI playlist creation.
+- The Windows EXE has only NSIS / x64 target static checks, so Windows runtime behavior is not marked PASS.
+- The macOS DMG passed verify and read-only version / arm64 / app.asar / AI runtime checks. Developer ID signing and notarization are not configured.
+- Real packaged GUI large-library mouse / trackpad scroll QA remains open and must use temp music data plus an isolated profile.
+- `check:track-list-virtualization` is a source-level regression guard, not a full packaged GUI stress test.
 
 ## 0.1.29 Manual QA Still Needed
 

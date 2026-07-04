@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import type { NormalPlaylist } from "../types/playlist";
 import type { Track } from "../types/track";
 import { TrackItem } from "./TrackItem";
@@ -6,6 +6,7 @@ import { TrackItem } from "./TrackItem";
 const TRACK_ROW_HEIGHT = 88;
 const TRACK_LIST_VIEWPORT_HEIGHT = 520;
 const TRACK_LIST_OVERSCAN = 8;
+const TRACK_LIST_BOTTOM_SAFE_SPACE = 144;
 
 type TrackListProps = {
   tracks: Track[];
@@ -40,6 +41,26 @@ export function TrackList({
 }: TrackListProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [scrollTop, setScrollTop] = useState(0);
+  const [viewportHeight, setViewportHeight] = useState(TRACK_LIST_VIEWPORT_HEIGHT);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  useLayoutEffect(() => {
+    const element = scrollRef.current;
+    if (!element) return;
+
+    const updateViewportHeight = () => {
+      setViewportHeight(Math.max(240, element.clientHeight || TRACK_LIST_VIEWPORT_HEIGHT));
+    };
+
+    updateViewportHeight();
+
+    if (typeof ResizeObserver === "undefined") return;
+
+    const resizeObserver = new ResizeObserver(updateViewportHeight);
+    resizeObserver.observe(element);
+
+    return () => resizeObserver.disconnect();
+  }, []);
 
   if (tracks.length === 0) {
     return (
@@ -50,7 +71,7 @@ export function TrackList({
   }
 
   const visibleCapacity =
-    Math.ceil(TRACK_LIST_VIEWPORT_HEIGHT / TRACK_ROW_HEIGHT) + TRACK_LIST_OVERSCAN * 2;
+    Math.ceil(viewportHeight / TRACK_ROW_HEIGHT) + TRACK_LIST_OVERSCAN * 2;
   const maxVisibleStart = Math.max(0, tracks.length - visibleCapacity);
   const visibleStart = Math.min(
     Math.max(0, Math.floor(scrollTop / TRACK_ROW_HEIGHT) - TRACK_LIST_OVERSCAN),
@@ -59,11 +80,13 @@ export function TrackList({
   const visibleEnd = Math.min(tracks.length, visibleStart + visibleCapacity);
   const visibleTracks = tracks.slice(visibleStart, visibleEnd);
   const paddingTop = visibleStart * TRACK_ROW_HEIGHT;
-  const paddingBottom = Math.max(0, (tracks.length - visibleEnd) * TRACK_ROW_HEIGHT);
+  const paddingBottom =
+    Math.max(0, (tracks.length - visibleEnd) * TRACK_ROW_HEIGHT) + TRACK_LIST_BOTTOM_SAFE_SPACE;
 
   return (
     <div
-      className="h-full min-h-0 overflow-y-auto pr-1"
+      ref={scrollRef}
+      className="playlist-scrollbar h-full min-h-0 overflow-y-auto overflow-x-hidden pr-3"
       onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
     >
       <ul className="space-y-2" style={{ paddingTop, paddingBottom }}>
