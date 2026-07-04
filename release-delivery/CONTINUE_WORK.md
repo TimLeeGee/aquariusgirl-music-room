@@ -1,6 +1,61 @@
 # 接續工作狀態
 
-最後更新：2026-07-03 CST
+最後更新：2026-07-04 CST
+
+## 2026-07-04 Kill Metadata Save Loop hotfix 0.1.28 完成
+
+- 已停止 `tracks` 任意變動就整庫保存的迴圈。`recordTrackPlayback`、duration、歌曲資訊 / 封面更新不再觸發 `store.clear()` + put all。
+- `src/storage/indexedDb.ts` 新增單曲 API：`putTrackMetadata`、`putManyTrackMetadata`、`patchTrackPlayback`、`patchTrackDuration`、`deleteTrackMetadata`、`replaceAllTrackMetadata`。`saveTrackMetadata()` 僅限整庫重建相容入口。
+- `src/App.tsx` 啟動回灌 `applyStoredTrackMetadata` 同一次執行只做一次；執行中改歌名 / 封面直接更新 tracks state 並 `await putTrackMetadata(reloadedTrack)`。
+- 新增 source-level regression scripts：`check:metadata-save-loop`、`check:no-track-save-loop`、`check:no-full-db-save-on-playback`、`check:cover-update-five-times`、`check:playlist-song-info-restart`、`check:no-audio-load-on-cover-only-update`。
+- 0.1.28 installer 位於：
+
+```text
+release-delivery/installers/Aquariusgirl Music Room Setup 0.1.28.exe
+release-delivery/installers/Aquariusgirl Music Room-0.1.28-arm64.dmg
+```
+
+- SHA-256：EXE `360394b2f88998ebfdf910d38e3a16a3be5b49be3eb92b2f548dbe7f9ce6aea6`；DMG `0f132b187542f28fbc3c614522bd337234efecbdc9a40c709b7020a760ec5913`。
+- 已通過 metadata-save-loop checks、playback-restore、song-info、track-display、track-identity、AI track search、FLAC metadata、prompt、AI assets、custom images、theme colors、build、Electron compile、升權 `npm run dist:release`、DMG verify、Windows NSIS static check。
+- 驗收限制：DMG 唯讀掛載版本 / arm64 / app.asar 讀回因外部用量限制未完成；本輪未做 packaged GUI 壓力測試與 Windows 真機。
+
+### 接續給下一輪 Codex
+
+請接續 Aquariusgirl Music Room 0.1.28 packaged GUI / Windows 驗收。最新版 installer 位於 `release-delivery/installers/`，SHA-256 應為 EXE `360394b2f88998ebfdf910d38e3a16a3be5b49be3eb92b2f548dbe7f9ce6aea6`、DMG `0f132b187542f28fbc3c614522bd337234efecbdc9a40c709b7020a760ec5913`。先讀 `release-delivery/QA_REPORT.md`、`release-delivery/INSTALLER_STATUS.md`、`release-delivery/KNOWN_ISSUES.md`。重點驗證：連續換同一首封面 5 次不卡；播放大型封面歌曲不全庫保存；播放清單中歌曲寫回 metadata / cover 後強制重開仍顯示最新資料；封面更新不觸發同來源 `audio.load()`。使用暫存音樂複本與隔離 profile，不可打開或修改使用者原始 Music 資料夾。
+
+## 2026-07-04 Kill Metadata Save Loop Hotfix 0.1.28 Complete
+
+- Removed arbitrary `tracks` -> full-library saves and replaced playback / duration / song-info persistence with single-track writes.
+- Latest installers are in `release-delivery/installers/`.
+- SHA-256: EXE `360394b2f88998ebfdf910d38e3a16a3be5b49be3eb92b2f548dbe7f9ce6aea6`; DMG `0f132b187542f28fbc3c614522bd337234efecbdc9a40c709b7020a760ec5913`.
+- Passed source guards, build, package, DMG verify, and Windows NSIS static check. DMG mount readback, packaged GUI stress QA, and real Windows QA remain open.
+
+## 2026-07-04 歌曲資訊面板二次寫回 hotfix 0.1.27 完成
+
+- 已修正第一次封面 / 歌曲資訊寫回後，第二次開啟歌曲資訊面板可能因舊 draft / saving 狀態造成「套用到原始檔」無反應或按鈕狀態異常。
+- 不採用清空整個 IndexedDB 或重掃整個音樂庫；本輪只收斂歌曲資訊面板狀態機與 App 寫回格式防線。
+- `SongInfoPanel` 現在用 `trackDraftSnapshot` 從最新 track snapshot 初始化，關閉或成功後用 `resetDraftState()` 清 draft，`savingRef` 在 `finally` 一律重設；disabled reason 包含 no current track / saving / not desktop / no dirty fields / unsupported format。
+- 0.1.27 installer 位於：
+
+```text
+release-delivery/installers/Aquariusgirl Music Room Setup 0.1.27.exe
+release-delivery/installers/Aquariusgirl Music Room-0.1.27-arm64.dmg
+```
+
+- SHA-256：EXE `c39676a14ce17931d20b21e22b2c9fba5239d16e43a6f449fd59b7188d67d937`；DMG `6a4100871195db1e2b0c17c87b2af8fb640a5d865bfccc0765fba2e0216fcf19`。
+- 已通過 playback-restore、song-info、track-display、track-identity、AI track search、FLAC metadata、prompt、AI assets、custom images、theme colors、build、Electron compile、升權 `npm run dist:release`、DMG verify、DMG 唯讀掛載版本 / arm64 / app.asar / AI runtime 檢查、Windows NSIS static check。
+- 驗收限制：本輪未做 packaged GUI 滑鼠流程與 Windows 真機；下一輪需用暫存音樂複本與隔離 profile 驗證第二次寫回、重開封面、播放清單、播放中不卡，以及 Windows fresh install / 4 GB 資料夾 / AI / Mini / 簽章。
+
+### 接續給下一輪 Codex
+
+請接續 Aquariusgirl Music Room 0.1.27 Windows / packaged GUI 驗收。最新版 installer 位於 `release-delivery/installers/`，SHA-256 應為 EXE `c39676a14ce17931d20b21e22b2c9fba5239d16e43a6f449fd59b7188d67d937`、DMG `6a4100871195db1e2b0c17c87b2af8fb640a5d865bfccc0765fba2e0216fcf19`。先讀 `release-delivery/QA_REPORT.md`、`release-delivery/INSTALLER_STATUS.md`、`release-delivery/KNOWN_ISSUES.md`。用暫存音樂複本與隔離 profile，驗證歌曲資訊面板第一次寫回後第二次開同一首或另一首換封面仍可按「套用到原始檔」，重開後封面不回舊圖、播放清單不掉歌、播放中 metadata / cover 更新不觸發同來源 `audio.load()` 卡頓。不要清整個 IndexedDB 當修法；文件更新只追加新版紀錄，不刪舊歷史。
+
+## 2026-07-04 Song Info Second Writeback Hotfix 0.1.27 Complete
+
+- Fixed the second song-info / cover writeback path by resetting panel draft and saving state from the latest track snapshot.
+- Latest installers are in `release-delivery/installers/`.
+- SHA-256: EXE `c39676a14ce17931d20b21e22b2c9fba5239d16e43a6f449fd59b7188d67d937`; DMG `6a4100871195db1e2b0c17c87b2af8fb640a5d865bfccc0765fba2e0216fcf19`.
+- Passed source checks, build, package, DMG verify, read-only DMG checks, and Windows NSIS static check. Packaged GUI mouse QA and real Windows QA remain open.
 
 ## 2026-07-03 單曲寫回後 DB 立即保存 hotfix 0.1.26 完成
 

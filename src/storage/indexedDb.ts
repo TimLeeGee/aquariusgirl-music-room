@@ -4,6 +4,7 @@ import type { Track } from "../types/track";
 const DB_NAME = "aquariusgirl-music-room";
 const DB_VERSION = 1;
 const MUSIC_SOURCE_PATHS_KEY = "music-source-paths";
+const FULL_TRACK_SAVE_WINDOW_MS = 5000;
 // ponytail: 不升版清除已退役的資料 store，避免破壞使用者資料；只有明確要求清理儲存空間時才加 migration。
 
 export type StoredTrackMetadata = Omit<
@@ -14,6 +15,22 @@ export type StoredTrackMetadata = Omit<
 };
 
 type StoreName = "tracks" | "playlists" | "settings" | "handles";
+type TrackPlaybackPatch = Pick<StoredTrackMetadata, "lastPlayedAt" | "playCount">;
+
+let fullTrackSaveTimestamps: number[] = [];
+
+function warnIfRepeatedFullTrackWrite(reason: string) {
+  const now = Date.now();
+  fullTrackSaveTimestamps = [...fullTrackSaveTimestamps, now].filter(
+    (timestamp) => now - timestamp <= FULL_TRACK_SAVE_WINDOW_MS,
+  );
+
+  if (fullTrackSaveTimestamps.length > 1) {
+    console.warn(
+      `[Aquariusgirl] ${reason} called more than once in ${FULL_TRACK_SAVE_WINDOW_MS / 1000}s; check for a metadata save loop.`,
+    );
+  }
+}
 
 function openLibraryDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -84,11 +101,108 @@ export function toStoredTrackMetadata(track: Track): StoredTrackMetadata {
   };
 }
 
-export async function saveTrackMetadata(tracks: Track[]) {
+async function patchStoredTrack(
+  trackId: string,
+  createNextTrack: (track: StoredTrackMetadata) => StoredTrackMetadata,
+) {
+  const db = await openLibraryDb();
+
+  return new Promise<StoredTrackMetadata | undefined>((resolve, reject) => {
+    const transaction = db.transaction("tracks", "readwrite");
+    const store = transaction.objectStore("tracks");
+    const request = store.get(trackId);
+    let nextTrack: StoredTrackMetadata | undefined;
+
+    request.onsuccess = () => {
+      const currentTrack = request.result as StoredTrackMetadata | undefined;
+      if (!currentTrack) return;
+      nextTrack = createNextTrack(currentTrack);
+      store.put(nextTrack);
+    };
+    request.onerror = () => reject(request.error);
+    transaction.oncomplete = () => {
+      db.close();
+      resolve(nextTrack);
+    };
+    transaction.onerror = () => {
+      db.close();
+      reject(transaction.error);
+    };
+  });
+}
+
+export async function getTrackMetadataById(trackId: string) {
+  return await withStore<StoredTrackMetadata>("tracks", "readonly", (store) =>
+    store.get(trackId),
+  );
+}
+
+export async function getTrackMetadataBySourcePath(sourcePath: string) {
+  const tracks = await getTrackMetadata();
+  return tracks.find((track) => track.sourcePath === sourcePath);
+}
+
+export async function putTrackMetadata(track: Track) {
+  await withStore("tracks", "readwrite", (store) => {
+    store.put(toStoredTrackMetadata(track));
+  });
+}
+
+export async function putManyTrackMetadata(tracks: Track[]) {
+  await withStore("tracks", "readwrite", (store) => {
+    tracks.map(toStoredTrackMetadata).forEach((track) => store.put(track));
+  });
+}
+
+export async function patchTrackMetadata(
+  trackId: string,
+  patch: Partial<StoredTrackMetadata>,
+) {
+  const hasCoverDataUrlPatch = Object.prototype.hasOwnProperty.call(patch, "coverDataUrl");
+
+  return await patchStoredTrack(trackId, (track) => ({
+    ...track,
+    ...patch,
+    coverDataUrl: hasCoverDataUrlPatch ? patch.coverDataUrl : track.coverDataUrl,
+  }));
+}
+
+export async function patchTrackPlayback(trackId: string, patch: TrackPlaybackPatch) {
+  return await patchStoredTrack(trackId, (track) => ({
+    ...track,
+    lastPlayedAt: patch.lastPlayedAt,
+    playCount: patch.playCount,
+  }));
+}
+
+export async function patchTrackDuration(trackId: string, duration: number) {
+  if (!Number.isFinite(duration) || duration <= 0) {
+    return undefined;
+  }
+
+  return await patchStoredTrack(trackId, (track) => ({
+    ...track,
+    duration,
+  }));
+}
+
+export async function deleteTrackMetadata(trackId: string) {
+  await withStore("tracks", "readwrite", (store) => {
+    store.delete(trackId);
+  });
+}
+
+export async function replaceAllTrackMetadata(tracks: Track[]) {
+  warnIfRepeatedFullTrackWrite("replaceAllTrackMetadata");
   await withStore("tracks", "readwrite", (store) => {
     store.clear();
     tracks.map(toStoredTrackMetadata).forEach((track) => store.put(track));
   });
+}
+
+export async function saveTrackMetadata(tracks: Track[]) {
+  // 僅限整庫重建，不可在一般 tracks state change 中呼叫。
+  await replaceAllTrackMetadata(tracks);
 }
 
 export async function getTrackMetadata() {
@@ -98,6 +212,7 @@ export async function getTrackMetadata() {
 }
 
 export async function clearTrackMetadata() {
+  warnIfRepeatedFullTrackWrite("clearTrackMetadata");
   await withStore("tracks", "readwrite", (store) => {
     store.clear();
   });

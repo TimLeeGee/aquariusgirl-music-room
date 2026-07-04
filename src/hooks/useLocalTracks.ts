@@ -18,6 +18,7 @@ type UseLocalTracksOptions = {
   onLikedTrackNamesChange: (names: string[]) => void;
   onError?: (message: string) => void;
   onInfo?: (message: string) => void;
+  onTrackMetadataLoaded?: (track: Track) => void;
 };
 
 type LocalAudioFile = File & {
@@ -54,6 +55,7 @@ export function useLocalTracks({
   onLikedTrackNamesChange,
   onError,
   onInfo,
+  onTrackMetadataLoaded,
 }: UseLocalTracksOptions) {
   const [tracks, setTracks] = useState<Track[]>([]);
   const tracksRef = useRef<Track[]>([]);
@@ -126,11 +128,16 @@ export function useLocalTracks({
         !metadata.artworkBlob &&
         metadata.metadataLoaded
       ) {
-        setTracks((currentTracks) =>
-          currentTracks.map((track) =>
-            track.id === trackId ? { ...track, metadataLoaded: true } : track,
-          ),
+        const currentTrack = tracksRef.current.find((track) => track.id === trackId);
+        if (!currentTrack) return;
+        const nextTrack = { ...currentTrack, metadataLoaded: true };
+        tracksRef.current = tracksRef.current.map((track) =>
+          track.id === trackId ? nextTrack : track,
         );
+        setTracks((currentTracks) =>
+          currentTracks.map((track) => (track.id === trackId ? nextTrack : track)),
+        );
+        onTrackMetadataLoaded?.(nextTrack);
         return;
       }
 
@@ -138,57 +145,60 @@ export function useLocalTracks({
         ? URL.createObjectURL(metadata.artworkBlob)
         : undefined;
 
-      setTracks((currentTracks) => {
-        const targetTrack = currentTracks.find((track) => track.id === trackId);
+      const targetTrack = tracksRef.current.find((track) => track.id === trackId);
 
-        if (!targetTrack) {
-          if (artworkUrl) {
-            URL.revokeObjectURL(artworkUrl);
-          }
-
-          return currentTracks;
-        }
-
-        if (targetTrack.metadataOverride) {
-          if (artworkUrl) {
-            URL.revokeObjectURL(artworkUrl);
-          }
-          return currentTracks;
-        }
-
+      if (!targetTrack) {
         if (artworkUrl) {
-          revokeTrackArtworkUrls(targetTrack);
+          URL.revokeObjectURL(artworkUrl);
         }
 
-        return currentTracks.map((track) =>
-          track.id === trackId
-            ? {
-                ...track,
-                title: metadata.title?.trim() || track.title,
-                artist: metadata.artist?.trim() || track.artist,
-                album: metadata.album?.trim() || track.album,
-                albumArtist: metadata.albumArtist?.trim() || track.albumArtist,
-                year: metadata.year?.trim() || track.year,
-                genre: metadata.genre?.trim() || track.genre,
-                trackNumber: metadata.trackNumber?.trim() || track.trackNumber,
-                discNumber: metadata.discNumber?.trim() || track.discNumber,
-                comment: metadata.comment?.trim() || track.comment,
-                composer: metadata.composer?.trim() || track.composer,
-                artworkUrl: artworkUrl || track.artworkUrl,
-                coverUrl: artworkUrl || track.coverUrl,
-                coverDataUrl: track.coverDataUrl,
-                coverMimeType: metadata.coverMimeType || track.coverMimeType,
-                metadataLoaded: metadata.metadataLoaded,
-                metadataError: metadata.metadataError,
-                metadataOverride: false,
-              }
-            : track,
-        );
+        return;
+      }
+
+      if (targetTrack.metadataOverride) {
+        if (artworkUrl) {
+          URL.revokeObjectURL(artworkUrl);
+        }
+        return;
+      }
+
+      if (artworkUrl) {
+        revokeTrackArtworkUrls(targetTrack);
+      }
+
+      const createNextTrack = (track: Track): Track => ({
+        ...track,
+        title: metadata.title?.trim() || track.title,
+        artist: metadata.artist?.trim() || track.artist,
+        album: metadata.album?.trim() || track.album,
+        albumArtist: metadata.albumArtist?.trim() || track.albumArtist,
+        year: metadata.year?.trim() || track.year,
+        genre: metadata.genre?.trim() || track.genre,
+        trackNumber: metadata.trackNumber?.trim() || track.trackNumber,
+        discNumber: metadata.discNumber?.trim() || track.discNumber,
+        comment: metadata.comment?.trim() || track.comment,
+        composer: metadata.composer?.trim() || track.composer,
+        artworkUrl: artworkUrl || track.artworkUrl,
+        coverUrl: artworkUrl || track.coverUrl,
+        coverDataUrl: track.coverDataUrl,
+        coverMimeType: metadata.coverMimeType || track.coverMimeType,
+        metadataLoaded: metadata.metadataLoaded,
+        metadataError: metadata.metadataError,
+        metadataOverride: false,
       });
+      const nextTrack = createNextTrack(targetTrack);
+
+      tracksRef.current = tracksRef.current.map((track) =>
+        track.id === trackId ? nextTrack : track,
+      );
+      setTracks((currentTracks) =>
+        currentTracks.map((track) => (track.id === trackId ? createNextTrack(track) : track)),
+      );
+      onTrackMetadataLoaded?.(nextTrack);
     } catch {
       // Bad or unsupported ID3 data should never block local playback.
     }
-  }, [revokeTrackArtworkUrls]);
+  }, [onTrackMetadataLoaded, revokeTrackArtworkUrls]);
 
   const replaceTrackSongInfo = useCallback(
     (trackId: string, draft: SongInfoDraft) => {
@@ -255,45 +265,47 @@ export function useLocalTracks({
         : undefined;
       const parsed = parseTrackName(track.file.name);
 
-      setTracks((currentTracks) => {
-        const targetTrack = currentTracks.find((item) => item.id === trackId);
+      const targetTrack = tracksRef.current.find((item) => item.id === trackId);
 
-        if (!targetTrack) {
-          if (artworkUrl) URL.revokeObjectURL(artworkUrl);
-          return currentTracks;
-        }
+      if (!targetTrack) {
+        if (artworkUrl) URL.revokeObjectURL(artworkUrl);
+        return null;
+      }
 
-        if (artworkUrl) {
-          revokeTrackArtworkUrls(targetTrack);
-        }
+      if (artworkUrl) {
+        revokeTrackArtworkUrls(targetTrack);
+      }
 
-        return currentTracks.map((item) =>
-          item.id === trackId
-            ? {
-                ...item,
-                title: metadata.title?.trim() || parsed.title,
-                artist: metadata.artist?.trim() || parsed.artist,
-                album: metadata.album?.trim() || undefined,
-                albumArtist: metadata.albumArtist?.trim() || undefined,
-                year: metadata.year?.trim() || undefined,
-                genre: metadata.genre?.trim() || undefined,
-                trackNumber: metadata.trackNumber?.trim() || undefined,
-                discNumber: metadata.discNumber?.trim() || undefined,
-                comment: metadata.comment?.trim() || undefined,
-                composer: metadata.composer?.trim() || undefined,
-                artworkUrl,
-                coverUrl: artworkUrl,
-                coverDataUrl: undefined,
-                coverMimeType: metadata.coverMimeType,
-                metadataLoaded: metadata.metadataLoaded,
-                metadataError: metadata.metadataError,
-                metadataOverride: false,
-              }
-            : item,
-        );
+      const createNextTrack = (track: Track): Track => ({
+        ...track,
+        title: metadata.title?.trim() || parsed.title,
+        artist: metadata.artist?.trim() || parsed.artist,
+        album: metadata.album?.trim() || undefined,
+        albumArtist: metadata.albumArtist?.trim() || undefined,
+        year: metadata.year?.trim() || undefined,
+        genre: metadata.genre?.trim() || undefined,
+        trackNumber: metadata.trackNumber?.trim() || undefined,
+        discNumber: metadata.discNumber?.trim() || undefined,
+        comment: metadata.comment?.trim() || undefined,
+        composer: metadata.composer?.trim() || undefined,
+        artworkUrl,
+        coverUrl: artworkUrl,
+        coverDataUrl: undefined,
+        coverMimeType: metadata.coverMimeType,
+        metadataLoaded: metadata.metadataLoaded,
+        metadataError: metadata.metadataError,
+        metadataOverride: false,
       });
+      const nextTrack = createNextTrack(targetTrack);
 
-      return metadata.metadataLoaded;
+      tracksRef.current = tracksRef.current.map((item) =>
+        item.id === trackId ? nextTrack : item,
+      );
+      setTracks((currentTracks) =>
+        currentTracks.map((item) => (item.id === trackId ? createNextTrack(item) : item)),
+      );
+
+      return metadata.metadataLoaded ? nextTrack : null;
     },
     [revokeTrackArtworkUrls],
   );
@@ -541,9 +553,17 @@ export function useLocalTracks({
 
   const setTrackDuration = useCallback((trackId: string, nextDuration: number) => {
     if (!Number.isFinite(nextDuration) || nextDuration <= 0) {
-      return;
+      return false;
     }
 
+    const currentTrack = tracksRef.current.find((track) => track.id === trackId);
+    if (!currentTrack || currentTrack.duration === nextDuration) {
+      return false;
+    }
+
+    tracksRef.current = tracksRef.current.map((track) =>
+      track.id === trackId ? { ...track, duration: nextDuration } : track,
+    );
     setTracks((currentTracks) =>
       currentTracks.map((track) =>
         track.id === trackId && track.duration !== nextDuration
@@ -551,20 +571,36 @@ export function useLocalTracks({
           : track,
       ),
     );
+
+    return true;
   }, []);
 
   const recordTrackPlayback = useCallback((trackId: string) => {
+    const currentTrack = tracksRef.current.find((track) => track.id === trackId);
+    if (!currentTrack) {
+      return null;
+    }
+
+    const patch = {
+      lastPlayedAt: Date.now(),
+      playCount: (currentTrack.playCount ?? 0) + 1,
+    };
+
+    tracksRef.current = tracksRef.current.map((track) =>
+      track.id === trackId ? { ...track, ...patch } : track,
+    );
     setTracks((currentTracks) =>
       currentTracks.map((track) =>
         track.id === trackId
           ? {
               ...track,
-              lastPlayedAt: Date.now(),
-              playCount: (track.playCount ?? 0) + 1,
+              ...patch,
             }
           : track,
       ),
     );
+
+    return patch;
   }, []);
 
   return {

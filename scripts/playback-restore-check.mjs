@@ -6,6 +6,7 @@ const fileSystemSource = readFileSync("src/hooks/useFileSystemAccess.ts", "utf8"
 const localTracksSource = readFileSync("src/hooks/useLocalTracks.ts", "utf8");
 const libraryDbSource = readFileSync("src/hooks/useMusicLibraryDb.ts", "utf8");
 const appSource = readFileSync("src/App.tsx", "utf8");
+const songInfoPanelSource = readFileSync("src/components/SongInfoPanel.tsx", "utf8");
 
 assert.match(audioHookSource, /currentTrackSource/);
 assert.doesNotMatch(audioHookSource, /\[currentTrack,\s*isPlaying,\s*onError\]/);
@@ -28,10 +29,20 @@ assert.match(localTracksSource, /metadataLoaded: track\.metadataLoaded \|\| hasS
 assert.doesNotMatch(localTracksSource, /mediaVersion:\s*Date\.now\(\),/);
 assert.match(libraryDbSource, /trackSaveQueueRef/);
 assert.match(libraryDbSource, /trackSaveQueueRef\.current\s*=\s*trackSaveQueueRef\.current/);
-assert.match(libraryDbSource, /then\(\(\) => saveTrackMetadata\(tracksSnapshot\)\)/);
-assert.match(libraryDbSource, /saveTracksNow/);
+assert.match(libraryDbSource, /putTrackMetadata/);
+assert.match(libraryDbSource, /patchTrackPlayback/);
+assert.match(libraryDbSource, /patchTrackDuration/);
 assert.match(libraryDbSource, /return saveTask/);
-assert.match(appSource, /await libraryDb\.saveTracksNow/);
-assert.doesNotMatch(appSource, /showInfo\("已套用到原始檔"\);[\s\S]{0,160}return true;[\s\S]{0,240}libraryDb\.saveTracksNow/);
+assert.match(appSource, /await libraryDb\.putTrackMetadata\(reloadedTrack\)/);
+assert.doesNotMatch(appSource, /libraryDb\.saveTracksNow/);
+assert.doesNotMatch(appSource, /showInfo\("已套用到原始檔"\);[\s\S]{0,240}libraryDb\.putTrackMetadata/);
+
+assert.match(songInfoPanelSource, /savingRef/);
+assert.match(songInfoPanelSource, /resetDraftState/);
+assert.match(songInfoPanelSource, /trackDraftSnapshot/);
+assert.doesNotMatch(songInfoPanelSource, /\}, \[open, track\?\.id\]\);/);
+assert.match(songInfoPanelSource, /disabled=\{!dirty \|\| busy \|\| Boolean\(writeBackDisabledReason\)\}/);
+assert.match(songInfoPanelSource, /savingRef\.current = false/);
+assert.match(songInfoPanelSource, /resetDraftState\(createSongInfoDraft\(null\)\)/);
 
 console.log("playback-restore-check PASS");

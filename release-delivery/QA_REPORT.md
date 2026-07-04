@@ -1,9 +1,63 @@
 # QA 驗收報告
 
 產品：Aquariusgirl Music Room / 水瓶罐子的音樂小水池
-版本：0.1.26
-日期：2026-07-03
+版本：0.1.28
+日期：2026-07-04
 驗收角色：PM / QA / Electron 發行工程師
+
+## 2026-07-04 Kill Metadata Save Loop hotfix 0.1.28
+
+- 範圍：修正嚴重效能與資料同步問題。使用者更新封面幾次後越來越卡、播放曾修改 metadata / cover 的歌曲會卡很久、播放清單與播放器資料庫重開後不穩定刷新，疑似全庫保存與 storedTracks 回灌迴圈。
+- 根因：`useMusicLibraryDb` 仍有 `tracks` 任意變動就 `saveTracksNow(tracks)` 的 effect；`saveTrackMetadata()` 會 `store.clear()` 後 put all。播放統計 `recordTrackPlayback`、duration、單曲 metadata / cover 更新都會造成 tracks 改變，進而重寫整個 tracks store，包含大型 `coverDataUrl`。`storedTracks` 更新後又會觸發 `applyStoredTrackMetadata` 回套到 tracks，形成回授風險。
+- 修正：移除 tracks autosave effect；新增 `putTrackMetadata`、`putManyTrackMetadata`、`patchTrackPlayback`、`patchTrackDuration`、`deleteTrackMetadata`、`replaceAllTrackMetadata`。`saveTrackMetadata()` 只保留為整庫重建相容入口並加註解。播放統計與 duration 只 patch 小欄位，不寫 coverDataUrl；原始檔寫回後只 `await putTrackMetadata(reloadedTrack)`；`applyStoredTrackMetadata` 同一次 App 執行只做啟動補救一次。
+- 播放防線：播放流程不呼叫 `readSongInfoFromOriginalFile` / `readAudioMetadata` / `applySongInfoToOriginalFile`，封面 / metadata-only 更新不改 `localUrl` 或 `mediaVersion`，沿用 `loadedTrackSourceRef` 只在 source 真變時 `audio.load()`。
+- 測試：先新增 `scripts/metadata-save-loop-check.mjs`，舊程式因缺少單曲 API 與仍有全庫保存入口紅燈；修正後 PASS。新增 npm 指令：`check:metadata-save-loop`、`check:no-track-save-loop`、`check:no-full-db-save-on-playback`、`check:cover-update-five-times`、`check:playlist-song-info-restart`、`check:no-audio-load-on-cover-only-update`。這些是 source-level regression guard，不是 packaged GUI 壓力測試。
+- 檢查：`npm run check:no-track-save-loop` PASS；`npm run check:no-full-db-save-on-playback` PASS；`npm run check:cover-update-five-times` PASS；`npm run check:playlist-song-info-restart` PASS；`npm run check:no-audio-load-on-cover-only-update` PASS；`npm run check:playback-restore` PASS；`npm run check:song-info` PASS；`npm run check:track-display` PASS；`npm run check:track-identity` PASS；`npm run check:ai-track-search` PASS；`npm run check:flac-metadata` PASS；`npm run check:prompts` PASS；`npm run check:theme-colors` PASS；`npm run check:custom-images` PASS；all-target `check:ai-assets` PASS；`npm run build` PASS；`npm run electron:compile` PASS。
+- 打包：一般沙盒 `npm run dist:release` 在 `hdiutil create` 失敗；升權重跑同一 `npm run dist:release` PASS，同步兩個 installer 到 `release-delivery/installers/`，暫存 `release/` 已移除。
+- DMG / EXE：DMG `hdiutil verify` VALID；EXE static check PASS，辨識為 Windows NSIS installer。DMG 唯讀掛載版本 / arm64 / app.asar 讀回因外部用量限制被拒絕，本輪不標記 PASS；未在 Windows 真機執行。
+
+0.1.28 最新 installer：
+
+- EXE：667,497,320 bytes，SHA-256 `360394b2f88998ebfdf910d38e3a16a3be5b49be3eb92b2f548dbe7f9ce6aea6`
+- arm64 DMG：684,456,512 bytes，SHA-256 `0f132b187542f28fbc3c614522bd337234efecbdc9a40c709b7020a760ec5913`
+
+限制：source-level checks 已覆蓋保存迴圈防線，但尚未完成 packaged GUI 連續換封面 5 次、播放清單寫回後強制重開、播放大型封面歌曲不卡、Windows 真機安裝、大資料夾、AI 操作、Mini/dialog focus、簽章與 notarization。
+
+### English QA Summary
+
+- Scope: fixes the metadata save loop and full-library IndexedDB rewrites.
+- Root cause: arbitrary `tracks` changes triggered `saveTracksNow(tracks)`, and `saveTrackMetadata()` cleared and rewrote the entire tracks store, including large cover payloads.
+- Fix: removed the arbitrary autosave effect and added explicit single-track put/patch/delete APIs. Playback and duration updates no longer write cover data or replace all metadata.
+- Passed checks: metadata-save-loop source guards, playback-restore, song-info, track-display, track-identity, AI track search, FLAC metadata, prompt checks, theme colors, custom images, all-target AI assets, build, Electron compile, elevated `dist:release`, DMG verify, and Windows NSIS static check.
+- Limits: packaged GUI stress QA, DMG mount readback, real Windows install, large-folder QA, signing, and notarization remain open.
+
+## 2026-07-04 歌曲資訊面板二次寫回 hotfix 0.1.27
+
+- 範圍：修正歌曲資訊 / 封面寫回 / IndexedDB / 播放卡頓同族殘留。第一次更換封面並套用到原始檔成功後，下一次開同一首或另一首歌曲資訊面板，按「套用到原始檔」可能無反應或按鈕狀態異常。
+- 判斷：不採用清空整個 IndexedDB 或重新載入全部歌曲。0.1.26 已建立單曲重讀與 `saveTracksNow()` 保存順序，本輪問題集中在面板 draft / saving 狀態與按鈕 disabled reason。
+- 根因：`SongInfoPanel` 只用 `[open, track?.id]` 初始化 draft，無法反映同一 track 最新 cover / metadata snapshot；第一次成功後缺少集中清理 draft 與 `savingRef` 的流程。disabled 條件也沒有完整包含 no dirty fields、unsupported format 等原因。
+- 修正：`SongInfoPanel` 新增 `trackDraftSnapshot`、`resetDraftState()`、`savingRef`；每次開啟用最新 track snapshot 初始化，關閉或成功後清 draft，`finally` 一律把 `savingRef.current = false` 並清 `busy`；writeback disabled 條件收斂為 no current track / saving / not desktop / no dirty fields / unsupported format。`App.tsx` 也在 IPC 前拒絕不支援格式。
+- 失敗先行：先讓 `scripts/playback-restore-check.mjs` 要求 `savingRef`、`resetDraftState`、`trackDraftSnapshot`、dirty-aware disabled，且禁止回到 `}, [open, track?.id]);`；舊程式紅燈，修正後 PASS。
+- 檢查：`npm run check:playback-restore` PASS；`npm run check:song-info` PASS；`npm run check:track-display` PASS；`npm run check:track-identity` PASS；`npm run check:ai-track-search` PASS；`npm run check:flac-metadata` PASS；`npm run check:prompts` PASS；`npm run check:theme-colors` PASS；`npm run check:custom-images` PASS；all-target `check:ai-assets` PASS；`npm run build` PASS；`npm run electron:compile` PASS。
+- 打包：一般沙盒 `npm run dist:release` 在 `hdiutil create` 失敗；升權重跑同一 `npm run dist:release` PASS，同步兩個 installer 到 `release-delivery/installers/`，暫存 `release/` 已移除。
+- DMG 驗證：`hdiutil verify` VALID；升權唯讀掛載讀回 `CFBundleShortVersionString` / `CFBundleVersion` 均為 0.1.27，執行檔為 Mach-O arm64，`app.asar` package version 為 0.1.27，mac AI runtime `darwin-arm64/llama-server` 存在，掛載點已卸載。
+- EXE static check：PASS，辨識為 Windows NSIS installer；未在 Windows 真機執行，不能宣稱 Windows fresh install、播放中改封面、播放/暫停、4 GB 資料夾、寫回與 AI 操作實機通過。
+- GUI 驗收限制：本輪未執行 packaged GUI 滑鼠流程；下一輪需用暫存音樂複本與隔離 profile 驗證第一次寫回後第二次寫回、重開封面、播放清單與播放中不卡。
+
+0.1.27 最新 installer：
+
+- EXE：667,496,788 bytes，SHA-256 `c39676a14ce17931d20b21e22b2c9fba5239d16e43a6f449fd59b7188d67d937`
+- arm64 DMG：684,462,624 bytes，SHA-256 `6a4100871195db1e2b0c17c87b2af8fb640a5d865bfccc0765fba2e0216fcf19`
+
+限制：Windows 真機安裝、Windows 播放中更換封面後切歌再切回不卡、Windows cover02 -> cover01 第一次重開後不回跳、選擇新資料夾後重開恢復、約 4 GB / 20+ 首資料夾載入、AI 操作與 Mini/dialog focus 尚未驗收；macOS GUI 滑鼠流程未在本輪驗收；macOS DMG 未做 Apple Developer ID 簽章或 notarization；Windows EXE 未做 code signing。
+
+### English QA Summary
+
+- Scope: fixes the second song-info / cover writeback path after an earlier successful original-file writeback.
+- Root cause: the song-info panel initialized only by `[open, track?.id]` and could keep stale draft / saving state; disabled reasons were incomplete.
+- Fix: initialize from the latest `trackDraftSnapshot`, clear draft state on close/success, reset `savingRef` in `finally`, and reject unsupported writeback formats before IPC.
+- Passed checks: playback-restore, song-info, track-display, track-identity, AI track search, FLAC metadata, prompt checks, theme colors, custom images, all-target AI assets, build, Electron compile, elevated `dist:release`, DMG verify, read-only DMG version / arm64 / app.asar / AI runtime checks, and Windows NSIS static check.
+- Limits: packaged GUI mouse QA, real Windows install, large-folder QA, AI/Mini UX, signing, and notarization remain open.
 
 ## 2026-07-03 單曲寫回後 DB 立即保存 hotfix 0.1.26
 

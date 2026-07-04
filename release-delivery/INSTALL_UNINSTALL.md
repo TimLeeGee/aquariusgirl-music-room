@@ -1,33 +1,67 @@
 # 安裝與解除安裝
 
-版本：0.1.26
-文件更新：2026-07-03
+版本：0.1.28
+文件更新：2026-07-04
 
-## 0.1.26 Windows 安裝
+## 0.1.28 Windows 安裝
 
-1. 執行 `Aquariusgirl Music Room Setup 0.1.26.exe`。
+1. 執行 `Aquariusgirl Music Room Setup 0.1.28.exe`。
 2. 選擇安裝位置。
 3. 安裝完成後，從桌面捷徑或開始選單開啟。
 4. 第一次啟動後，選擇本機音樂檔或資料夾。
 
 SmartScreen 提醒通常是因為測試版尚未做 Windows code signing。確認檔案來源可信後，可選擇繼續執行。
 
-0.1.26 修正原始檔寫回後播放器資料庫可能仍保留舊 cover / metadata 的殘留問題。仍建議首次在 Windows 真機驗證播放中改封面、第一次重開即保留新封面、播放/暫停、資料夾恢復、歌曲資訊與封面寫回。
+0.1.28 修正 metadata 保存迴圈與全庫重寫問題。仍建議首次在 Windows 真機驗證播放含大型封面的歌曲、連續更換封面、播放清單歌曲資訊寫回後重開、播放/暫停、資料夾恢復、歌曲資訊與封面寫回。
 
-## 0.1.26 macOS 安裝
+## 0.1.28 macOS 安裝
 
-1. 開啟 `Aquariusgirl Music Room-0.1.26-arm64.dmg`。
+1. 開啟 `Aquariusgirl Music Room-0.1.28-arm64.dmg`。
 2. 將 `Aquariusgirl Music Room.app` 拖曳到 Applications。
 3. 從 Applications 開啟。
 4. 第一次啟動後，選擇本機音樂檔或資料夾。
 
 Gatekeeper 提醒通常是因為測試版尚未做 Apple Developer ID 簽章與 notarization。可在「系統設定 > 隱私權與安全性」允許開啟。
 
-0.1.26 解除安裝方式與下方歷史說明相同；解除安裝 App 不會刪除使用者原始音樂檔。
+0.1.28 解除安裝方式與下方歷史說明相同；解除安裝 App 不會刪除使用者原始音樂檔。
 
-0.1.26 packaged macOS 隔離驗收已用暫存 Plazma 複本確認封面 Cover 02 -> Cover 01 寫回、切歌再切回、重開後封面保留與播放清單保留；驗收未打開使用者原始 Music 資料夾。macOS native dialog 選取 `/private/tmp` 暫存路徑時使用 harness，Windows 真機仍需另驗。
+0.1.28 已完成 DMG verify；本輪唯讀掛載讀回版本 / arm64 / app.asar 因外部用量限制未完成。下一輪 packaged GUI 驗收仍須使用暫存音樂複本與隔離 profile，不可打開或修改使用者原始 Music 資料夾。
 
 歌曲資訊保存只保留「套用到原始檔」。寫回會修改使用者選取的原始 MP3/FLAC/M4A；操作前請確認內容正確，必要時先保留音樂檔備份。
+
+## 0.1.27 歷史安裝說明
+
+0.1.27 Windows installer 為 `Aquariusgirl Music Room Setup 0.1.27.exe`，macOS installer 為 `Aquariusgirl Music Room-0.1.27-arm64.dmg`。該版 hotfix 修正第一次歌曲資訊 / 封面寫回成功後，第二次開面板可能因舊 draft / saving 狀態導致「套用到原始檔」無反應的問題。
+
+## 0.1.27 歷史 Windows 安裝
+
+1. 執行 `Aquariusgirl Music Room Setup 0.1.27.exe`。
+2. 選擇安裝位置。
+3. 安裝完成後，從桌面捷徑或開始選單開啟。
+4. 第一次啟動後，選擇本機音樂檔或資料夾。
+
+SmartScreen 提醒通常是因為測試版尚未做 Windows code signing。確認檔案來源可信後，可選擇繼續執行。
+
+0.1.27 修正第一次歌曲資訊 / 封面寫回成功後，第二次開面板可能因舊 draft / saving 狀態導致「套用到原始檔」無反應的問題。仍建議首次在 Windows 真機驗證播放中改封面、第二次寫回、第一次重開即保留新封面、播放/暫停、資料夾恢復、歌曲資訊與封面寫回。
+
+## 0.1.27 歷史 macOS 安裝
+
+1. 開啟 `Aquariusgirl Music Room-0.1.27-arm64.dmg`。
+2. 將 `Aquariusgirl Music Room.app` 拖曳到 Applications。
+3. 從 Applications 開啟。
+4. 第一次啟動後，選擇本機音樂檔或資料夾。
+
+Gatekeeper 提醒通常是因為測試版尚未做 Apple Developer ID 簽章與 notarization。可在「系統設定 > 隱私權與安全性」允許開啟。
+
+0.1.27 解除安裝方式與下方歷史說明相同；解除安裝 App 不會刪除使用者原始音樂檔。
+
+0.1.27 已完成 DMG verify 與唯讀掛載讀回版本 / arm64 / app.asar / AI runtime 檢查；本輪尚未執行 packaged GUI 滑鼠流程。下一輪驗收仍須使用暫存音樂複本與隔離 profile，不可打開或修改使用者原始 Music 資料夾。
+
+歌曲資訊保存只保留「套用到原始檔」。寫回會修改使用者選取的原始 MP3/FLAC/M4A；操作前請確認內容正確，必要時先保留音樂檔備份。
+
+## 0.1.26 歷史安裝說明
+
+0.1.26 Windows installer 為 `Aquariusgirl Music Room Setup 0.1.26.exe`，macOS installer 為 `Aquariusgirl Music Room-0.1.26-arm64.dmg`。該版 hotfix 修正原始檔寫回後播放器資料庫可能仍保留舊 cover / metadata 的殘留問題。
 
 ## 0.1.25 歷史安裝說明
 
@@ -116,34 +150,66 @@ Gatekeeper 提醒通常是因為測試版尚未做 Apple Developer ID 簽章與 
 
 ## Install and Uninstall
 
-Version: 0.1.26
-Document update: 2026-07-03
+Version: 0.1.28
+Document update: 2026-07-04
 
-## 0.1.26 Windows Install
+## 0.1.28 Windows Install
 
-1. Run `Aquariusgirl Music Room Setup 0.1.26.exe`.
+1. Run `Aquariusgirl Music Room Setup 0.1.28.exe`.
 2. Choose an install location.
 3. Open the app from the desktop shortcut or Start menu.
 4. Select local music files or a music folder on first launch.
 
 SmartScreen warnings are expected for unsigned test builds.
 
-0.1.26 fixes the remaining original-file writeback persistence race where IndexedDB could still restore old cover / metadata after a successful UI update. Real Windows QA should still verify playback while editing cover art, first-restart cover persistence, playback/pause, latest-folder restore, song-info writeback, and cover writeback.
+0.1.28 fixes the metadata save loop and full-library rewrite path. Real Windows QA should still verify large-cover playback, five repeated cover updates, playlist song-info restart persistence, playback/pause, latest-folder restore, song-info writeback, and cover writeback.
 
-## 0.1.26 macOS Install
+## 0.1.28 macOS Install
 
-1. Open `Aquariusgirl Music Room-0.1.26-arm64.dmg`.
+1. Open `Aquariusgirl Music Room-0.1.28-arm64.dmg`.
 2. Drag `Aquariusgirl Music Room.app` into Applications.
 3. Open the app from Applications.
 4. Select local music files or a music folder on first launch.
 
 Gatekeeper warnings are expected until Developer ID signing and notarization are configured.
 
-0.1.26 uses the same uninstall steps as the historical notes below. Uninstalling the app does not delete original music files.
+0.1.28 uses the same uninstall steps as the historical notes below. Uninstalling the app does not delete original music files.
 
-0.1.26 packaged macOS isolated QA used a temp Plazma copy and confirmed Cover 02 -> Cover 01 writeback, switching away and back, restart cover persistence, and playlist retention without opening the user's original Music folder. Native macOS dialog selection for `/private/tmp` used a harness; real Windows QA remains separate.
+0.1.28 passed DMG verify. DMG read-only mount / app.asar readback was blocked by external usage limits this round. Packaged GUI stress QA still needs a temp music copy and isolated profile; do not open or modify the user's original Music folder.
+
+## 0.1.27 Historical Install Notes
+
+0.1.27 used `Aquariusgirl Music Room Setup 0.1.27.exe` and `Aquariusgirl Music Room-0.1.27-arm64.dmg`. It fixed the second song-info / cover writeback path after an earlier successful writeback.
+
+## 0.1.27 Historical Windows Install
+
+1. Run `Aquariusgirl Music Room Setup 0.1.27.exe`.
+2. Choose an install location.
+3. Open the app from the desktop shortcut or Start menu.
+4. Select local music files or a music folder on first launch.
+
+SmartScreen warnings are expected for unsigned test builds.
+
+0.1.27 fixes the second song-info / cover writeback path after an earlier successful writeback. Real Windows QA should still verify second writeback, first-restart cover persistence, playback/pause, latest-folder restore, song-info writeback, and cover writeback.
+
+## 0.1.27 Historical macOS Install
+
+1. Open `Aquariusgirl Music Room-0.1.27-arm64.dmg`.
+2. Drag `Aquariusgirl Music Room.app` into Applications.
+3. Open the app from Applications.
+4. Select local music files or a music folder on first launch.
+
+Gatekeeper warnings are expected until Developer ID signing and notarization are configured.
+
+0.1.27 uses the same uninstall steps as the historical notes below. Uninstalling the app does not delete original music files.
+
+0.1.27 passed DMG verify and read-only DMG version / arm64 / app.asar / AI runtime checks. Packaged GUI mouse QA still needs a temp music copy and isolated profile; do not open or modify the user's original Music folder.
 
 Song info saving now only writes back to the original file. Writeback modifies the selected original MP3/FLAC/M4A, so verify the edit first and keep a backup when needed.
+
+## 0.1.26 Historical Install Notes
+
+0.1.26 used `Aquariusgirl Music Room Setup 0.1.26.exe` and `Aquariusgirl Music Room-0.1.26-arm64.dmg`. It fixed the remaining original-file writeback persistence race.
 
 ## 0.1.25 Historical Install Notes
 

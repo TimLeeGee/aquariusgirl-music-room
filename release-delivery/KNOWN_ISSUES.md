@@ -1,9 +1,34 @@
 # 已知問題
 
-版本：0.1.26
-文件更新：2026-07-03
+版本：0.1.28
+文件更新：2026-07-04
 
-## 0.1.26 仍需人工驗收
+## 0.1.28 仍需人工驗收
+
+- Windows 真機尚未安裝 `Aquariusgirl Music Room Setup 0.1.28.exe` 驗證 fresh install、啟動、播放含大型封面的歌曲不卡、連續更換同一首封面 5 次不卡、播放清單歌曲資訊寫回後強制重開仍顯示最新 metadata / cover、播放/暫停連點、選擇新資料夾後重開恢復最後來源、約 4 GB / 20+ 首音樂資料夾、AI 聊天與 AI 建歌單。
+- Windows EXE 目前只有 NSIS / x64 target static check，不能宣稱 Windows 實機 PASS。
+- macOS DMG 已完成 verify；本輪唯讀掛載版本 / arm64 / app.asar 讀回因外部用量限制未完成，不能宣稱該項 PASS。
+- 本輪新增的 `check:cover-update-five-times`、`check:playlist-song-info-restart` 等是 source-level regression guard，不是完整 packaged GUI 壓力測試。
+- macOS packaged GUI 滑鼠流程仍需用暫存音樂複本與隔離 profile 補驗，不可打開或修改使用者原始 Music 資料夾。
+- Windows EXE 未做 code signing，SmartScreen 提醒仍屬預期；macOS DMG 未做 Apple Developer ID 簽章與 notarization。
+- 0.1.28 修正的是 metadata 保存迴圈與全庫重寫；若使用者在播放器外修改原始檔 tag，仍需要用明確重新讀取 / 重新選擇來源讓 metadata 更新。
+- 原始檔寫回目前只支援 MP3、FLAC、M4A；不提供「保存到播放器」作為替代保存路徑。
+- 0.1.28 不拆封面到獨立 object store；這次先停止全庫保存與播放中重寫 coverDataUrl。若未來上萬首壓力測試仍不足，再另開縮圖 / cover store 設計。
+- 0.1.28 內建模型、llama.cpp runtime 與 `taglib-wasm`，installer 體積比純播放器版本大。
+
+## 0.1.27 仍需人工驗收
+
+- Windows 真機尚未安裝 `Aquariusgirl Music Room Setup 0.1.27.exe` 驗證 fresh install、啟動、第一次歌曲資訊 / 封面寫回後第二次寫回仍可按「套用到原始檔」、重開後封面不回舊圖、播放中改封面後切歌再切回不卡、播放/暫停連點、選擇新資料夾後重開恢復最後來源、約 4 GB / 20+ 首音樂資料夾、改封面後播放清單不掉歌、AI 聊天與 AI 建歌單。
+- Windows EXE 目前只有 NSIS / x64 target static check，不能宣稱 Windows 實機 PASS。
+- macOS DMG 已完成 verify 與唯讀掛載版本 / arm64 / app.asar / AI runtime 檢查；但未做 Apple Developer ID 簽章與 notarization。
+- 本輪尚未執行 packaged macOS GUI 滑鼠流程；下一輪需用暫存音樂複本與隔離 profile 驗證第二次寫回、重開封面、播放清單與播放中不卡。
+- Windows EXE 未做 code signing，SmartScreen 提醒仍屬預期。
+- 0.1.27 修正的是歌曲資訊面板二次寫回狀態機與格式防線；若使用者在播放器外修改原始檔 tag，仍需要用明確重新讀取 / 重新選擇來源讓 metadata 更新。
+- 原始檔寫回目前只支援 MP3、FLAC、M4A；不提供「保存到播放器」作為替代保存路徑。
+- 0.1.27 不會在每次歌曲資訊更新後清空整個音樂資料庫；若未來要做大規模索引或縮圖快取，需要另開效能設計，不應混進這個 hotfix。
+- 0.1.27 內建模型、llama.cpp runtime 與 `taglib-wasm`，installer 體積比純播放器版本大。
+
+## 0.1.26 仍需人工驗收（歷史）
 
 - Windows 真機尚未安裝 `Aquariusgirl Music Room Setup 0.1.26.exe` 驗證 fresh install、啟動、播放中更換封面後切歌再切回不卡、cover02 -> cover01 第一次重開後不回跳、播放/暫停連點、選擇新資料夾後重開恢復最後來源、約 4 GB / 20+ 首音樂資料夾、歌曲資訊寫回、改封面後播放清單不掉歌、AI 聊天與 AI 建歌單。
 - Windows EXE 目前只有 NSIS / x64 target static check，不能宣稱 Windows 實機 PASS。
@@ -113,10 +138,35 @@
 
 ## Known Issues
 
-Version: 0.1.26
-Document update: 2026-07-03
+Version: 0.1.28
+Document update: 2026-07-04
 
-## 0.1.26 Manual QA Still Needed
+## 0.1.28 Manual QA Still Needed
+
+- `Aquariusgirl Music Room Setup 0.1.28.exe` has not been installed on a real Windows machine for fresh install, launch, large-cover playback, five repeated cover updates, playlist song-info restart persistence, playback/pause click testing, latest-folder restore, a roughly 4 GB / 20+ song folder, AI chat, and AI playlist creation.
+- The Windows EXE has only NSIS / x64 target static checks, so Windows runtime behavior is not marked PASS.
+- The macOS DMG passed verify, but DMG read-only mount / arm64 / app.asar readback was blocked by external usage limits this round.
+- The new cover-update and playlist-restart checks are source-level regression guards, not full packaged GUI stress tests.
+- Packaged macOS GUI stress QA still needs a temp music copy and isolated profile.
+- The Windows EXE is unsigned, so SmartScreen warnings are expected. Developer ID signing and notarization are not configured for macOS.
+- 0.1.28 fixes the metadata save loop and full-library rewrite path. If original tags are changed outside the player, use explicit reload / source reselection to refresh metadata.
+- Original-file writeback currently supports MP3, FLAC, and M4A only. Player-local metadata saving is not offered as a fallback save path.
+- 0.1.28 does not split artwork into a separate object store; that should be a separate design only if large-library stress tests still show a need.
+- 0.1.28 bundles the model, llama.cpp runtime, and `taglib-wasm`, so installers are larger than player-only builds.
+
+## 0.1.27 Manual QA Still Needed
+
+- `Aquariusgirl Music Room Setup 0.1.27.exe` has not been installed on a real Windows machine for fresh install, launch, second song-info / cover writeback after an earlier successful writeback, first-restart cover persistence, playback after changing cover art while playing, playback/pause click testing, latest-folder restore, a roughly 4 GB / 20+ song folder, playlist persistence after cover changes, AI chat, and AI playlist creation.
+- The Windows EXE has only NSIS / x64 target static checks, so Windows runtime behavior is not marked PASS.
+- The macOS DMG passed verify and read-only version / arm64 / app.asar / AI runtime checks. Developer ID signing and notarization are not configured.
+- Packaged macOS GUI mouse QA was not completed in this round. The next pass must use a temp music copy and isolated profile to verify second writeback, restart cover persistence, playlist retention, and no playback stall while editing metadata / cover.
+- The Windows EXE is unsigned, so SmartScreen warnings are expected.
+- 0.1.27 fixes the song-info panel second-writeback state machine and writeback format guard. If original tags are changed outside the player, use explicit reload / source reselection to refresh metadata.
+- Original-file writeback currently supports MP3, FLAC, and M4A only. Player-local metadata saving is not offered as a fallback save path.
+- 0.1.27 does not clear the whole music database after every song-info edit. Large-scale indexing or thumbnail caching should be designed separately if truly needed.
+- 0.1.27 bundles the model, llama.cpp runtime, and `taglib-wasm`, so installers are larger than player-only builds.
+
+## 0.1.26 Manual QA Still Needed (Historical)
 
 - `Aquariusgirl Music Room Setup 0.1.26.exe` has not been installed on a real Windows machine for fresh install, launch, playback after changing cover art while playing, cover02 -> cover01 first-restart persistence, playback/pause click testing, latest-folder restore, a roughly 4 GB / 20+ song folder, song info writeback, playlist persistence after cover changes, AI chat, and AI playlist creation.
 - The Windows EXE has only NSIS / x64 target static checks, so Windows runtime behavior is not marked PASS.

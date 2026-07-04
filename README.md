@@ -6,6 +6,18 @@ English version: see [English Version](#english-version).
 
 ## 目前最新版本
 
+0.1.28 修正版「Kill Metadata Save Loop / 停止歌曲資料保存迴圈」補完嚴重效能與資料同步問題：`tracks` 任意變動不再自動全庫保存，播放統計、duration、歌曲資訊 / 封面寫回都改成單曲 `put` / `patch`，避免每次播放或改封面都清空 IndexedDB tracks store 並重寫所有大型 `coverDataUrl`。
+
+本版將 `saveTrackMetadata()` 限縮為僅限整庫重建的歷史相容入口，新增 `putTrackMetadata`、`putManyTrackMetadata`、`patchTrackPlayback`、`patchTrackDuration`、`deleteTrackMetadata` 與 `replaceAllTrackMetadata`。`applyStoredTrackMetadata` 在同一次 App 執行中只做啟動補救一次；執行中由事件直接更新全域 tracks 與 IndexedDB 單曲，不再用 `storedTracks` 回灌形成循環。播放流程仍只在音訊來源真的改變時 `audio.load()`，封面 / metadata-only 更新不改 `localUrl` 或 `mediaVersion`。
+
+新增 source-level 回歸指令：`check:metadata-save-loop`、`check:no-track-save-loop`、`check:no-full-db-save-on-playback`、`check:cover-update-five-times`、`check:playlist-song-info-restart`、`check:no-audio-load-on-cover-only-update`。0.1.28 已通過這些檢查、既有 playback-restore、song-info、track-display、track-identity、AI track search、FLAC metadata、prompt、theme、custom images、all-target AI assets、build、Electron compile、升權 `dist:release`、DMG verify 與 Windows NSIS static check。DMG 唯讀掛載版本 / app.asar 讀回本輪因外部用量限制未完成；Windows 真機與 packaged GUI 壓力測試仍待補。
+
+0.1.27 修正版補完歌曲資訊 / 封面寫回 / IndexedDB / 播放卡頓同族問題：第一次更換封面並「套用到原始檔」後，下一次再開歌曲資訊面板可能沿用舊 draft / saving 狀態，導致第二次按鈕無反應或狀態異常；也可能讓使用者誤以為封面已保存，但重開後仍看到舊封面。
+
+本版不清空整個 IndexedDB，也不重掃整個音樂庫。最小修法是收斂歌曲資訊面板的狀態機：每次開啟都從目前最新 track snapshot 建立 `trackDraftSnapshot`，關閉或成功後清掉 draft，`savingRef` 在 `finally` 一律重設；「套用到原始檔」的 disabled 條件只包含目前歌曲、儲存中、桌面版、本機路徑、支援格式與是否 dirty。App 端也補上格式防線，避免 UI 與實際 IPC 寫回能力不同步。
+
+`check:playback-restore` 已加入 0.1.27 防回歸，要求歌曲資訊面板不能再只用 `[open, track?.id]` 初始化，必須有 `savingRef`、`resetDraftState`、`trackDraftSnapshot` 與 dirty-aware disabled。0.1.27 已通過 song-info、playback-restore、track-display、track-identity、AI track search、FLAC metadata、prompt、theme、custom images、all-target AI assets、build、Electron compile、升權 `dist:release`、DMG verify、DMG 唯讀掛載版本 / arm64 / app.asar / AI runtime 檢查，以及 Windows NSIS static check。
+
 0.1.26 修正版補完 0.1.24 / 0.1.25 同族殘留：播放中把米津玄師 Plazma 封面從 cover02 改回 cover01，切到其他歌再切回時仍可能短暫卡住；重新開啟 App 時也可能第一次看到舊 cover02、第二次才看到新 cover01。
 
 這次不採用「每次歌曲資訊更新就清掉整個音樂資料庫再重載」；那會在 99 首還可忍、上萬首會變成災難。最小修法是只刷新並等待保存「剛寫回的那一首」：原始檔寫回後，播放器會重新讀回該曲 metadata，取得新的 track snapshot，並 `await` IndexedDB 立即保存完成後才顯示成功。這等於把使用者手動清庫重加會成功的原因，縮小成單曲級精準刷新，不動整個曲庫與播放清單。
@@ -46,13 +58,17 @@ Electron 桌面版手動選擇音樂資料夾時，會把該次回傳的 `source
 release-delivery/installers/
 ```
 
-- `Aquariusgirl Music Room Setup 0.1.26.exe`
-- `Aquariusgirl Music Room-0.1.26-arm64.dmg`
+- `Aquariusgirl Music Room Setup 0.1.28.exe`
+- `Aquariusgirl Music Room-0.1.28-arm64.dmg`
 
 SHA-256：
 
-- EXE：`0486767f4ebf7cf4d0adb233f62bd1d62da0c53709895d00e1a3fc50ce94dc5d`
-- arm64 DMG：`16acf709838b2fc1831227693aba133e47d5979ee0dc580865734d3038a2be91`
+- EXE：`360394b2f88998ebfdf910d38e3a16a3be5b49be3eb92b2f548dbe7f9ce6aea6`
+- arm64 DMG：`0f132b187542f28fbc3c614522bd337234efecbdc9a40c709b7020a760ec5913`
+
+0.1.27 歷史 hotfix：修正歌曲資訊面板二次寫回 draft / saving 狀態。0.1.27 hotfix SHA-256：EXE `c39676a14ce17931d20b21e22b2c9fba5239d16e43a6f449fd59b7188d67d937`；arm64 DMG `6a4100871195db1e2b0c17c87b2af8fb640a5d865bfccc0765fba2e0216fcf19`。
+
+0.1.26 歷史 hotfix：修正原始檔寫回成功後，播放器資料庫可能還沒保存最新 cover / metadata snapshot，導致快速重開時讀到舊封面。0.1.26 hotfix SHA-256：EXE `0486767f4ebf7cf4d0adb233f62bd1d62da0c53709895d00e1a3fc50ce94dc5d`；arm64 DMG `16acf709838b2fc1831227693aba133e47d5979ee0dc580865734d3038a2be91`。
 
 0.1.25 歷史 hotfix：修正同來源 audio reload 殘留，避免 duration / metadata 更新誤觸 `audio.load()`。0.1.25 hotfix SHA-256：EXE `591442e89c863405e59666b1aa19372927f909b02f3a55eaa47a1d06f9984442`；arm64 DMG `dac596ee8df1b54103984d6b292d6d74f4f9c19ce52350efc90c9a736924e1c4`。
 
@@ -555,6 +571,18 @@ Aquariusgirl Music Room is a local-first music player. It can run as a Vite web 
 
 ## Current Version
 
+0.1.28 "Kill Metadata Save Loop" fixes the remaining severe performance and sync path: arbitrary `tracks` changes no longer trigger full-library IndexedDB saves. Playback stats, duration updates, and song-info / cover writeback now use single-track `put` / `patch` operations instead of clearing and rewriting the whole tracks store with large `coverDataUrl` payloads.
+
+This release limits `saveTrackMetadata()` to whole-library rebuild compatibility and adds explicit single-track APIs: `putTrackMetadata`, `putManyTrackMetadata`, `patchTrackPlayback`, `patchTrackDuration`, `deleteTrackMetadata`, and `replaceAllTrackMetadata`. `applyStoredTrackMetadata` is now a one-time startup recovery path, not a live mirror from `storedTracks` back into `tracks`.
+
+0.1.28 passed source-level metadata-save-loop guards, playback-restore, song-info, track-display, track-identity, AI track search, FLAC metadata, prompt, theme, custom images, all-target AI assets, build, Electron compile, elevated `dist:release`, DMG verify, and Windows NSIS static check. DMG read-only mount / app.asar readback was blocked by external usage limits this round; real Windows and packaged GUI stress QA remain open.
+
+0.1.27 completes the song-info / cover writeback / IndexedDB / playback-stall family. After the first successful cover writeback, reopening the song-info panel could keep stale draft or saving state, so the second writeback button could appear disabled or do nothing. That could make the UI look saved while a restart still restored the previous artwork.
+
+This release does not clear IndexedDB or rescan the whole music library. The fix keeps the state local and explicit: each panel open initializes from the latest `trackDraftSnapshot`, close/success clears the draft, `savingRef` is reset in `finally`, and the original-file writeback button is disabled only for no current track, saving, desktop unavailable, missing local path, unsupported format, or no dirty fields. App-level writeback now also rejects unsupported formats before IPC.
+
+`check:playback-restore` now guards the 0.1.27 path: the panel must not rely only on `[open, track?.id]`, and it must keep `savingRef`, `resetDraftState`, `trackDraftSnapshot`, and dirty-aware disabled logic. 0.1.27 passed song-info, playback-restore, track-display, track-identity, AI track search, FLAC metadata, prompt, theme, custom images, all-target AI assets, build, Electron compile, elevated `dist:release`, DMG verify, read-only DMG version / arm64 / app.asar / AI runtime checks, and Windows NSIS static check.
+
 0.1.26 completes the remaining 0.1.24 / 0.1.25-family persistence issue. While Plazma is playing, changing its cover from cover02 back to cover01, switching to another track, and switching back could still briefly stall; after restart, the first launch could also show the old cover02 before the next launch showed cover01.
 
 This release does not clear and reload the whole music database after every song-info edit. That would work around the symptom for small libraries, but it would be the wrong design for 10k tracks. Instead, original-file writeback reloads only the edited track, gets the updated track snapshot, and waits for IndexedDB to save that exact snapshot before reporting success.
@@ -593,13 +621,19 @@ Latest installers:
 release-delivery/installers/
 ```
 
-- `Aquariusgirl Music Room Setup 0.1.26.exe`
-- `Aquariusgirl Music Room-0.1.26-arm64.dmg`
+- `Aquariusgirl Music Room Setup 0.1.28.exe`
+- `Aquariusgirl Music Room-0.1.28-arm64.dmg`
 
 SHA-256:
 
-- EXE: `0486767f4ebf7cf4d0adb233f62bd1d62da0c53709895d00e1a3fc50ce94dc5d`
-- arm64 DMG: `16acf709838b2fc1831227693aba133e47d5979ee0dc580865734d3038a2be91`
+- EXE: `c39676a14ce17931d20b21e22b2c9fba5239d16e43a6f449fd59b7188d67d937`
+- arm64 DMG: `6a4100871195db1e2b0c17c87b2af8fb640a5d865bfccc0765fba2e0216fcf19`
+
+0.1.28 SHA-256: EXE `360394b2f88998ebfdf910d38e3a16a3be5b49be3eb92b2f548dbe7f9ce6aea6`; arm64 DMG `0f132b187542f28fbc3c614522bd337234efecbdc9a40c709b7020a760ec5913`.
+
+0.1.27 historical hotfix SHA-256: EXE `c39676a14ce17931d20b21e22b2c9fba5239d16e43a6f449fd59b7188d67d937`; arm64 DMG `6a4100871195db1e2b0c17c87b2af8fb640a5d865bfccc0765fba2e0216fcf19`.
+
+0.1.26 historical hotfix SHA-256: EXE `0486767f4ebf7cf4d0adb233f62bd1d62da0c53709895d00e1a3fc50ce94dc5d`; arm64 DMG `16acf709838b2fc1831227693aba133e47d5979ee0dc580865734d3038a2be91`.
 
 0.1.25 historical hotfix SHA-256: EXE `591442e89c863405e59666b1aa19372927f909b02f3a55eaa47a1d06f9984442`; arm64 DMG `dac596ee8df1b54103984d6b292d6d74f4f9c19ce52350efc90c9a736924e1c4`.
 

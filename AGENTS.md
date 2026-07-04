@@ -2,7 +2,7 @@
 
 ## 快速接手
 
-- Aquariusgirl Music Room 是 React + TypeScript + Vite + Electron 的本地音樂播放器，目前版本是 `0.1.26`。
+- Aquariusgirl Music Room 是 React + TypeScript + Vite + Electron 的本地音樂播放器，目前版本是 `0.1.28`。
 - 主程式在 `src/`，Electron main/preload 在 `electron/`，打包與檢查腳本在 `scripts/`。
 - 發行與驗收紀錄在 `release-delivery/`；改版前先讀 `release-delivery/QA_REPORT.md` 與 `release-delivery/README.md`。
 - AI prompt 在 `private/prompts/`，GGUF 模型與 llama.cpp runtime 放在 `resources/ai/`；大型模型與 installer 不進 Git。

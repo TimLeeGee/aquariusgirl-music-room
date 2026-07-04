@@ -477,6 +477,7 @@ export default function App() {
     };
   }, []);
 
+  const putTrackMetadataRef = useRef<((track: Track) => Promise<void>) | null>(null);
   const {
     tracks,
     addFiles,
@@ -494,12 +495,23 @@ export default function App() {
     onLikedTrackNamesChange: setLikedTrackNames,
     onInfo: showInfo,
     onError: showError,
+    onTrackMetadataLoaded: (track) => {
+      void putTrackMetadataRef.current?.(track);
+    },
   });
 
   const playlistsState = usePlaylists(tracks);
+  const libraryDb = useMusicLibraryDb(playlistsState.playlists);
+  useEffect(() => {
+    putTrackMetadataRef.current = libraryDb.putTrackMetadata;
+  }, [libraryDb.putTrackMetadata]);
   const addFilesToActivePlaylist = useCallback(
     (files: FileList | File[]) => {
       const addedTracks = addFiles(files) ?? [];
+
+      if (addedTracks.length > 0) {
+        void libraryDb.putManyTrackMetadata(addedTracks);
+      }
 
       if (playlistsState.activePlaylist?.type !== "normal" || addedTracks.length === 0) {
         return addedTracks;
@@ -511,7 +523,7 @@ export default function App() {
       showInfo(`已加入 ${addedTracks.length} 首到「${playlistsState.activePlaylist.name}」。`);
       return addedTracks;
     },
-    [addFiles, playlistsState, showInfo],
+    [addFiles, libraryDb, playlistsState, showInfo],
   );
   const normalPlaylists = useMemo(
     () =>
@@ -535,17 +547,24 @@ export default function App() {
     () => makeTrackSequence(playlistsState.activeTrackIds, tracks),
     [playlistsState.activeTrackIds, tracks],
   );
-  const libraryDb = useMusicLibraryDb(tracks, playlistsState.playlists);
   const songInfoTrack = useMemo(
     () => tracks.find((track) => track.id === songInfoTrackId) ?? null,
     [songInfoTrackId, tracks],
+  );
+  const handleTrackDuration = useCallback(
+    (trackId: string, duration: number) => {
+      if (setTrackDuration(trackId, duration)) {
+        void libraryDb.patchTrackDuration(trackId, duration);
+      }
+    },
+    [libraryDb, setTrackDuration],
   );
 
   const player = useAudioPlayer({
     tracks: playbackTracks,
     onInfo: showInfo,
     onError: showError,
-    onTrackDuration: setTrackDuration,
+    onTrackDuration: handleTrackDuration,
     stopAfterCurrentTrack,
     onStopAfterCurrentTrack: () => {
       setStopAfterCurrentTrack(false);
@@ -583,12 +602,18 @@ export default function App() {
     onError: showError,
   });
   const restoreMusicPaths = fileSystemAccess.restoreMusicPaths;
+  const hasAppliedStoredMetadataRef = useRef(false);
 
   useEffect(() => {
-    if (tracks.length === 0 || libraryDb.storedTracks.length === 0) {
+    if (
+      hasAppliedStoredMetadataRef.current ||
+      tracks.length === 0 ||
+      libraryDb.storedTracks.length === 0
+    ) {
       return;
     }
 
+    hasAppliedStoredMetadataRef.current = true;
     applyStoredTrackMetadata(libraryDb.storedTracks);
     const currentIdsBySourcePath = new Map(
       tracks
@@ -821,9 +846,12 @@ export default function App() {
       return;
     }
 
-    recordTrackPlayback(player.currentTrackId);
+    const playbackPatch = recordTrackPlayback(player.currentTrackId);
+    if (playbackPatch) {
+      void libraryDb.patchTrackPlayback(player.currentTrackId, playbackPatch);
+    }
     lastRecordedTrackIdRef.current = player.currentTrackId;
-  }, [player.currentTrackId, player.isPlaying, recordTrackPlayback]);
+  }, [libraryDb, player.currentTrackId, player.isPlaying, recordTrackPlayback]);
 
   useEffect(() => {
     if (player.currentTrack) {
@@ -895,6 +923,8 @@ export default function App() {
       removeTrack(trackId);
       if (tracks.length <= 1) {
         libraryDb.clearStoredTracks();
+      } else {
+        void libraryDb.deleteTrackMetadata(trackId);
       }
     },
     [libraryDb, player, playlistsState, removeTrack, tracks],
@@ -1082,7 +1112,7 @@ export default function App() {
         return null;
       }
 
-      return (await reloadTrackMetadata(track.id)) ? track : null;
+      return await reloadTrackMetadata(track.id);
     },
     [reloadTrackMetadata, replaceTrackSongInfo],
   );
@@ -1105,11 +1135,17 @@ export default function App() {
     const reloadedTrack = await reloadSongInfoFromOriginal(track);
 
     if (reloadedTrack) {
+      try {
+        await libraryDb.putTrackMetadata(reloadedTrack);
+      } catch {
+        showError("音樂標籤已重新讀取，但播放器資料庫保存失敗。");
+        return;
+      }
       showInfo("已重新讀取音樂標籤。");
     } else {
       showError("重新讀取音樂標籤失敗，請確認原始檔仍可讀取。");
     }
-  }, [player.currentTrack, reloadSongInfoFromOriginal, showError, showInfo]);
+  }, [libraryDb, player.currentTrack, reloadSongInfoFromOriginal, showError, showInfo]);
 
   const handleShowCurrentTrackFileLocation = useCallback(async () => {
     const track = player.currentTrack;
@@ -1142,6 +1178,11 @@ export default function App() {
         return false;
       }
 
+      if (!isSupportedOriginalWriteFormat(track.sourcePath)) {
+        showError("這個檔案格式不支援寫回原始檔。");
+        return false;
+      }
+
       try {
         const result = await window.aquariusgirlAPI?.applySongInfoToOriginalFile?.({
           sourcePath: track.sourcePath,
@@ -1160,9 +1201,7 @@ export default function App() {
         }
 
         try {
-          await libraryDb.saveTracksNow(
-            tracks.map((item) => (item.id === reloadedTrack.id ? reloadedTrack : item)),
-          );
+          await libraryDb.putTrackMetadata(reloadedTrack);
         } catch {
           showError("原始檔已更新，但播放器資料庫保存失敗，請重新載入音樂資料夾。");
           return false;

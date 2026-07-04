@@ -1,9 +1,47 @@
 # 版本資訊
 
 產品：Aquariusgirl Music Room / 水瓶罐子的音樂小水池
-版本：0.1.26
-日期：2026-07-03
+版本：0.1.28
+日期：2026-07-04
 平台目標：Windows x64、macOS arm64
+
+## 2026-07-04 0.1.28 hotfix 發行狀態
+
+0.1.28「Kill Metadata Save Loop / 停止歌曲資料保存迴圈」修正嚴重效能與資料同步問題：播放次數、上次播放時間、duration、歌曲資訊 / 封面更新不再觸發全曲庫保存，也不再清空 tracks store 後重寫所有大型 coverDataUrl。
+
+本版移除 `tracks` 任意變動就整庫保存的 effect，將 IndexedDB API 拆成 `putTrackMetadata`、`putManyTrackMetadata`、`patchTrackPlayback`、`patchTrackDuration`、`deleteTrackMetadata` 與 `replaceAllTrackMetadata`。`saveTrackMetadata()` 只保留為整庫重建相容入口；`applyStoredTrackMetadata` 只做啟動補救一次，不再監聽每次 `storedTracks` 更新反向覆蓋 `tracks`。
+
+通過：`check:metadata-save-loop`、`check:no-track-save-loop`、`check:no-full-db-save-on-playback`、`check:cover-update-five-times`、`check:playlist-song-info-restart`、`check:no-audio-load-on-cover-only-update`、`check:playback-restore`、`check:song-info`、`check:track-display`、`check:track-identity`、`check:ai-track-search`、`check:flac-metadata`、`check:prompts`、`check:theme-colors`、`check:custom-images`、all-target `check:ai-assets`、`npm run build`、`npm run electron:compile`、升權 `npm run dist:release`、DMG verify、Windows NSIS static check。DMG 唯讀掛載版本 / app.asar 讀回因外部用量限制未完成；Windows 真機與 packaged GUI 壓力測試仍需驗收。
+
+SHA-256：
+
+- EXE：`360394b2f88998ebfdf910d38e3a16a3be5b49be3eb92b2f548dbe7f9ce6aea6`
+- arm64 DMG：`0f132b187542f28fbc3c614522bd337234efecbdc9a40c709b7020a760ec5913`
+
+### English Summary
+
+0.1.28 fixes the metadata save loop. Playback stats, duration updates, and song-info / cover edits now use explicit single-track IndexedDB writes instead of full-library clear-and-rewrite saves.
+
+Passed: metadata-save-loop source guards, playback-restore, song-info, track-display, track-identity, AI track search, FLAC metadata, prompt checks, theme colors, custom images, all-target AI assets, build, Electron compile, elevated `dist:release`, DMG verify, and Windows NSIS static check. DMG read-only mount / app.asar readback was blocked by external usage limits; real Windows QA, packaged GUI stress QA, signing, and notarization remain open.
+
+## 2026-07-04 0.1.27 hotfix 發行狀態
+
+0.1.27 補完歌曲資訊 / 封面寫回 / IndexedDB / 播放卡頓同族殘留：第一次更換封面並「套用到原始檔」成功後，下一次開啟歌曲資訊面板可能沿用舊 draft / saving 狀態，造成第二次寫回按鈕無反應或狀態異常。
+
+本版不清空整個音樂資料庫，也不為每次歌曲資訊更新重載所有歌曲。`SongInfoPanel` 會從最新 `trackDraftSnapshot` 初始化，關閉或成功後清 draft，`savingRef` 在 `finally` 重設；App 端在 IPC 寫回前拒絕不支援格式。這是對 M1 MacBook Air 8GB 與未來上萬首曲庫較穩的最小修法。
+
+通過：先讓 `npm run check:playback-restore` 因缺少 `savingRef` / `resetDraftState` / `trackDraftSnapshot` 與 dirty-aware disabled 失敗，再修到 PASS；`npm run check:song-info`、`npm run check:track-display`、`npm run check:track-identity`、`npm run check:ai-track-search`、`npm run check:flac-metadata`、`npm run check:prompts`、`npm run check:theme-colors`、`npm run check:custom-images`、all-target `check:ai-assets`、`npm run build`、`npm run electron:compile`、升權 `npm run dist:release`、DMG verify、DMG 唯讀掛載版本 / arm64 / app.asar / AI runtime 檢查、Windows NSIS static check。packaged GUI 滑鼠流程、Windows 真機與正式簽章仍需驗收。
+
+SHA-256：
+
+- EXE：`c39676a14ce17931d20b21e22b2c9fba5239d16e43a6f449fd59b7188d67d937`
+- arm64 DMG：`6a4100871195db1e2b0c17c87b2af8fb640a5d865bfccc0765fba2e0216fcf19`
+
+### English Summary
+
+0.1.27 fixes the second song-info / cover writeback path after an earlier successful writeback. The panel now initializes from the latest track snapshot, clears draft state on close/success, resets `savingRef` in `finally`, and rejects unsupported formats before IPC. It does not clear or reload the whole music database.
+
+Passed: red/green playback-restore regression check, song-info, track-display, track-identity, AI track search, FLAC metadata, prompt checks, theme colors, custom images, all-target AI assets, build, Electron compile, elevated `dist:release`, DMG verify, read-only DMG checks, and Windows NSIS static check. Packaged GUI mouse QA, real Windows QA, and signing remain open.
 
 ## 2026-07-03 0.1.26 hotfix 發行狀態
 

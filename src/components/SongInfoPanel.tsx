@@ -1,9 +1,10 @@
 import { ImagePlus, X } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Track } from "../types/track";
 import {
   createSongInfoDraft,
   getSongCoverFileValidationError,
+  isSupportedOriginalWriteFormat,
   normalizeSongInfoDraft,
   type SongInfoDraft,
   validateSongInfoDraft,
@@ -34,6 +35,10 @@ function readFileAsDataUrl(file: File) {
     reader.readAsDataURL(file);
   });
 }
+
+const isDevRuntime = Boolean(
+  (import.meta as ImportMeta & { env?: { DEV?: boolean } }).env?.DEV,
+);
 
 function TextField({ label, value, onChange, multiline = false }: TextFieldProps) {
   const className =
@@ -70,23 +75,77 @@ export function SongInfoPanel({
   const [draft, setDraft] = useState<SongInfoDraft>(() => createSongInfoDraft(track));
   const [savedDraft, setSavedDraft] = useState<SongInfoDraft>(() => createSongInfoDraft(track));
   const [busy, setBusy] = useState(false);
+  const savingRef = useRef(false);
   const coverInputRef = useRef<HTMLInputElement | null>(null);
+  const trackDraftSnapshot = useMemo(
+    () => createSongInfoDraft(track),
+    [
+      track?.album,
+      track?.albumArtist,
+      track?.artist,
+      track?.comment,
+      track?.composer,
+      track?.coverDataUrl,
+      track?.coverMimeType,
+      track?.discNumber,
+      track?.genre,
+      track?.id,
+      track?.title,
+      track?.trackNumber,
+      track?.year,
+    ],
+  );
+  const resetDraftState = useCallback((nextDraft: SongInfoDraft) => {
+    setDraft(nextDraft);
+    setSavedDraft(nextDraft);
+  }, []);
   const dirty = useMemo(
     () => JSON.stringify(normalizeSongInfoDraft(draft)) !== JSON.stringify(savedDraft),
     [draft, savedDraft],
   );
-  const writeBackDisabledLabel = !isDesktopApp
-    ? "寫回原始檔僅支援桌面版"
-    : !track?.sourcePath
-      ? "這首歌沒有可寫回的本機路徑"
-      : "";
+  const unsupportedWriteFormat = Boolean(
+    track?.sourcePath && !isSupportedOriginalWriteFormat(track.sourcePath),
+  );
+  const writeBackDisabledReason = !track
+    ? "no current track"
+    : busy
+      ? "saving"
+      : !isDesktopApp
+        ? "not desktop"
+        : !track.sourcePath
+          ? "no current track"
+          : unsupportedWriteFormat
+            ? "unsupported format"
+            : !dirty
+              ? "no dirty fields"
+              : "";
+  const writeBackDisabledLabel =
+    writeBackDisabledReason === "not desktop"
+      ? "寫回原始檔僅支援桌面版"
+      : writeBackDisabledReason === "no current track"
+        ? "這首歌沒有可寫回的本機路徑"
+        : writeBackDisabledReason === "unsupported format"
+          ? "這個檔案格式不支援寫回原始檔"
+          : writeBackDisabledReason === "no dirty fields"
+            ? "沒有任何欄位變更"
+            : "";
 
   useEffect(() => {
-    if (!open) return;
-    const nextDraft = createSongInfoDraft(track);
-    setDraft(nextDraft);
-    setSavedDraft(nextDraft);
-  }, [open, track?.id]);
+    if (!open) {
+      resetDraftState(createSongInfoDraft(null));
+      savingRef.current = false;
+      setBusy(false);
+      return;
+    }
+
+    resetDraftState(trackDraftSnapshot);
+  }, [open, resetDraftState, trackDraftSnapshot]);
+
+  useEffect(() => {
+    if (open && writeBackDisabledReason && isDevRuntime) {
+      console.debug("[SongInfoPanel] writeback disabled:", writeBackDisabledReason);
+    }
+  }, [open, writeBackDisabledReason]);
 
   if (!open || !track) {
     return null;
@@ -137,6 +196,15 @@ export function SongInfoPanel({
   };
 
   const handleApplyToOriginal = async () => {
+    if (writeBackDisabledReason) {
+      if (isDevRuntime) {
+        console.debug("[SongInfoPanel] writeback disabled:", writeBackDisabledReason);
+      }
+      return;
+    }
+
+    if (savingRef.current) return;
+
     const validDraft = getValidDraft();
     if (!validDraft) return;
 
@@ -148,14 +216,18 @@ export function SongInfoPanel({
       return;
     }
 
+    savingRef.current = true;
     setBusy(true);
     try {
       const ok = await onApplyToOriginal(track.id, validDraft);
       if (ok) {
-        setSavedDraft(validDraft);
+        resetDraftState(createSongInfoDraft(null));
         onClose();
       }
+    } catch {
+      onError("儲存失敗，請稍後再試");
     } finally {
+      savingRef.current = false;
       setBusy(false);
     }
   };
@@ -249,7 +321,7 @@ export function SongInfoPanel({
           <button
             type="button"
             className="rounded-lg border border-aquarius-pink/[0.36] bg-aquarius-pink/[0.12] px-4 py-2 text-sm font-bold text-white transition hover:bg-aquarius-pink/[0.2] disabled:cursor-not-allowed disabled:opacity-40"
-            disabled={busy || Boolean(writeBackDisabledLabel)}
+            disabled={!dirty || busy || Boolean(writeBackDisabledReason)}
             title={writeBackDisabledLabel || "套用到原始檔"}
             onClick={() => void handleApplyToOriginal()}
           >
