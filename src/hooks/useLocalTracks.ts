@@ -60,6 +60,7 @@ export function useLocalTracks({
   const [tracks, setTracks] = useState<Track[]>([]);
   const tracksRef = useRef<Track[]>([]);
   const likedTrackNamesRef = useRef(likedTrackNames);
+  const storedMetadataApplyCountRef = useRef(0);
 
   const likedNameSet = useMemo(
     () => new Set(likedTrackNames),
@@ -314,6 +315,13 @@ export function useLocalTracks({
     (storedTracks: StoredTrackMetadata[]) => {
       if (storedTracks.length === 0) {
         return;
+      }
+
+      storedMetadataApplyCountRef.current += 1;
+      if (process.env.NODE_ENV !== "production" && storedMetadataApplyCountRef.current > 1) {
+        console.warn(
+          "[Aquariusgirl] applyStoredTrackMetadata called more than once in one run; check for storedTracks feedback loops.",
+        );
       }
 
       setTracks((currentTracks) => {

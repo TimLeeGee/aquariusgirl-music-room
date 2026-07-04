@@ -9,14 +9,14 @@
 
 0.1.28「Kill Metadata Save Loop / 停止歌曲資料保存迴圈」修正嚴重效能與資料同步問題：播放次數、上次播放時間、duration、歌曲資訊 / 封面更新不再觸發全曲庫保存，也不再清空 tracks store 後重寫所有大型 coverDataUrl。
 
-本版移除 `tracks` 任意變動就整庫保存的 effect，將 IndexedDB API 拆成 `putTrackMetadata`、`putManyTrackMetadata`、`patchTrackPlayback`、`patchTrackDuration`、`deleteTrackMetadata` 與 `replaceAllTrackMetadata`。`saveTrackMetadata()` 只保留為整庫重建相容入口；`applyStoredTrackMetadata` 只做啟動補救一次，不再監聽每次 `storedTracks` 更新反向覆蓋 `tracks`。
+本版移除 `tracks` 任意變動就整庫保存的 effect，將 IndexedDB API 拆成 `putTrackMetadata`、`putManyTrackMetadata`、`patchTrackPlayback`、`patchTrackDuration`、`deleteTrackMetadata` 與 `replaceAllTrackMetadata`。`saveTrackMetadata()` 只保留為整庫重建相容入口；`applyStoredTrackMetadata` 只做啟動補救一次，不再監聽每次 `storedTracks` 更新反向覆蓋 `tracks`。2026-07-04 追加 dev guard：重複 `applyStoredTrackMetadata`、播放中非預期 `readSongInfoFromOriginalFile`、同 track source 變動造成 `audio.load()` 都會 console warn。
 
 通過：`check:metadata-save-loop`、`check:no-track-save-loop`、`check:no-full-db-save-on-playback`、`check:cover-update-five-times`、`check:playlist-song-info-restart`、`check:no-audio-load-on-cover-only-update`、`check:playback-restore`、`check:song-info`、`check:track-display`、`check:track-identity`、`check:ai-track-search`、`check:flac-metadata`、`check:prompts`、`check:theme-colors`、`check:custom-images`、all-target `check:ai-assets`、`npm run build`、`npm run electron:compile`、升權 `npm run dist:release`、DMG verify、DMG 唯讀掛載版本 / arm64 / app.asar / AI runtime 檢查、Windows NSIS static check。Windows 真機與 packaged GUI 壓力測試仍需驗收。
 
 SHA-256：
 
-- EXE：`360394b2f88998ebfdf910d38e3a16a3be5b49be3eb92b2f548dbe7f9ce6aea6`
-- arm64 DMG：`0f132b187542f28fbc3c614522bd337234efecbdc9a40c709b7020a760ec5913`
+- EXE：`a0ddca439295dbc11c9f2f237d049be19875bdc8996dc4b91cdc814c2d70140a`
+- arm64 DMG：`d890f56f0c933d772735c12a6891b99257355eeffa0a742a0877507468c8bf2b`
 
 ### English Summary
 

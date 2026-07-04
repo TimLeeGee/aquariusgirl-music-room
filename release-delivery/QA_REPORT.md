@@ -11,15 +11,15 @@
 - 根因：`useMusicLibraryDb` 仍有 `tracks` 任意變動就 `saveTracksNow(tracks)` 的 effect；`saveTrackMetadata()` 會 `store.clear()` 後 put all。播放統計 `recordTrackPlayback`、duration、單曲 metadata / cover 更新都會造成 tracks 改變，進而重寫整個 tracks store，包含大型 `coverDataUrl`。`storedTracks` 更新後又會觸發 `applyStoredTrackMetadata` 回套到 tracks，形成回授風險。
 - 修正：移除 tracks autosave effect；新增 `putTrackMetadata`、`putManyTrackMetadata`、`patchTrackPlayback`、`patchTrackDuration`、`deleteTrackMetadata`、`replaceAllTrackMetadata`。`saveTrackMetadata()` 只保留為整庫重建相容入口並加註解。播放統計與 duration 只 patch 小欄位，不寫 coverDataUrl；原始檔寫回後只 `await putTrackMetadata(reloadedTrack)`；`applyStoredTrackMetadata` 同一次 App 執行只做啟動補救一次。
 - 播放防線：播放流程不呼叫 `readSongInfoFromOriginalFile` / `readAudioMetadata` / `applySongInfoToOriginalFile`，封面 / metadata-only 更新不改 `localUrl` 或 `mediaVersion`，沿用 `loadedTrackSourceRef` 只在 source 真變時 `audio.load()`。
-- 測試：先新增 `scripts/metadata-save-loop-check.mjs`，舊程式因缺少單曲 API 與仍有全庫保存入口紅燈；修正後 PASS。新增 npm 指令：`check:metadata-save-loop`、`check:no-track-save-loop`、`check:no-full-db-save-on-playback`、`check:cover-update-five-times`、`check:playlist-song-info-restart`、`check:no-audio-load-on-cover-only-update`。這些是 source-level regression guard，不是 packaged GUI 壓力測試。
+- 測試：先新增 `scripts/metadata-save-loop-check.mjs`，舊程式因缺少單曲 API 與仍有全庫保存入口紅燈；修正後 PASS。新增 npm 指令：`check:metadata-save-loop`、`check:no-track-save-loop`、`check:no-full-db-save-on-playback`、`check:cover-update-five-times`、`check:playlist-song-info-restart`、`check:no-audio-load-on-cover-only-update`。這些是 source-level regression guard，不是 packaged GUI 壓力測試。2026-07-04 追加 dev guard：重複 `applyStoredTrackMetadata`、播放中非預期 `readSongInfoFromOriginalFile`、同 track source 變動造成 `audio.load()` 都會 console warn，並納入 `check:metadata-save-loop`。
 - 檢查：`npm run check:no-track-save-loop` PASS；`npm run check:no-full-db-save-on-playback` PASS；`npm run check:cover-update-five-times` PASS；`npm run check:playlist-song-info-restart` PASS；`npm run check:no-audio-load-on-cover-only-update` PASS；`npm run check:playback-restore` PASS；`npm run check:song-info` PASS；`npm run check:track-display` PASS；`npm run check:track-identity` PASS；`npm run check:ai-track-search` PASS；`npm run check:flac-metadata` PASS；`npm run check:prompts` PASS；`npm run check:theme-colors` PASS；`npm run check:custom-images` PASS；all-target `check:ai-assets` PASS；`npm run build` PASS；`npm run electron:compile` PASS。
 - 打包：一般沙盒 `npm run dist:release` 在 `hdiutil create` 失敗；升權重跑同一 `npm run dist:release` PASS，同步兩個 installer 到 `release-delivery/installers/`，暫存 `release/` 已移除。
 - DMG / EXE：DMG `hdiutil verify` VALID；唯讀掛載讀回 `CFBundleShortVersionString` / `CFBundleVersion` 均為 0.1.28，執行檔為 Mach-O arm64，`app.asar` package version 為 0.1.28，mac AI runtime `darwin-arm64/llama-server` 存在，掛載點已卸載。EXE static check PASS，辨識為 Windows NSIS installer；未在 Windows 真機執行。
 
 0.1.28 最新 installer：
 
-- EXE：667,497,320 bytes，SHA-256 `360394b2f88998ebfdf910d38e3a16a3be5b49be3eb92b2f548dbe7f9ce6aea6`
-- arm64 DMG：684,456,512 bytes，SHA-256 `0f132b187542f28fbc3c614522bd337234efecbdc9a40c709b7020a760ec5913`
+- EXE：667,497,484 bytes，SHA-256 `a0ddca439295dbc11c9f2f237d049be19875bdc8996dc4b91cdc814c2d70140a`
+- arm64 DMG：684,483,204 bytes，SHA-256 `d890f56f0c933d772735c12a6891b99257355eeffa0a742a0877507468c8bf2b`
 
 限制：source-level checks 已覆蓋保存迴圈防線，但尚未完成 packaged GUI 連續換封面 5 次、播放清單寫回後強制重開、播放大型封面歌曲不卡、Windows 真機安裝、大資料夾、AI 操作、Mini/dialog focus、簽章與 notarization。
 

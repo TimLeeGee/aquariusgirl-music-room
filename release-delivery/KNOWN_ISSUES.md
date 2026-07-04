@@ -9,6 +9,7 @@
 - Windows EXE 目前只有 NSIS / x64 target static check，不能宣稱 Windows 實機 PASS。
 - macOS DMG 已完成 verify 與唯讀掛載版本 / arm64 / app.asar / AI runtime 檢查；但未做 Apple Developer ID 簽章與 notarization。
 - 本輪新增的 `check:cover-update-five-times`、`check:playlist-song-info-restart` 等是 source-level regression guard，不是完整 packaged GUI 壓力測試。
+- 本輪新增的 console warn guard 只在開發診斷中標出可疑迴圈或同來源 reload；是否在 packaged GUI 大量操作下完全不卡，仍需用暫存音樂複本與隔離 profile 驗收。
 - macOS packaged GUI 滑鼠流程仍需用暫存音樂複本與隔離 profile 補驗，不可打開或修改使用者原始 Music 資料夾。
 - Windows EXE 未做 code signing，SmartScreen 提醒仍屬預期；macOS DMG 未做 Apple Developer ID 簽章與 notarization。
 - 0.1.28 修正的是 metadata 保存迴圈與全庫重寫；若使用者在播放器外修改原始檔 tag，仍需要用明確重新讀取 / 重新選擇來源讓 metadata 更新。
@@ -147,6 +148,7 @@ Document update: 2026-07-04
 - The Windows EXE has only NSIS / x64 target static checks, so Windows runtime behavior is not marked PASS.
 - The macOS DMG passed verify and read-only version / arm64 / app.asar / AI runtime checks. Developer ID signing and notarization are not configured.
 - The new cover-update and playlist-restart checks are source-level regression guards, not full packaged GUI stress tests.
+- The new console warning guards are diagnostic only; packaged GUI stress behavior still needs a temp music copy and isolated profile.
 - Packaged macOS GUI stress QA still needs a temp music copy and isolated profile.
 - The Windows EXE is unsigned, so SmartScreen warnings are expected. Developer ID signing and notarization are not configured for macOS.
 - 0.1.28 fixes the metadata save loop and full-library rewrite path. If original tags are changed outside the player, use explicit reload / source reselection to refresh metadata.

@@ -4,19 +4,19 @@
 
 本輪把版本更新為 0.1.28，重點是停止 tracks 任意變動造成的全曲庫 IndexedDB 保存迴圈。播放統計、duration、歌曲資訊 / 封面更新都改為單曲 `put` / `patch`，不再每次播放或換封面就清空 tracks store 並重寫所有大型 coverDataUrl。
 
-- `Aquariusgirl Music Room Setup 0.1.28.exe`：667,497,320 bytes，SHA-256 `360394b2f88998ebfdf910d38e3a16a3be5b49be3eb92b2f548dbe7f9ce6aea6`
-- `Aquariusgirl Music Room-0.1.28-arm64.dmg`：684,456,512 bytes，SHA-256 `0f132b187542f28fbc3c614522bd337234efecbdc9a40c709b7020a760ec5913`
+- `Aquariusgirl Music Room Setup 0.1.28.exe`：667,497,484 bytes，SHA-256 `a0ddca439295dbc11c9f2f237d049be19875bdc8996dc4b91cdc814c2d70140a`
+- `Aquariusgirl Music Room-0.1.28-arm64.dmg`：684,483,204 bytes，SHA-256 `d890f56f0c933d772735c12a6891b99257355eeffa0a742a0877507468c8bf2b`
 
 模型仍為 `resources/ai/models/qwen3.5-0.8b.gguf`，532,517,120 bytes，SHA-256 `bd258782e35f7f458f8aced1adc053e6e92e89bc735ba3be89d38a06121dc517`。
 
-驗收：`npm run check:metadata-save-loop`、`npm run check:no-track-save-loop`、`npm run check:no-full-db-save-on-playback`、`npm run check:cover-update-five-times`、`npm run check:playlist-song-info-restart`、`npm run check:no-audio-load-on-cover-only-update`、`npm run check:playback-restore`、`npm run check:song-info`、`npm run check:track-display`、`npm run check:track-identity`、`npm run check:ai-track-search`、`npm run check:flac-metadata`、`npm run check:prompts`、`npm run check:theme-colors`、`npm run check:custom-images`、all-target `check:ai-assets`、`npm run build`、`npm run electron:compile`、升權 `npm run dist:release` 均通過。DMG `hdiutil verify` VALID；唯讀掛載後版本為 0.1.28、CFBundleVersion 為 0.1.28、執行檔為 Mach-O arm64、`app.asar` package version 為 0.1.28、mac AI runtime 存在。EXE static check 為 Windows NSIS installer；`release/` 暫存輸出已移除，唯一交付位置是 `release-delivery/installers/`；未在 Windows 真機執行。
+驗收：`npm run check:metadata-save-loop`、`npm run check:no-track-save-loop`、`npm run check:no-full-db-save-on-playback`、`npm run check:cover-update-five-times`、`npm run check:playlist-song-info-restart`、`npm run check:no-audio-load-on-cover-only-update`、`npm run check:playback-restore`、`npm run check:song-info`、`npm run check:track-display`、`npm run check:track-identity`、`npm run check:ai-track-search`、`npm run check:flac-metadata`、`npm run check:prompts`、`npm run check:theme-colors`、`npm run check:custom-images`、all-target `check:ai-assets`、`npm run build`、`npm run electron:compile`、升權 `npm run dist:release` 均通過。新增 dev guard：重複 `applyStoredTrackMetadata`、播放中非預期 `readSongInfoFromOriginalFile`、同 track source 變動造成 `audio.load()` 都會 console warn。DMG `hdiutil verify` VALID；唯讀掛載後版本為 0.1.28、CFBundleVersion 為 0.1.28、執行檔為 Mach-O arm64、`app.asar` package version 為 0.1.28、mac AI runtime 存在。EXE static check 為 Windows NSIS installer；`release/` 暫存輸出已移除，唯一交付位置是 `release-delivery/installers/`；未在 Windows 真機執行。
 
 ### English Status
 
 0.1.28 fixes the metadata save loop. Playback stats, duration updates, and song-info / cover edits now use single-track `put` / `patch` writes instead of clearing and rewriting the full tracks store.
 
-- `Aquariusgirl Music Room Setup 0.1.28.exe`: 667,497,320 bytes, SHA-256 `360394b2f88998ebfdf910d38e3a16a3be5b49be3eb92b2f548dbe7f9ce6aea6`
-- `Aquariusgirl Music Room-0.1.28-arm64.dmg`: 684,456,512 bytes, SHA-256 `0f132b187542f28fbc3c614522bd337234efecbdc9a40c709b7020a760ec5913`
+- `Aquariusgirl Music Room Setup 0.1.28.exe`: 667,497,484 bytes, SHA-256 `a0ddca439295dbc11c9f2f237d049be19875bdc8996dc4b91cdc814c2d70140a`
+- `Aquariusgirl Music Room-0.1.28-arm64.dmg`: 684,483,204 bytes, SHA-256 `d890f56f0c933d772735c12a6891b99257355eeffa0a742a0877507468c8bf2b`
 
 Passed: metadata-save-loop guards, playback-restore, song-info, track-display, track-identity, AI track search, FLAC metadata, prompt checks, theme colors, custom images, all-target AI assets, build, Electron compile, elevated `dist:release`, DMG verify, read-only DMG version / arm64 / app.asar / AI runtime checks, and Windows NSIS static check. Packaged GUI stress QA, real Windows QA, signing, and notarization remain open.
 

@@ -40,6 +40,7 @@ export function useAudioPlayer({
 }: UseAudioPlayerOptions) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const loadedTrackSourceRef = useRef("");
+  const loadedTrackIdRef = useRef<string | null>(null);
   const [currentTrackId, setCurrentTrackId] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -129,6 +130,7 @@ export function useAudioPlayer({
     }
 
     loadedTrackSourceRef.current = "";
+    loadedTrackIdRef.current = null;
     setCurrentTrackId(null);
     setCurrentTime(0);
     setDuration(0);
@@ -416,6 +418,7 @@ export function useAudioPlayer({
       audio.removeAttribute("src");
       audio.load();
       loadedTrackSourceRef.current = "";
+      loadedTrackIdRef.current = null;
       setCurrentTime(0);
       setDuration(0);
       return;
@@ -423,12 +426,22 @@ export function useAudioPlayer({
 
     // ponytail: audio.src is browser-normalized; compare only the source we assigned so metadata updates do not reload playback.
     if (loadedTrackSourceRef.current !== currentTrackSource) {
+      if (
+        process.env.NODE_ENV !== "production" &&
+        loadedTrackIdRef.current === currentTrackId &&
+        loadedTrackSourceRef.current
+      ) {
+        console.warn(
+          "[Aquariusgirl] audio.load called for the same track after its source changed; verify metadata or cover-only updates did not change localUrl/mediaVersion.",
+        );
+      }
       audio.src = currentTrackSource;
       loadedTrackSourceRef.current = currentTrackSource;
+      loadedTrackIdRef.current = currentTrackId;
       audio.load();
       setCurrentTime(0);
     }
-  }, [currentTrackSource]);
+  }, [currentTrackId, currentTrackSource]);
 
   useEffect(() => {
     const audio = audioRef.current;

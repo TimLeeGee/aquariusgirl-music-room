@@ -22,6 +22,8 @@ const playlistSource = readFileSync("src/hooks/usePlaylists.ts", "utf8");
 ].forEach((name) => {
   assert.match(indexedDbSource, new RegExp(`export async function ${name}\\b`));
 });
+assert.match(indexedDbSource, /FULL_TRACK_SAVE_WINDOW_MS/);
+assert.match(indexedDbSource, /warnIfRepeatedFullTrackWrite/);
 
 assert.doesNotMatch(
   libraryDbSource,
@@ -41,6 +43,7 @@ assert.doesNotMatch(appSource, /libraryDb\.saveTracksNow/);
 
 assert.match(appSource, /hasAppliedStoredMetadataRef/);
 assert.match(appSource, /hasAppliedStoredMetadataRef\.current = true/);
+assert.match(appSource, /readSongInfoFromOriginalFile called while playback is active/);
 assert.doesNotMatch(
   appSource,
   /applyStoredTrackMetadata\(libraryDb\.storedTracks\);[\s\S]{0,260}libraryDb\.storedTracks,[\s\S]{0,120}tracks\.length/,
@@ -48,6 +51,10 @@ assert.doesNotMatch(
 
 assert.doesNotMatch(audioHookSource, /readSongInfoFromOriginalFile|readAudioMetadata|applySongInfoToOriginalFile/);
 assert.doesNotMatch(audioHookSource, /audio\.src !== currentTrackSource/);
+assert.match(audioHookSource, /loadedTrackIdRef/);
+assert.match(audioHookSource, /audio\.load called for the same track/);
+assert.match(localTracksSource, /storedMetadataApplyCountRef/);
+assert.match(localTracksSource, /applyStoredTrackMetadata called more than once/);
 assert.doesNotMatch(localTracksSource, /mediaVersion:\s*Date\.now\(\),/);
 
 assert.doesNotMatch(playlistSource, /coverDataUrl/);

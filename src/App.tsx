@@ -1103,6 +1103,12 @@ export default function App() {
         isSupportedOriginalWriteFormat(track.sourcePath) &&
         window.aquariusgirlAPI?.readSongInfoFromOriginalFile
       ) {
+        if (process.env.NODE_ENV !== "production" && player.isPlaying) {
+          console.warn(
+            "[Aquariusgirl] readSongInfoFromOriginalFile called while playback is active; verify this is user initiated and not part of playback.",
+          );
+        }
+
         const result = await window.aquariusgirlAPI.readSongInfoFromOriginalFile(track.sourcePath);
 
         if (result.ok && result.metadata) {
@@ -1114,7 +1120,7 @@ export default function App() {
 
       return await reloadTrackMetadata(track.id);
     },
-    [reloadTrackMetadata, replaceTrackSongInfo],
+    [player.isPlaying, reloadTrackMetadata, replaceTrackSongInfo],
   );
 
   const handleReloadCurrentTrackMetadata = useCallback(async () => {

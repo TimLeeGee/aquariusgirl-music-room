@@ -3,6 +3,7 @@
 ## 快速接手
 
 - Aquariusgirl Music Room 是 React + TypeScript + Vite + Electron 的本地音樂播放器，目前版本是 `0.1.28`。
+- 0.1.28 最新 hotfix 是 `Kill Metadata Save Loop`：播放統計、duration、歌曲資訊 / 封面更新走單曲 `put` / `patch`；新增 dev guard 可警示重複 stored metadata 回灌、播放中非預期原檔 metadata 重讀、同 track source 變動造成的 `audio.load()`。
 - 主程式在 `src/`，Electron main/preload 在 `electron/`，打包與檢查腳本在 `scripts/`。
 - 發行與驗收紀錄在 `release-delivery/`；改版前先讀 `release-delivery/QA_REPORT.md` 與 `release-delivery/README.md`。
 - AI prompt 在 `private/prompts/`，GGUF 模型與 llama.cpp runtime 放在 `resources/ai/`；大型模型與 installer 不進 Git。
