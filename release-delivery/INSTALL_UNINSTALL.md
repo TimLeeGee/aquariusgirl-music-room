@@ -1,33 +1,37 @@
 # 安裝與解除安裝
 
-版本：0.1.28
+版本：0.1.29
 文件更新：2026-07-04
 
-## 0.1.28 Windows 安裝
+## 0.1.29 Windows 安裝
 
-1. 執行 `Aquariusgirl Music Room Setup 0.1.28.exe`。
+1. 執行 `Aquariusgirl Music Room Setup 0.1.29.exe`。
 2. 選擇安裝位置。
 3. 安裝完成後，從桌面捷徑或開始選單開啟。
 4. 第一次啟動後，選擇本機音樂檔或資料夾。
 
 SmartScreen 提醒通常是因為測試版尚未做 Windows code signing。確認檔案來源可信後，可選擇繼續執行。
 
-0.1.28 修正 metadata 保存迴圈、全庫重寫問題、播放順序未跟隨目前歌曲清單排序，以及大清單一次 render 全部列的問題。仍建議首次在 Windows 真機驗證手動排序 / 檔名排序播放順序、大清單滑動、播放含大型封面的歌曲、連續更換封面、播放清單歌曲資訊寫回後重開、播放/暫停、資料夾恢復、歌曲資訊與封面寫回。
+0.1.29 修正右側播放清單卡片捲軸與高度邊界，讓播放清單卡片底部與左側睡前定時卡片底部切齊，並保留 0.1.28 的大清單 visible-window render。仍建議首次在 Windows 真機驗證播放清單內部捲動、底部播放器不被清單覆蓋、手動排序 / 檔名排序播放順序、大清單滑動、播放/暫停、資料夾恢復、歌曲資訊與封面寫回。
 
-## 0.1.28 macOS 安裝
+## 0.1.29 macOS 安裝
 
-1. 開啟 `Aquariusgirl Music Room-0.1.28-arm64.dmg`。
+1. 開啟 `Aquariusgirl Music Room-0.1.29-arm64.dmg`。
 2. 將 `Aquariusgirl Music Room.app` 拖曳到 Applications。
 3. 從 Applications 開啟。
 4. 第一次啟動後，選擇本機音樂檔或資料夾。
 
 Gatekeeper 提醒通常是因為測試版尚未做 Apple Developer ID 簽章與 notarization。可在「系統設定 > 隱私權與安全性」允許開啟。
 
-0.1.28 解除安裝方式與下方歷史說明相同；解除安裝 App 不會刪除使用者原始音樂檔。
+0.1.29 解除安裝方式與下方歷史說明相同；解除安裝 App 不會刪除使用者原始音樂檔。
 
-0.1.28 已完成 DMG verify 與唯讀掛載讀回版本 / arm64 / app.asar / AI model / prompts / runtime 檢查。下一輪 packaged GUI 驗收仍須使用暫存音樂複本與隔離 profile，補驗手動排序 / 檔名排序的實機播放順序與大清單滑動，不可打開或修改使用者原始 Music 資料夾。
+0.1.29 已完成 DMG verify 與唯讀掛載讀回版本 / arm64 / app.asar / AI model / prompts / runtime 檢查。下一輪 packaged GUI 驗收仍須使用暫存音樂複本與隔離 profile，補驗播放清單捲軸、手動排序 / 檔名排序的實機播放順序與大清單滑動，不可打開或修改使用者原始 Music 資料夾。
 
 歌曲資訊面板提供「儲存到播放器」與「套用到原始檔」。「儲存到播放器」只保存播放器本機 metadata，不修改原始音樂檔；「套用到原始檔」會修改使用者選取的原始 MP3/FLAC/M4A，操作前請確認內容正確，必要時先保留音樂檔備份。
+
+## 0.1.28 歷史安裝說明
+
+0.1.28 Windows installer 為 `Aquariusgirl Music Room Setup 0.1.28.exe`，macOS installer 為 `Aquariusgirl Music Room-0.1.28-arm64.dmg`。該版 hotfix 修正 metadata 保存迴圈、全庫重寫問題、播放順序未跟隨目前歌曲清單排序，以及大清單一次 render 全部列的問題。
 
 ## 0.1.27 歷史安裝說明
 
@@ -150,34 +154,38 @@ Gatekeeper 提醒通常是因為測試版尚未做 Apple Developer ID 簽章與 
 
 ## Install and Uninstall
 
-Version: 0.1.28
+Version: 0.1.29
 Document update: 2026-07-04
 
-## 0.1.28 Windows Install
+## 0.1.29 Windows Install
 
-1. Run `Aquariusgirl Music Room Setup 0.1.28.exe`.
+1. Run `Aquariusgirl Music Room Setup 0.1.29.exe`.
 2. Choose an install location.
 3. Open the app from the desktop shortcut or Start menu.
 4. Select local music files or a music folder on first launch.
 
 SmartScreen warnings are expected for unsigned test builds.
 
-0.1.28 fixes the metadata save loop and full-library rewrite path. Real Windows QA should still verify large-cover playback, five repeated cover updates, playlist song-info restart persistence, playback/pause, latest-folder restore, song-info writeback, and cover writeback.
+0.1.29 fixes the right playlist card scroll bounds and keeps the playlist card bottom aligned with the Sleep Timer card. Real Windows QA should still verify internal playlist scrolling, large-list scroll smoothness, playback/pause, latest-folder restore, song-info writeback, and cover writeback.
 
-## 0.1.28 macOS Install
+## 0.1.29 macOS Install
 
-1. Open `Aquariusgirl Music Room-0.1.28-arm64.dmg`.
+1. Open `Aquariusgirl Music Room-0.1.29-arm64.dmg`.
 2. Drag `Aquariusgirl Music Room.app` into Applications.
 3. Open the app from Applications.
 4. Select local music files or a music folder on first launch.
 
 Gatekeeper warnings are expected until Developer ID signing and notarization are configured.
 
-0.1.28 uses the same uninstall steps as the historical notes below. Uninstalling the app does not delete original music files.
+0.1.29 uses the same uninstall steps as the historical notes below. Uninstalling the app does not delete original music files.
 
-0.1.28 passed DMG verify and read-only DMG version / arm64 / app.asar / AI model / prompts / runtime checks. Packaged GUI stress QA and large-list scroll QA still need a temp music copy and isolated profile; do not open or modify the user's original Music folder.
+0.1.29 passed DMG verify and read-only DMG version / arm64 / app.asar / AI model / prompts / runtime checks. Packaged GUI stress QA and large-list scroll QA still need a temp music copy and isolated profile; do not open or modify the user's original Music folder.
 
 The song-info panel has both player-local save and original-file writeback. Player-local save only updates local player metadata; original-file writeback modifies the selected MP3/FLAC/M4A, so keep a backup when needed.
+
+## 0.1.28 Historical Install Notes
+
+0.1.28 used `Aquariusgirl Music Room Setup 0.1.28.exe` and `Aquariusgirl Music Room-0.1.28-arm64.dmg`. It fixed the metadata save loop, playback order, and TrackList visible-window rendering.
 
 ## 0.1.27 Historical Install Notes
 

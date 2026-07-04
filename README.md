@@ -6,6 +6,12 @@ English version: see [English Version](#english-version).
 
 ## 目前最新版本
 
+0.1.29 修正版「Playlist Scroll Bounds / 播放清單捲軸邊界」把右側播放清單卡片改回有內部捲軸，並讓播放清單卡片底部與左側「睡前定時停止」卡片底部切齊。這次不是新功能，而是 0.1.28 做 TrackList windowing 後，右欄外層高度邊界沒有跟著補齊：右側 wrapper 不是 `h-full min-h-0`，播放清單卡片又使用 viewport `max-height`，導致 `TrackList` 的 `h-full overflow-y-auto` 沒有穩定父層高度，清單會往底部播放器下方延伸，看起來像捲軸被拿掉。
+
+本版只用既有 CSS flex / overflow 修正，不新增套件、不重做虛擬清單：`AppLayout` 右側 grid item 在桌面版保留 full height，`App.tsx` 右側 wrapper 改為 `flex h-full min-h-0 flex-col`，`PlaylistPanel` 改成桌面版 `lg:flex-1 lg:min-h-0` 並 `overflow-hidden`，移除舊的 viewport `max-height`。`TrackList` 仍沿用 0.1.28 的可見窗口與 overscan，保留上萬首曲庫時避免一次掛載所有 DOM row 的效能防線。
+
+`check:track-list-virtualization` 已擴充為紅綠防回歸：先確認舊版缺少右欄高度邊界會失敗，再修到 PASS；同時仍檢查 TrackList windowing 未退回 `tracks.map` 全量 render。本輪通過 `check:prompts`、`check:track-display`、`check:track-identity`、`check:playback-order`、`check:track-list-virtualization`、`check:playback-restore`、`check:metadata-save-loop`、all-target `check:ai-assets`、`npm run build`、`npm run electron:compile`、升權 `npm run dist:release`、DMG verify、DMG 唯讀掛載版本 / arm64 / app.asar / AI model / prompts / runtime 檢查與 Windows NSIS static check。dev browser 以 2048×1152 量測確認播放清單卡片與睡前定時卡片底部同為 `1542px`。Windows 真機與真實大曲庫 GUI 滑動仍待補驗。
+
 0.1.28 修正版「Kill Metadata Save Loop / 停止歌曲資料保存迴圈」補完嚴重效能與資料同步問題：`tracks` 任意變動不再自動全庫保存，播放統計、duration、歌曲資訊 / 封面保存都改成單曲 `put` / `patch`，避免每次播放或改封面都清空 IndexedDB tracks store 並重寫所有大型 `coverDataUrl`。本版也修正播放順序：播放核心會照目前歌曲清單排序由上到下播放，手動排序與檔名排序都會一致；歌曲清單改為只 render 可見窗口，不再讓上萬首曲庫一次產生上萬個 DOM row。
 
 本版將 `saveTrackMetadata()` 限縮為僅限整庫重建的歷史相容入口，新增 `putTrackMetadata`、`putManyTrackMetadata`、`patchTrackPlayback`、`patchTrackDuration`、`deleteTrackMetadata` 與 `replaceAllTrackMetadata`。`applyStoredTrackMetadata` 在同一次 App 執行中只做啟動補救一次；執行中由事件直接更新全域 tracks 與 IndexedDB 單曲，不再用 `storedTracks` 回灌形成循環。歌曲資訊面板現在提供「儲存到播放器」與「套用到原始檔」：前者只更新全域 tracks 與 IndexedDB 單曲、標記本地 metadata override，不修改原始音樂檔；後者仍會寫回原始檔並重新讀回該首歌。播放流程仍只在音訊來源真的改變時 `audio.load()`，封面 / metadata-only 更新不改 `localUrl` 或 `mediaVersion`；播放佇列則使用目前清單排序，不再吃未排序的原始 active track id 序列。
@@ -58,13 +64,15 @@ Electron 桌面版手動選擇音樂資料夾時，會把該次回傳的 `source
 release-delivery/installers/
 ```
 
-- `Aquariusgirl Music Room Setup 0.1.28.exe`
-- `Aquariusgirl Music Room-0.1.28-arm64.dmg`
+- `Aquariusgirl Music Room Setup 0.1.29.exe`
+- `Aquariusgirl Music Room-0.1.29-arm64.dmg`
 
 SHA-256：
 
-- EXE：`bf58e089f85d0653336e017dc5ec2425200639f7b89eb4363a95349875ece141`
-- arm64 DMG：`246562abf9eaed00e456ff92f9e8222932ff6a08a393b73daa32dde6639ad8a6`
+- EXE：`b774a90ce60d593cdeab9221509d9920cd76940b25043b1025e6af4be19459a1`
+- arm64 DMG：`22752a59b697c9d2d899bb798fe5f175d10bdf1a87d375b9e39b327bca8dd874`
+
+0.1.28 歷史 hotfix：修正 metadata 保存迴圈、播放順序與 TrackList windowing。0.1.28 hotfix SHA-256：EXE `bf58e089f85d0653336e017dc5ec2425200639f7b89eb4363a95349875ece141`；arm64 DMG `246562abf9eaed00e456ff92f9e8222932ff6a08a393b73daa32dde6639ad8a6`。
 
 0.1.27 歷史 hotfix：修正歌曲資訊面板二次寫回 draft / saving 狀態。0.1.27 hotfix SHA-256：EXE `c39676a14ce17931d20b21e22b2c9fba5239d16e43a6f449fd59b7188d67d937`；arm64 DMG `6a4100871195db1e2b0c17c87b2af8fb640a5d865bfccc0765fba2e0216fcf19`。
 
@@ -571,6 +579,12 @@ Aquariusgirl Music Room is a local-first music player. It can run as a Vite web 
 
 ## Current Version
 
+0.1.29 "Playlist Scroll Bounds" restores the right playlist card's internal scroll and aligns the playlist card bottom with the left Sleep Timer card bottom. This is not a new feature; 0.1.28 already added TrackList windowing, but the right column did not give the list a stable flex height boundary. The right wrapper lacked `h-full min-h-0`, and the playlist card used a viewport `max-height`, so `TrackList`'s `h-full overflow-y-auto` had no reliable parent height and the list could extend under the bottom player.
+
+This release uses only existing CSS flex / overflow and the existing TrackList windowing. `AppLayout` gives the desktop right grid item full height, `App.tsx` makes the right wrapper `flex h-full min-h-0 flex-col`, and `PlaylistPanel` uses `lg:flex-1 lg:min-h-0` with `overflow-hidden` instead of the old viewport `max-height`. No package, new virtualizer, or list rewrite was added.
+
+`check:track-list-virtualization` now guards both the visible-window list and the parent scroll bounds. It first failed on the old missing right-column height boundary, then passed after the fix. 0.1.29 passed prompt checks, track-display, track-identity, playback-order, track-list windowing / scroll-bound guard, playback-restore, metadata-save-loop guard, all-target AI assets, build, Electron compile, elevated `dist:release`, DMG verify, read-only DMG version / arm64 / app.asar / AI model / prompts / runtime checks, and Windows NSIS static check. A dev browser measurement at 2048x1152 confirmed the playlist card and Sleep Timer card both ended at `1542px`. Real Windows and real large-library GUI scroll QA remain open.
+
 0.1.28 "Kill Metadata Save Loop" fixes the remaining severe performance and sync path: arbitrary `tracks` changes no longer trigger full-library IndexedDB saves. Playback stats, duration updates, and song-info / cover saves now use single-track `put` / `patch` operations instead of clearing and rewriting the whole tracks store with large `coverDataUrl` payloads. Playback follows the visible list order, and the track list renders only a visible window instead of creating one DOM row per library item.
 
 This release limits `saveTrackMetadata()` to whole-library rebuild compatibility and adds explicit single-track APIs: `putTrackMetadata`, `putManyTrackMetadata`, `patchTrackPlayback`, `patchTrackDuration`, `deleteTrackMetadata`, and `replaceAllTrackMetadata`. The song-info panel now offers both player-local save and original-file writeback: player-local save updates global tracks plus IndexedDB only and marks metadata override, while original-file writeback reloads and saves only the edited track. `applyStoredTrackMetadata` is now a one-time startup recovery path, not a live mirror from `storedTracks` back into `tracks`.
@@ -621,13 +635,15 @@ Latest installers:
 release-delivery/installers/
 ```
 
-- `Aquariusgirl Music Room Setup 0.1.28.exe`
-- `Aquariusgirl Music Room-0.1.28-arm64.dmg`
+- `Aquariusgirl Music Room Setup 0.1.29.exe`
+- `Aquariusgirl Music Room-0.1.29-arm64.dmg`
 
 SHA-256:
 
-- EXE: `bf58e089f85d0653336e017dc5ec2425200639f7b89eb4363a95349875ece141`
-- arm64 DMG: `246562abf9eaed00e456ff92f9e8222932ff6a08a393b73daa32dde6639ad8a6`
+- EXE: `b774a90ce60d593cdeab9221509d9920cd76940b25043b1025e6af4be19459a1`
+- arm64 DMG: `22752a59b697c9d2d899bb798fe5f175d10bdf1a87d375b9e39b327bca8dd874`
+
+0.1.28 historical hotfix SHA-256: EXE `bf58e089f85d0653336e017dc5ec2425200639f7b89eb4363a95349875ece141`; arm64 DMG `246562abf9eaed00e456ff92f9e8222932ff6a08a393b73daa32dde6639ad8a6`.
 
 0.1.27 historical hotfix SHA-256: EXE `c39676a14ce17931d20b21e22b2c9fba5239d16e43a6f449fd59b7188d67d937`; arm64 DMG `6a4100871195db1e2b0c17c87b2af8fb640a5d865bfccc0765fba2e0216fcf19`.
 

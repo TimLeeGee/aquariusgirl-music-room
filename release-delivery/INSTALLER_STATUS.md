@@ -1,5 +1,25 @@
 # Installer 狀態
 
+## 2026-07-04 0.1.29 最新狀態（Playlist Scroll Bounds / 播放清單捲軸邊界）
+
+本輪把版本更新為 0.1.29，重點是恢復右側播放清單卡片內部捲軸，並讓播放清單卡片底部與左側睡前定時卡片底部切齊。修法只補齊既有 TrackList windowing 的父層高度邊界：`AppLayout` 右側 section 加 `lg:h-full`，`App.tsx` 右側 wrapper 改為 `flex h-full min-h-0 flex-col gap-4`，`PlaylistPanel` 改為 `overflow-hidden lg:min-h-0 lg:flex-1` 並移除舊 viewport max-height。未新增套件、未重做清單。
+
+- `Aquariusgirl Music Room Setup 0.1.29.exe`：667,497,625 bytes，SHA-256 `b774a90ce60d593cdeab9221509d9920cd76940b25043b1025e6af4be19459a1`
+- `Aquariusgirl Music Room-0.1.29-arm64.dmg`：684,461,729 bytes，SHA-256 `22752a59b697c9d2d899bb798fe5f175d10bdf1a87d375b9e39b327bca8dd874`
+
+模型仍為 `resources/ai/models/qwen3.5-0.8b.gguf`，532,517,120 bytes，SHA-256 `bd258782e35f7f458f8aced1adc053e6e92e89bc735ba3be89d38a06121dc517`。
+
+驗收：`npm run check:track-list-virtualization`、`npm run build`、`npm run electron:compile`、升權 `npm run dist:release` 均通過；`dist:release` 內通過 prompt、track-display、track-identity、playback-order、track-list-virtualization、playback-restore、metadata-save-loop、all-target AI assets、build、Electron compile。dev browser 2048×1152 量測 `PlaylistPanel.bottom` 與 `SleepTimer.bottom` 均為 `1542px`。DMG `hdiutil verify` VALID；唯讀掛載後版本為 0.1.29、CFBundleVersion 為 0.1.29、執行檔為 Mach-O arm64、`app.asar` package version 為 0.1.29、mac AI model / prompts / `darwin-arm64/llama-server` 存在。EXE static check 為 Windows NSIS installer；`release/` 暫存輸出已移除，唯一交付位置是 `release-delivery/installers/`；未在 Windows 真機執行。
+
+### English Status
+
+0.1.29 restores internal scrolling inside the right playlist card and aligns the playlist card bottom with the Sleep Timer card bottom. The fix only adds the missing flex height boundary around the existing TrackList windowing; it does not add a dependency or rewrite the list.
+
+- `Aquariusgirl Music Room Setup 0.1.29.exe`: 667,497,625 bytes, SHA-256 `b774a90ce60d593cdeab9221509d9920cd76940b25043b1025e6af4be19459a1`
+- `Aquariusgirl Music Room-0.1.29-arm64.dmg`: 684,461,729 bytes, SHA-256 `22752a59b697c9d2d899bb798fe5f175d10bdf1a87d375b9e39b327bca8dd874`
+
+Passed: track-list windowing / scroll-bound guard, browser layout measurement, build, Electron compile, elevated `dist:release`, DMG verify, read-only DMG version / arm64 / app.asar / AI model / prompts / runtime checks, and Windows NSIS static check. Real Windows QA, real large-library GUI scroll QA, signing, and notarization remain open.
+
 ## 2026-07-04 0.1.28 最新狀態（Kill Metadata Save Loop / 停止歌曲資料保存迴圈）
 
 本輪把版本更新為 0.1.28，重點是停止 tracks 任意變動造成的全曲庫 IndexedDB 保存迴圈。播放統計、duration、歌曲資訊 / 封面保存都改為單曲 `put` / `patch`，不再每次播放或換封面就清空 tracks store 並重寫所有大型 coverDataUrl。歌曲資訊面板補回「儲存到播放器」入口，只保存全域 tracks 與 IndexedDB 單曲並標記本地 metadata override，不修改原始音樂檔。本輪也修正播放佇列未跟隨畫面排序的問題；手動排序與檔名排序都會照目前歌曲清單由上到下播放。`TrackList` 只 render 可見窗口與 overscan，避免上萬首曲庫一次產生上萬個 DOM row。

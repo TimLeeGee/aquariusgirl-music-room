@@ -59,7 +59,7 @@ export function PlaylistPanel({
   const totalDuration = tracks.reduce((sum, track) => sum + (track.duration ?? 0), 0);
 
   return (
-    <aside className="glass-panel flex max-h-[calc(100vh-10rem)] min-h-[520px] flex-col p-4 sm:p-5 lg:sticky lg:top-5">
+    <aside className="glass-panel flex min-h-[520px] flex-col overflow-hidden p-4 sm:p-5 lg:sticky lg:top-5 lg:min-h-0 lg:flex-1">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div className="min-w-0">
           <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-aquarius-blue">

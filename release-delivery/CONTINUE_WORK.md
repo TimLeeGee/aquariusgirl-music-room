@@ -2,6 +2,37 @@
 
 最後更新：2026-07-04 CST
 
+## 2026-07-04 Playlist Scroll Bounds hotfix 0.1.29 完成
+
+- 已修正右側播放清單卡片沒有內部捲軸、清單往底部播放器下方延伸的版面回歸。
+- 根因：0.1.28 已有 `TrackList` visible-window render，但右側外層缺少穩定高度邊界；`App.tsx` 右側 wrapper 缺 `h-full min-h-0`，`PlaylistPanel` 舊 viewport max-height 不能跟左側睡前定時卡片切齊。
+- 修正：`AppLayout` 右側 section 加 `lg:h-full`；`App.tsx` 右側 wrapper 改為 `flex h-full min-h-0 flex-col gap-4`；`PlaylistPanel` 改為 `overflow-hidden lg:min-h-0 lg:flex-1`，移除舊 viewport max-height。沒有新增套件、沒有重做清單。
+- 防回歸：`check:track-list-virtualization` 擴充檢查右欄 full-height / min-height 邊界、`PlaylistPanel` flex scroll bounds、禁止回到舊 viewport max-height，同時保留 TrackList windowing 檢查。
+- 驗收：`check:track-list-virtualization` 紅綠通過；`npm run build`、`npm run electron:compile`、升權 `npm run dist:release` 通過。dev browser 2048×1152 量測播放清單卡片 bottom 與睡前定時卡片 bottom 均為 `1542px`。
+- DMG `hdiutil verify` VALID；升權唯讀掛載讀回版本 `0.1.29`、CFBundleVersion `0.1.29`、Mach-O arm64、`app.asar` package version `0.1.29`、mac AI model / prompts / `darwin-arm64/llama-server` 存在。EXE static check 為 NSIS installer。
+- 0.1.29 installer 位於：
+
+```text
+release-delivery/installers/Aquariusgirl Music Room Setup 0.1.29.exe
+release-delivery/installers/Aquariusgirl Music Room-0.1.29-arm64.dmg
+```
+
+- SHA-256：EXE `b774a90ce60d593cdeab9221509d9920cd76940b25043b1025e6af4be19459a1`；DMG `22752a59b697c9d2d899bb798fe5f175d10bdf1a87d375b9e39b327bca8dd874`。
+- 驗收限制：本輪未在 Windows 真機安裝；dev browser 沒載入真實大曲庫，真實上萬首 GUI 滑動仍需用暫存資料與隔離 profile 補驗；macOS / Windows 仍未簽章。
+
+### 接續給下一輪 Codex
+
+請接續 Aquariusgirl Music Room 0.1.29 Windows / 大曲庫 GUI 驗收。最新版 installer 位於 `release-delivery/installers/`，SHA-256 應為 EXE `b774a90ce60d593cdeab9221509d9920cd76940b25043b1025e6af4be19459a1`、DMG `22752a59b697c9d2d899bb798fe5f175d10bdf1a87d375b9e39b327bca8dd874`。先讀 `release-delivery/QA_REPORT.md`、`release-delivery/INSTALLER_STATUS.md`、`release-delivery/KNOWN_ISSUES.md`。重點驗證：右側播放清單卡片底部與左側睡前定時卡片底部切齊；播放清單內部可捲動且底部播放器不被清單覆蓋；大清單滑動仍只 render 可見窗口並保持順暢；Windows fresh install、播放/暫停、資料夾恢復、AI、Mini/dialog focus。不可打開或修改使用者原始 Music 資料夾，使用暫存音樂複本與隔離 profile。
+
+## 2026-07-04 Playlist Scroll Bounds Hotfix 0.1.29 Complete
+
+- Restored internal scrolling inside the right playlist card and aligned its bottom with the Sleep Timer card bottom.
+- Root cause: TrackList had visible-window rendering, but the right column lacked a stable flex height boundary.
+- Fix: right grid item gets desktop full height, right wrapper is `flex h-full min-h-0 flex-col`, and `PlaylistPanel` uses `overflow-hidden lg:min-h-0 lg:flex-1`.
+- Latest installers are in `release-delivery/installers/`.
+- SHA-256: EXE `b774a90ce60d593cdeab9221509d9920cd76940b25043b1025e6af4be19459a1`; DMG `22752a59b697c9d2d899bb798fe5f175d10bdf1a87d375b9e39b327bca8dd874`.
+- Passed source guards, browser layout measurement, build, package, DMG verify, read-only DMG version / arm64 / app.asar / AI model / prompts / runtime checks, and Windows NSIS static check. Real Windows QA, real large-library GUI scroll QA, signing, and notarization remain open.
+
 ## 2026-07-04 Kill Metadata Save Loop hotfix 0.1.28 完成
 
 - 已停止 `tracks` 任意變動就整庫保存的迴圈。`recordTrackPlayback`、duration、歌曲資訊 / 封面保存不再觸發 `store.clear()` + put all。

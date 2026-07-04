@@ -1,9 +1,20 @@
 # 已知問題
 
-版本：0.1.28
+版本：0.1.29
 文件更新：2026-07-04
 
-## 0.1.28 仍需人工驗收
+## 0.1.29 仍需人工驗收
+
+- Windows 真機尚未安裝 `Aquariusgirl Music Room Setup 0.1.29.exe` 驗證 fresh install、啟動、右側播放清單卡片內部捲動、底部播放器不被播放清單覆蓋、手動排序 / 檔名排序播放都照目前歌曲清單由上到下、大清單滑動只 render 可見窗口且不卡、播放/暫停連點、選擇新資料夾後重開恢復最後來源、約 4 GB / 20+ 首音樂資料夾、AI 聊天與 AI 建歌單。
+- Windows EXE 目前只有 NSIS / x64 target static check，不能宣稱 Windows 實機 PASS。
+- macOS DMG 已完成 verify 與唯讀掛載版本 / arm64 / app.asar / AI runtime 檢查；但未做 Apple Developer ID 簽章與 notarization。
+- 本輪 dev browser 只量測空歌單版面底部對齊；真實大曲庫 GUI 滑動仍需用暫存音樂資料與隔離 profile 補驗，不可打開或修改使用者原始 Music 資料夾。
+- 本輪 `check:track-list-virtualization` 是 source-level regression guard，可防止右欄高度邊界與 TrackList windowing 回歸，但不是完整 packaged GUI 壓力測試。
+- Windows EXE 未做 code signing，SmartScreen 提醒仍屬預期；macOS DMG 未做 Apple Developer ID 簽章與 notarization。
+- 0.1.29 修正的是播放清單卡片 scroll bounds；若未來真實上萬首 GUI 滑動仍不足，再評估成熟 virtualization / dynamic viewport measurement，不要混進這個 hotfix。
+- 0.1.29 沿用 0.1.28 的 metadata save loop 修正與本機 metadata 保存策略；若使用者在播放器外修改原始檔 tag，仍需要用明確重新讀取 / 重新選擇來源讓 metadata 更新。
+
+## 0.1.28 仍需人工驗收（歷史）
 
 - Windows 真機尚未安裝 `Aquariusgirl Music Room Setup 0.1.28.exe` 驗證 fresh install、啟動、手動排序 / 檔名排序播放都照目前歌曲清單由上到下、大清單滑動只 render 可見窗口且不卡、播放含大型封面的歌曲不卡、連續更換同一首封面 5 次不卡、播放清單歌曲資訊寫回後強制重開仍顯示最新 metadata / cover、播放/暫停連點、選擇新資料夾後重開恢復最後來源、約 4 GB / 20+ 首音樂資料夾、AI 聊天與 AI 建歌單。
 - Windows EXE 目前只有 NSIS / x64 target static check，不能宣稱 Windows 實機 PASS。
@@ -139,10 +150,20 @@
 
 ## Known Issues
 
-Version: 0.1.28
+Version: 0.1.29
 Document update: 2026-07-04
 
-## 0.1.28 Manual QA Still Needed
+## 0.1.29 Manual QA Still Needed
+
+- `Aquariusgirl Music Room Setup 0.1.29.exe` has not been installed on a real Windows machine for fresh install, launch, internal playlist scrolling, no playlist overlap with the bottom player, playback/pause click testing, latest-folder restore, a roughly 4 GB / 20+ song folder, AI chat, and AI playlist creation.
+- The Windows EXE has only NSIS / x64 target static checks, so Windows runtime behavior is not marked PASS.
+- The macOS DMG passed verify and read-only version / arm64 / app.asar / AI runtime checks. Developer ID signing and notarization are not configured.
+- The dev browser measurement used an empty playlist. Real large-library GUI scrolling still needs a temp music copy and isolated profile.
+- The track-list source guard covers the scroll-bound regression, but it is not a full packaged GUI stress test.
+- The Windows EXE is unsigned, so SmartScreen warnings are expected. Developer ID signing and notarization are not configured for macOS.
+- 0.1.29 fixes playlist scroll bounds. If real 10k-track GUI scrolling still falls short, consider a separate mature virtualization / dynamic viewport design later.
+
+## 0.1.28 Manual QA Still Needed (Historical)
 
 - `Aquariusgirl Music Room Setup 0.1.28.exe` has not been installed on a real Windows machine for fresh install, launch, large-cover playback, five repeated cover updates, playlist song-info restart persistence, playback/pause click testing, latest-folder restore, a roughly 4 GB / 20+ song folder, AI chat, and AI playlist creation.
 - The Windows EXE has only NSIS / x64 target static checks, so Windows runtime behavior is not marked PASS.

@@ -1,11 +1,30 @@
 # 版本資訊
 
 產品：Aquariusgirl Music Room / 水瓶罐子的音樂小水池
-版本：0.1.28
+版本：0.1.29
 日期：2026-07-04
 平台目標：Windows x64、macOS arm64
 
-## 2026-07-04 0.1.28 hotfix 發行狀態
+## 2026-07-04 0.1.29 hotfix 發行狀態
+
+0.1.29「Playlist Scroll Bounds / 播放清單捲軸邊界」修正右側播放清單卡片沒有內部捲軸、往底部播放器下方延伸的版面回歸，並讓播放清單卡片底部與左側「睡前定時停止」卡片底部切齊。
+
+本版不新增套件、不重做清單；它只補齊 0.1.28 TrackList visible-window render 所需的父層高度邊界。`AppLayout` 右側 section 加 `lg:h-full`，`App.tsx` 右側 wrapper 改為 `flex h-full min-h-0 flex-col gap-4`，`PlaylistPanel` 移除舊 viewport max-height，改為 `overflow-hidden lg:min-h-0 lg:flex-1`。`check:track-list-virtualization` 已擴充防回歸，會同時確認 TrackList windowing 與右欄 scroll bounds。
+
+通過：先讓 `npm run check:track-list-virtualization` 因舊右欄高度邊界缺失失敗，再修到 PASS；`npm run build`、`npm run electron:compile`、升權 `npm run dist:release`、DMG verify、DMG 唯讀掛載版本 / arm64 / app.asar / AI model / prompts / runtime 檢查、Windows NSIS static check。`dist:release` 內也通過 prompts、track-display、track-identity、playback-order、playback-restore、metadata-save-loop、all-target AI assets。dev browser 2048×1152 量測播放清單卡片與睡前定時卡片 bottom 均為 `1542px`。Windows 真機、真實大曲庫 GUI 滑動、簽章與 notarization 仍需驗收。
+
+SHA-256：
+
+- EXE：`b774a90ce60d593cdeab9221509d9920cd76940b25043b1025e6af4be19459a1`
+- arm64 DMG：`22752a59b697c9d2d899bb798fe5f175d10bdf1a87d375b9e39b327bca8dd874`
+
+### English Summary
+
+0.1.29 fixes the playlist scroll-bound regression. The right playlist card scrolls internally again and its bottom aligns with the left Sleep Timer card. The fix only adds the missing flex height boundary around the existing TrackList windowing; no new dependency or list rewrite was added.
+
+Passed: red/green track-list-virtualization / scroll-bound guard, build, Electron compile, elevated `dist:release`, DMG verify, read-only DMG version / arm64 / app.asar / AI model / prompts / runtime checks, and Windows NSIS static check. Real Windows QA, real large-library GUI scroll QA, signing, and notarization remain open.
+
+## 2026-07-04 0.1.28 hotfix 發行狀態（歷史）
 
 0.1.28「Kill Metadata Save Loop / 停止歌曲資料保存迴圈」修正嚴重效能與資料同步問題：播放次數、上次播放時間、duration、歌曲資訊 / 封面保存不再觸發全曲庫保存，也不再清空 tracks store 後重寫所有大型 coverDataUrl。本版也修正播放順序，讓播放核心照目前歌曲清單排序由上到下播放；歌曲清單只 render 可見窗口與 overscan，避免上萬首曲庫一次產生上萬個 DOM row。
 

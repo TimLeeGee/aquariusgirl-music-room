@@ -1,9 +1,36 @@
 # QA 驗收報告
 
 產品：Aquariusgirl Music Room / 水瓶罐子的音樂小水池
-版本：0.1.28
+版本：0.1.29
 日期：2026-07-04
 驗收角色：PM / QA / Electron 發行工程師
+
+## 2026-07-04 Playlist Scroll Bounds hotfix 0.1.29
+
+- 範圍：修正使用者截圖回報的右側播放清單卡片沒有內部捲軸、清單往底部播放器下方延伸，以及播放清單卡片底部沒有與左側「睡前定時停止」卡片底部切齊。
+- 判斷：播放清單捲軸需要存在；未來上萬首歌曲時，清單必須在自己的 bounded container 內捲動，不可讓整頁或底部播放器被清單撐開。
+- 根因：0.1.28 已把 `TrackList` 改成 visible window + overscan，但父層高度邊界沒有補齊。`App.tsx` 右側 wrapper 仍只是 `flex flex-col gap-4`，`PlaylistPanel` 使用 `max-h-[calc(100vh-10rem)] min-h-[520px]`，沒有吃右欄剩餘高度；因此 `TrackList` 的 `h-full overflow-y-auto` 沒有穩定父層高度，清單會在卡片外繼續往下延伸。
+- 修正：`src/components/AppLayout.tsx` 右側 section 加 `lg:h-full`；`src/App.tsx` 右側 wrapper 改為 `flex h-full min-h-0 flex-col gap-4`；`src/components/PlaylistPanel.tsx` 移除舊 viewport max-height，改為 `overflow-hidden lg:min-h-0 lg:flex-1`。保留 0.1.28 的 TrackList windowing，不新增套件、不重做清單。
+- 失敗先行：先擴充 `scripts/track-list-virtualization-check.mjs`，要求右側 full-height / min-height 邊界、`PlaylistPanel` flex scroll bounds、`overflow-hidden`，並禁止舊 `max-h-[calc(100vh-10rem)]`。舊程式因缺少 `className="flex h-full min-h-0 flex-col gap-4"` 紅燈；修正後 PASS。
+- 瀏覽器驗收：啟動 Vite dev server，使用 in-app browser 2048×1152 viewport 讀 DOM。量測結果：`PlaylistPanel.bottom = 1542`、`SleepTimer.bottom = 1542`，右側 wrapper class 為 `flex h-full min-h-0 flex-col gap-4`。空歌單狀態沒有 TrackList scroller 是正常的；有歌曲時 source guard 確認 `TrackList` 仍是 `overflow-y-auto` visible-window list。
+- 檢查：`npm run check:track-list-virtualization` PASS；`npm run build` PASS；`npm run electron:compile` PASS；升權 `npm run dist:release` PASS。`dist:release` 內通過 `check:prompts`、`check:track-display`、`check:track-identity`、`check:playback-order`、`check:track-list-virtualization`、`check:playback-restore`、`check:metadata-save-loop`、all-target `check:ai-assets`、build、Electron compile。
+- 打包：一般沙盒 `npm run dist:release` 在 `hdiutil create` 失敗；升權重跑同一 `npm run dist:release` PASS，同步兩個 installer 到 `release-delivery/installers/`，暫存 `release/` 已移除。
+- DMG / EXE：DMG `hdiutil verify` VALID；升權唯讀掛載讀回 `CFBundleShortVersionString` / `CFBundleVersion` 均為 0.1.29，執行檔為 Mach-O arm64，`app.asar` package version 為 0.1.29，mac AI model `qwen3.5-0.8b.gguf`、三份 prompts 與 runtime `darwin-arm64/llama-server` 存在，掛載點已卸載。EXE static check PASS，辨識為 Windows NSIS installer；未在 Windows 真機執行。
+
+0.1.29 最新 installer：
+
+- EXE：667,497,625 bytes，SHA-256 `b774a90ce60d593cdeab9221509d9920cd76940b25043b1025e6af4be19459a1`
+- arm64 DMG：684,461,729 bytes，SHA-256 `22752a59b697c9d2d899bb798fe5f175d10bdf1a87d375b9e39b327bca8dd874`
+
+限制：本輪未在 Windows 真機安裝；dev browser 沒載入真實大曲庫，真實上萬首 GUI 滑動仍需用暫存資料與隔離 profile 補驗；packaged macOS GUI 滑鼠流程、Windows fresh install、4 GB / 20+ 首資料夾、AI/Mini/dialog focus、簽章與 notarization 仍未完成。
+
+### English QA Summary
+
+- Scope: restores internal scrolling in the right playlist card and aligns its bottom with the left Sleep Timer card.
+- Root cause: TrackList had visible-window rendering, but the parent right column lacked a stable flex height boundary, so the list's `h-full overflow-y-auto` had no bounded parent.
+- Fix: desktop right grid item now keeps full height, the right wrapper is `flex h-full min-h-0 flex-col`, and `PlaylistPanel` uses `overflow-hidden lg:min-h-0 lg:flex-1` instead of the old viewport max-height.
+- Passed checks: red/green track-list-virtualization / scroll-bound guard, browser layout measurement, build, Electron compile, elevated `dist:release`, DMG verify, read-only DMG version / arm64 / app.asar / AI model / prompts / runtime checks, and Windows NSIS static check.
+- Limits: real Windows install, real large-library GUI scroll QA, packaged GUI stress QA, signing, and notarization remain open.
 
 ## 2026-07-04 Kill Metadata Save Loop hotfix 0.1.28
 

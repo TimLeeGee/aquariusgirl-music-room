@@ -33,7 +33,7 @@ export function AppLayout({
         {header}
         <main className="grid flex-1 grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1.02fr)_minmax(380px,0.72fr)]">
           <section className="flex min-w-0 flex-col gap-5">{left}</section>
-          <section className="min-h-0 min-w-0">{right}</section>
+          <section className="min-h-0 min-w-0 lg:h-full">{right}</section>
         </main>
       </div>
       {miniPlayer}

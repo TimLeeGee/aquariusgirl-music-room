@@ -2,8 +2,8 @@
 
 ## 快速接手
 
-- Aquariusgirl Music Room 是 React + TypeScript + Vite + Electron 的本地音樂播放器，目前版本是 `0.1.28`。
-- 0.1.28 最新 hotfix 是 `Kill Metadata Save Loop`：播放統計、duration、歌曲資訊 / 封面保存走單曲 `put` / `patch`；歌曲資訊面板有「儲存到播放器」與「套用到原始檔」兩條路徑；播放佇列會跟目前歌曲清單排序由上到下播放；歌曲清單只 render 可見窗口，避免上萬首一次產生上萬個 DOM row；新增 dev guard 可警示重複 stored metadata 回灌、播放中非預期原檔 metadata 重讀、同 track source 變動造成的 `audio.load()`。
+- Aquariusgirl Music Room 是 React + TypeScript + Vite + Electron 的本地音樂播放器，目前版本是 `0.1.29`。
+- 0.1.29 最新 hotfix 是 `Playlist Scroll Bounds`：右側播放清單卡片恢復內部捲軸，右欄高度跟左側睡前定時卡片底部切齊；修法只用既有 flex / overflow 與 TrackList windowing，不新增套件、不重做清單。0.1.28 的 `Kill Metadata Save Loop` 仍是資料流基底：播放統計、duration、歌曲資訊 / 封面保存走單曲 `put` / `patch`；歌曲資訊面板有「儲存到播放器」與「套用到原始檔」兩條路徑；播放佇列會跟目前歌曲清單排序由上到下播放；歌曲清單只 render 可見窗口，避免上萬首一次產生上萬個 DOM row；dev guard 可警示重複 stored metadata 回灌、播放中非預期原檔 metadata 重讀、同 track source 變動造成的 `audio.load()`。
 - 主程式在 `src/`，Electron main/preload 在 `electron/`，打包與檢查腳本在 `scripts/`。
 - 發行與驗收紀錄在 `release-delivery/`；改版前先讀 `release-delivery/QA_REPORT.md` 與 `release-delivery/README.md`。
 - AI prompt 在 `private/prompts/`，GGUF 模型與 llama.cpp runtime 放在 `resources/ai/`；大型模型與 installer 不進 Git。
