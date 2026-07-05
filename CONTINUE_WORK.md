@@ -1,5 +1,17 @@
 # Aquariusgirl Music Room Continue Work
 
+## 2026-07-05 Nested Main and Playlist Scroll hotfix 0.1.33 完成
+
+- 已完成 source 修正：`AppLayout` 外層主內容容器改成 `h-screen overflow-y-auto overflow-x-hidden`，主視窗內容超出 viewport 時恢復右側大型垂直卷軸；`body` 不再全域 `overflow: hidden` 鎖死主視窗，只保留 `overflow-x: hidden`。
+- `TrackList` 仍保留播放清單內部小卷軸：`playlist-scrollbar h-full min-h-0 overflow-y-auto overflow-x-hidden pr-3`；`PlaylistPanel` 繼續使用 0.1.32 / 0.1.28 高度 `max-h-[calc(100vh-10rem)] min-h-[520px]`，不讓歌曲清單無限制撐高整頁。
+- 未新增套件、未重做清單、未改 metadata / cover / IndexedDB / playback 資料流；這次只修正主視窗與 playlist 兩層 scroll container 邊界。
+- 已通過 `check:track-list-virtualization`、`npm run build`、`npm run electron:compile`、升權 `npm run dist:release`；`dist:release` 內也通過 prompts、track-display、track-identity、playback-order、track-list-virtualization、playback-restore、metadata-save-loop、all-target AI assets、build、Electron compile。
+- 已補 `docs/releases/0.1.33-checksums.md`；DMG verify、唯讀掛載讀回版本 / app.asar、packaged renderer scroll class、packaged CSS overflow 與 Windows NSIS static check 已完成。Windows 真機與 packaged GUI 大曲庫滑鼠 / 觸控板滾動仍待補驗。
+
+### 接續提示詞
+
+請接續 Aquariusgirl Music Room 0.1.33 Windows / packaged GUI 大曲庫卷軸驗收或 GitHub release readback。最新版 installer 位於 `release-delivery/installers/`：`Aquariusgirl Music Room Setup 0.1.33.exe`、`Aquariusgirl Music Room-0.1.33-arm64.dmg`。SHA-256 請以 `docs/releases/0.1.33-checksums.md` 為準。重點驗證：一般主內容區滾輪會捲整個主視窗；播放清單區滾輪優先捲歌曲清單；兩個卷軸都只在內容超出時出現；沒有水平卷軸；底部內容與 Mini Player 不被裁切；Windows fresh install、播放/暫停、資料夾恢復、AI、Mini/dialog focus。不可打開或修改使用者原始 Music 資料夾，使用暫存音樂複本與隔離 profile。
+
 ## 2026-07-05 Playlist Column Scroll Restore hotfix 0.1.32 完成
 
 - 已完成 source 修正：`AppLayout` 左欄移除 0.1.31 放錯位置的 `playlist-scrollbar overflow-y-auto`，回到不承擔 playlist overflow 的 `flex min-w-0 flex-col gap-5`。

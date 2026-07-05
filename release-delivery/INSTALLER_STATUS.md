@@ -1,5 +1,20 @@
 # Installer 狀態
 
+## 2026-07-05 0.1.33 狀態（Nested Main and Playlist Scroll / 巢狀主視窗與播放清單卷軸）
+
+0.1.33 已完成 UI hotfix 並產出 installer。本輪升權 `npm run dist:release` 通過 prompt、track-display、track-identity、playback-order、track-list-virtualization、playback-restore、metadata-save-loop、all-target AI assets、build、Electron compile、macOS arm64 DMG 與 Windows x64 NSIS 打包，並同步到 `release-delivery/installers/`；暫存 `release/` 已移除。
+
+- `Aquariusgirl Music Room Setup 0.1.33.exe`：667,497,980 bytes，SHA-256 `b0316a37c191930859f5a1017ed919188f3de4941c45cd90acdfd5e1991673e9`
+- `Aquariusgirl Music Room-0.1.33-arm64.dmg`：684,496,549 bytes，SHA-256 `6caefd200e956fba8a5a255d4bb6942918f8d8609dd5c821d349a362f8882667`
+
+模型仍為 `resources/ai/models/qwen3.5-0.8b.gguf`，532,517,120 bytes，SHA-256 `bd258782e35f7f458f8aced1adc053e6e92e89bc735ba3be89d38a06121dc517`。
+
+驗收：DMG `hdiutil verify` VALID；唯讀掛載讀回版本為 0.1.33、執行檔存在且可執行、`app.asar` package version 為 0.1.33。packaged renderer bundle 含主視窗 scroll container class 與 TrackList scroll container class；packaged CSS 確認 body 不含 `overflow:hidden`、只含 `overflow-x:hidden`，並保留 `scrollbar-gutter:stable`。EXE static check 為 Windows NSIS installer；未在 Windows 真機執行。
+
+### English Status
+
+0.1.33 installers were produced and synced to `release-delivery/installers/`. DMG verify and read-only DMG version / app.asar / packaged renderer scroll class / packaged CSS overflow checks passed. The Windows artifact is a NSIS installer static check only; real Windows QA remains open.
+
 ## 2026-07-05 0.1.32 狀態（Playlist Column Scroll Restore / 播放清單欄位捲軸復原）
 
 0.1.32 已完成 UI hotfix 並產出 installer。本輪升權 `npm run dist:release` 通過 prompt、track-display、track-identity、playback-order、track-list-virtualization、playback-restore、metadata-save-loop、all-target AI assets、build、Electron compile、macOS arm64 DMG 與 Windows x64 NSIS 打包，並同步到 `release-delivery/installers/`；暫存 `release/` 已移除。

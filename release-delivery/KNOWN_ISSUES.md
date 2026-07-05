@@ -1,9 +1,17 @@
 # 已知問題
 
-版本：0.1.32
+版本：0.1.33
 文件更新：2026-07-05
 
-## 0.1.32 仍需完成
+## 0.1.33 仍需完成
+
+- 尚未用 packaged GUI 載入 100+ 首暫存歌曲驗證：一般主內容區滾輪可捲整個主視窗、playlist 區滾輪優先捲歌曲列表、兩個卷軸都只在內容超出時出現、沒有水平卷軸、底部內容不被 Mini Player 裁切。
+- 尚未在 Windows 真機安裝 0.1.33 EXE 驗證 fresh install、主視窗卷軸、playlist 內部卷軸、播放/暫停、資料夾恢復、AI、Mini/dialog focus。
+- 0.1.33 source-level guard 與 packaged asar/CSS 讀回已確認主視窗與 playlist 是兩個不同 scroll container，且 `body` 不再全域 `overflow:hidden`；但這不等於完整 packaged GUI 大曲庫壓力測試。
+- 0.1.33 未新增 virtualization 套件；若未來真實上萬首 GUI 滑動仍不足，應另開成熟 virtualization / thumbnail cache 設計，不混進這個 hotfix。
+- 本輪 headless browser runtime 受本機 Playwright 瀏覽器快取缺失與 Chrome CLI exit 134 限制，未宣稱滑鼠 / 觸控板實際 GUI 捲動 PASS。
+
+## 0.1.32 仍需完成（歷史）
 
 - 尚未用 packaged GUI 載入 100+ 首暫存歌曲驗證：左側主欄不出現 playlist 捲軸、右側 playlist 欄位高度回到 0.1.28、滑鼠滾輪 / 觸控板 / 拖曳捲軸都只捲歌曲列表、最後一首不被 mini player 蓋住且無水平捲軸。
 - 尚未在 Windows 真機安裝 0.1.32 EXE 驗證 fresh install、播放/暫停、資料夾恢復、AI、Mini/dialog focus。
@@ -175,10 +183,18 @@
 
 ## Known Issues
 
-Version: 0.1.32
+Version: 0.1.33
 Document update: 2026-07-05
 
-## 0.1.32 Manual QA Still Needed
+## 0.1.33 Manual QA Still Needed
+
+- Packaged GUI QA with 100+ temp tracks is still needed to verify main-window scrolling over general content, playlist-internal scrolling over the song list, both scrollbars appearing only on overflow, no horizontal scrollbar, and no bottom-content clipping by the mini player.
+- Real Windows 0.1.33 EXE QA is still needed for fresh install, main-window scrollbar, playlist scrollbar, playback/pause, folder restore, AI, Mini player, and dialog focus.
+- The 0.1.33 source-level guard and packaged asar/CSS readback confirm the main window and playlist are separate scroll containers and body no longer globally uses `overflow:hidden`, but this is not a full packaged GUI large-library stress test.
+- 0.1.33 did not add a virtualization dependency; if real 10k-track GUI scrolling still falls short, use a separate mature virtualization / thumbnail-cache design later.
+- Headless browser runtime was limited by the missing Playwright browser cache and Chrome CLI exit 134, so mouse / trackpad GUI scrolling is not marked PASS.
+
+## 0.1.32 Manual QA Still Needed (Historical)
 
 - Packaged GUI QA with 100+ temp tracks is still needed to verify that the left column has no playlist scrollbar, the playlist panel has the restored 0.1.28 height, mouse wheel / trackpad / scrollbar dragging affect only the song list, the final track stays above the mini player, and no horizontal scrollbar appears.
 - Real Windows 0.1.32 EXE QA is still needed for fresh install, playback/pause, folder restore, AI, Mini player, and dialog focus.

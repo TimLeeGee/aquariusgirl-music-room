@@ -2,6 +2,19 @@
 
 最後更新：2026-07-05 CST
 
+## 2026-07-05 Nested Main and Playlist Scroll hotfix 0.1.33 完成
+
+- 已完成 source 修正：主視窗外層改為 `playlist-scrollbar relative z-10 h-screen overflow-y-auto overflow-x-hidden`，內容超出 viewport 時恢復右側大型垂直卷軸；`body` 不再全域 `overflow: hidden`，只保留 `overflow-x: hidden`。
+- `TrackList` 仍是播放清單內部歌曲列表 scroll container，保留 `playlist-scrollbar h-full min-h-0 overflow-y-auto overflow-x-hidden pr-3` 與 visible-window + overscan。
+- `PlaylistPanel` 保留 0.1.32 / 0.1.28 高度 `max-h-[calc(100vh-10rem)] min-h-[520px]`，播放清單不會無限制撐高主視窗。
+- 未新增套件、未重做清單、未改 metadata / cover / IndexedDB / playback。
+- 已通過 source guards、`npm run build`、`npm run electron:compile`、升權 `npm run dist:release`、DMG verify、唯讀掛載讀回、packaged renderer/CSS scroll 檢查與 Windows NSIS static check。
+- 0.1.33 installer 已同步到 `release-delivery/installers/`；`docs/releases/0.1.33-checksums.md` 已建立。Windows 真機與 packaged GUI 大曲庫滑動仍待補驗。
+
+### 接續給下一輪 Codex
+
+請接續 Aquariusgirl Music Room 0.1.33 Windows / packaged GUI 大曲庫卷軸驗收或 GitHub release readback。先執行 `git status -sb`、`git diff --name-only`，不要 reset。最新版 installer 位於 `release-delivery/installers/`，SHA-256 請以 `docs/releases/0.1.33-checksums.md` 為準。重點驗證：一般主內容區滾輪會捲整個主視窗；播放清單區滾輪優先捲歌曲清單；兩個卷軸都只在內容超出時出現；沒有水平卷軸；底部內容與 Mini Player 不被裁切；Windows fresh install、播放/暫停、資料夾恢復、AI、Mini/dialog focus。
+
 ## 2026-07-05 Playlist Column Scroll Restore hotfix 0.1.32 完成
 
 - 已完成 source 修正：左側主欄不再放 `playlist-scrollbar overflow-y-auto`；playlist 欄位高度恢復 0.1.28 的 `max-h-[calc(100vh-10rem)] min-h-[520px]`。

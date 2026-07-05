@@ -1,9 +1,36 @@
 # QA 驗收報告
 
 產品：Aquariusgirl Music Room / 水瓶罐子的音樂小水池
-版本：0.1.32
+版本：0.1.33
 日期：2026-07-05
 驗收角色：PM / QA / Electron 發行工程師
+
+## 2026-07-05 Nested Main and Playlist Scroll hotfix 0.1.33
+
+- 範圍：修正主視窗右側大型垂直卷軸消失，只剩 playlist 內部可能捲動的 UI 回歸。這次需求明確要求主視窗卷軸與播放清單卷軸不是二選一，而是兩個巢狀 scroll container。
+- 判斷：兩個卷軸都需要存在，但都不應強制永遠顯示。主視窗負責整個 App 主內容，playlist 只負責歌曲列表；大型曲庫仍沿用 TrackList visible-window render，不新增套件、不重做清單。
+- 根因：0.1.31 / 0.1.32 修 playlist 欄位時，外層 shell 仍有 `h-screen overflow-hidden` 與 `body { overflow: hidden; }`，右側 wrapper 也有 `h-full ... overflow-hidden`，導致主視窗整體內容超出 viewport 時不能由主容器捲動，下方面板看起來被裁切。
+- 修正：`src/components/AppLayout.tsx` 外層改為 `className="playlist-scrollbar relative z-10 h-screen overflow-y-auto overflow-x-hidden ..."`，內層改為 `min-h-full`，右欄 section 不再用 `overflow-hidden` 鎖住整個右側內容；`src/App.tsx` 右側 wrapper 移除 `h-full` / `overflow-hidden`；`src/styles/index.css` 將 body 改為只 `overflow-x: hidden`。`src/components/TrackList.tsx` 仍保留 `playlist-scrollbar h-full min-h-0 overflow-y-auto overflow-x-hidden pr-3`，`PlaylistPanel` 仍保留 `max-h-[calc(100vh-10rem)] min-h-[520px]`。
+- 失敗先行：`check:track-list-virtualization` 先新增主視窗與 playlist 兩層 scroll guard，確認 AppLayout 必須有主容器 `overflow-y-auto overflow-x-hidden`、body 不得再有 `overflow: hidden`、TrackList 必須保留內部 `overflow-y-auto overflow-x-hidden`；舊 source 紅燈，修正後 PASS。
+- 檢查：`npm run check:track-list-virtualization` PASS；`npm run build` PASS；`npm run electron:compile` PASS；升權 `npm run dist:release` PASS，流程內通過 prompt、track-display、track-identity、playback-order、track-list-virtualization、playback-restore、metadata-save-loop、all-target AI assets、build、Electron compile、macOS arm64 DMG 與 Windows x64 NSIS 打包；同步兩個 installer 到 `release-delivery/installers/`，暫存 `release/` 已移除。
+
+0.1.33 installer 已產生；SHA-256 記錄在 `docs/releases/0.1.33-checksums.md`。
+
+0.1.33 最新 installer：
+
+- EXE：667,497,980 bytes，SHA-256 `b0316a37c191930859f5a1017ed919188f3de4941c45cd90acdfd5e1991673e9`
+- arm64 DMG：684,496,549 bytes，SHA-256 `6caefd200e956fba8a5a255d4bb6942918f8d8609dd5c821d349a362f8882667`
+
+DMG / EXE：DMG `hdiutil verify` VALID；唯讀掛載讀回 `CFBundleShortVersionString` 為 0.1.33，執行檔存在且可執行，`app.asar` package version 為 0.1.33；packaged renderer bundle 讀回主容器 scroll class 與 TrackList scroll class；packaged CSS 讀回 body 不含 `overflow:hidden`、含 `overflow-x:hidden` 與 `scrollbar-gutter:stable`。EXE static check PASS，辨識為 Windows NSIS installer；未在 Windows 真機執行。
+
+限制：本輪 headless browser runtime 受本機 Playwright 瀏覽器快取缺失與 Chrome CLI exit 134 限制，未宣稱實際滑鼠 / 觸控板 GUI 滾動 PASS。尚未完成 packaged GUI 100+ 首暫存歌曲驗證、Windows 真機、簽章與 notarization。
+
+### English QA Summary
+
+- Scope: restores the missing main-window right scrollbar while preserving the internal playlist scrollbar.
+- Fix: AppLayout is the main `overflow-y-auto overflow-x-hidden` scroll container; TrackList remains the playlist `overflow-y-auto overflow-x-hidden` scroll container; body no longer globally locks scrolling with `overflow:hidden`.
+- Passed checks: nested scroll source guard, build, Electron compile, elevated `npm run dist:release`, DMG verify, read-only DMG version / app.asar / packaged renderer scroll class / packaged CSS overflow checks, and Windows NSIS static check.
+- Limits: real packaged GUI large-library scroll QA, real Windows QA, signing, and notarization remain open.
 
 ## 2026-07-05 Playlist Column Scroll Restore hotfix 0.1.32
 

@@ -1,9 +1,30 @@
 # 版本資訊
 
 產品：Aquariusgirl Music Room / 水瓶罐子的音樂小水池
-版本：0.1.32
+版本：0.1.33
 日期：2026-07-05
 平台目標：Windows x64、macOS arm64
+
+## 2026-07-05 0.1.33 hotfix 狀態（Nested Main and Playlist Scroll / 巢狀主視窗與播放清單卷軸）
+
+0.1.33 修正主視窗大型卷軸消失的回歸：主視窗卷軸與 playlist 卷軸不是二選一，而是兩個不同的巢狀 scroll container。`AppLayout` 外層主內容容器改為 `playlist-scrollbar relative z-10 h-screen overflow-y-auto overflow-x-hidden`，內容超出 viewport 時恢復右側大型垂直卷軸；`body` 不再全域 `overflow: hidden`，只保留 `overflow-x: hidden` 避免橫向卷軸。`TrackList` 仍保留 `playlist-scrollbar h-full min-h-0 overflow-y-auto overflow-x-hidden pr-3`，播放清單歌曲多時由內部小卷軸捲動。
+
+本版不新增套件、不重做清單、不改 metadata / cover / IndexedDB / playback 資料流。0.1.32 的 `PlaylistPanel` `max-h-[calc(100vh-10rem)] min-h-[520px]` 與 0.1.28 的 TrackList visible-window + overscan 仍保留，避免上萬首歌曲一次 render 全部 DOM row。
+
+驗收：先擴充 `check:track-list-virtualization` 讓舊版 `h-screen overflow-hidden`、body `overflow: hidden`、右側 wrapper `overflow-hidden` 與缺失的主 scroll container 紅燈，再修到 PASS。已通過 `npm run check:track-list-virtualization`、`npm run build`、`npm run electron:compile`、升權 `npm run dist:release`；`dist:release` 內通過 prompt、track-display、track-identity、playback-order、track-list-virtualization、playback-restore、metadata-save-loop、all-target AI assets、build、Electron compile、macOS arm64 DMG 與 Windows x64 NSIS 打包。
+
+0.1.33 installer 已同步到 `release-delivery/installers/`；SHA-256 請看 `docs/releases/0.1.33-checksums.md`。DMG `hdiutil verify` VALID；唯讀掛載讀回 `CFBundleShortVersionString` 為 0.1.33，執行檔存在且可執行，`app.asar` package version 為 0.1.33；packaged renderer bundle 含主視窗 scroll container class 與 TrackList scroll container class；packaged CSS 確認 body 不含 `overflow:hidden`、含 `overflow-x:hidden` 與 `scrollbar-gutter:stable`。Windows EXE static check 為 NSIS installer；未在 Windows 真機執行。
+
+SHA-256：
+
+- EXE：`b0316a37c191930859f5a1017ed919188f3de4941c45cd90acdfd5e1991673e9`
+- arm64 DMG：`6caefd200e956fba8a5a255d4bb6942918f8d8609dd5c821d349a362f8882667`
+
+### English Summary
+
+0.1.33 restores the missing main-window scrollbar while preserving the playlist-internal scrollbar. AppLayout is the main `overflow-y-auto overflow-x-hidden` scroll container; TrackList remains the playlist `overflow-y-auto overflow-x-hidden` scroll container; body no longer globally locks scrolling with `overflow:hidden`.
+
+Passed: nested scroll source guard, build, Electron compile, elevated `npm run dist:release`, DMG verify, read-only DMG version / app.asar / packaged renderer scroll class / packaged CSS overflow checks, and Windows NSIS static check. 0.1.33 checksums are in `docs/releases/0.1.33-checksums.md`. Real Windows QA remains open.
 
 ## 2026-07-05 0.1.32 hotfix 狀態（Playlist Column Scroll Restore / 播放清單欄位捲軸復原）
 

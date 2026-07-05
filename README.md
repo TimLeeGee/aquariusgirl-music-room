@@ -6,6 +6,10 @@ English version: see [English Version](#english-version).
 
 ## 目前最新版本
 
+0.1.33 修正版「Nested Main and Playlist Scroll / 巢狀主視窗與播放清單卷軸」接續 0.1.32：這次不是在主視窗卷軸與 playlist 卷軸之間二選一，而是恢復正確的巢狀 scroll container。`AppLayout` 外層主內容容器改為 `h-screen overflow-y-auto overflow-x-hidden`，主視窗內容超出 viewport 時會出現右側大型垂直卷軸；`TrackList` 仍保留 `playlist-scrollbar h-full min-h-0 overflow-y-auto overflow-x-hidden pr-3`，歌曲很多時由播放清單內部小卷軸優先捲動。`body` 不再用全域 `overflow: hidden` 鎖死主視窗，只保留 `overflow-x: hidden` 避免橫向卷軸。
+
+本版仍不新增套件、不重做 virtualization、不修改 metadata / cover / IndexedDB / playback 資料流。0.1.28 的 TrackList visible-window + overscan、0.1.32 的 `PlaylistPanel` `max-h-[calc(100vh-10rem)] min-h-[520px]` 都保留。`check:track-list-virtualization` 已擴充為主視窗 + playlist 兩層 scroll guard；`npm run dist:release` 已輸出 0.1.33 Windows x64 NSIS EXE 與 macOS arm64 DMG，並通過 DMG verify、唯讀掛載讀回版本 / app.asar / packaged renderer scroll class / packaged CSS overflow 檢查與 Windows NSIS static check；未在 Windows 真機執行，未完成 packaged GUI 大曲庫滑鼠 / 觸控板實測。
+
 0.1.32 修正版「Playlist Column Scroll Restore / 播放清單欄位捲軸復原」接續 0.1.31：這次復原使用者指出放錯位置的左側主欄捲軸，`AppLayout` 左欄回到不承擔 playlist scroll 的 `flex min-w-0 flex-col gap-5`；真正垂直捲動仍在右側 playlist 欄位的 `TrackList` 原生 `playlist-scrollbar` 裡。`PlaylistPanel` 高度也回到 0.1.28 的 `max-h-[calc(100vh-10rem)] min-h-[520px]`，搜尋 / 排序 header 留在 playlist 面板上方，歌曲卡片列表自己捲動。
 
 本版不新增套件、不重做 virtualization、不修改 metadata / cover / IndexedDB / playback 資料流。`check:track-list-virtualization` 先紅燈抓到 0.1.31 的左欄 `playlist-scrollbar overflow-y-auto`，再修到 PASS；`npm run dist:release` 已輸出 0.1.32 Windows x64 NSIS EXE 與 macOS arm64 DMG，並通過 DMG verify、唯讀掛載讀回版本 / arm64 / app.asar / AI model / prompts / runtime 檢查與 Windows NSIS static check；未在 Windows 真機執行。
@@ -80,10 +84,10 @@ Electron 桌面版手動選擇音樂資料夾時，會把該次回傳的 `source
 release-delivery/installers/
 ```
 
-- `Aquariusgirl Music Room Setup 0.1.32.exe`
-- `Aquariusgirl Music Room-0.1.32-arm64.dmg`
+- `Aquariusgirl Music Room Setup 0.1.33.exe`
+- `Aquariusgirl Music Room-0.1.33-arm64.dmg`
 
-0.1.32 SHA-256 請查看 [docs/releases/0.1.32-checksums.md](docs/releases/0.1.32-checksums.md)。完整版本歷史與詳細驗收紀錄請看 [release-delivery/VERSION.md](release-delivery/VERSION.md)。
+0.1.33 SHA-256 請查看 [docs/releases/0.1.33-checksums.md](docs/releases/0.1.33-checksums.md)。完整版本歷史與詳細驗收紀錄請看 [release-delivery/VERSION.md](release-delivery/VERSION.md)。
 
 ## 交付檔案索引
 
@@ -572,6 +576,10 @@ Aquariusgirl Music Room is a local-first music player. It can run as a Vite web 
 
 ## Current Version
 
+0.1.33 "Nested Main and Playlist Scroll" restores the correct nested scrollbar design. The main app content and the playlist are not mutually exclusive scrollers: `AppLayout` is now the main `h-screen overflow-y-auto overflow-x-hidden` scroll container, so the right-side main-window scrollbar appears when the whole app content exceeds the viewport; `TrackList` remains the playlist-internal `playlist-scrollbar h-full min-h-0 overflow-y-auto overflow-x-hidden pr-3` container for long song lists. `body` no longer globally locks scrolling with `overflow: hidden`; it keeps only `overflow-x: hidden` to prevent horizontal scrolling.
+
+This release adds no dependency, does not rewrite virtualization, and does not touch metadata, cover, IndexedDB, or playback data flow. It preserves the 0.1.32 / 0.1.28 `PlaylistPanel` height bounds and the 0.1.28 TrackList visible-window rendering. `check:track-list-virtualization` now guards both scroll containers. `npm run dist:release` produced the 0.1.33 Windows x64 NSIS EXE and macOS arm64 DMG, with DMG verify, read-only DMG version / app.asar / packaged renderer scroll class / packaged CSS overflow checks, and Windows NSIS static check passing. It was not run on a real Windows machine or full packaged GUI large-library scroll test.
+
 0.1.32 "Playlist Column Scroll Restore" corrects the 0.1.31 scrollbar placement. The left main column no longer owns a `playlist-scrollbar` or playlist overflow; it is back to `flex min-w-0 flex-col gap-5`. The right playlist column keeps the real native scroll inside `TrackList`, and `PlaylistPanel` restores the 0.1.28 height bounds: `max-h-[calc(100vh-10rem)] min-h-[520px]`.
 
 This release adds no dependency, does not rewrite virtualization, and does not touch metadata, cover, IndexedDB, or playback data flow. `check:track-list-virtualization` first failed on the 0.1.31 left-column `playlist-scrollbar overflow-y-auto` path, then passed after the fix. `npm run dist:release` produced the 0.1.32 Windows x64 NSIS EXE and macOS arm64 DMG, with DMG verify, read-only DMG version / arm64 / app.asar / AI model / prompts / runtime checks, and Windows NSIS static check passing. It was not run on a real Windows machine.
@@ -644,10 +652,10 @@ Download installers from GitHub Releases. Local delivery artifacts are kept in:
 release-delivery/installers/
 ```
 
-- `Aquariusgirl Music Room Setup 0.1.32.exe`
-- `Aquariusgirl Music Room-0.1.32-arm64.dmg`
+- `Aquariusgirl Music Room Setup 0.1.33.exe`
+- `Aquariusgirl Music Room-0.1.33-arm64.dmg`
 
-0.1.32 SHA-256 values are recorded in [docs/releases/0.1.32-checksums.md](docs/releases/0.1.32-checksums.md). Full version history and detailed QA notes live in [release-delivery/VERSION.md](release-delivery/VERSION.md).
+0.1.33 SHA-256 values are recorded in [docs/releases/0.1.33-checksums.md](docs/releases/0.1.33-checksums.md). Full version history and detailed QA notes live in [release-delivery/VERSION.md](release-delivery/VERSION.md).
 
 ## Delivery File Index
 
