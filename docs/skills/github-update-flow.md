@@ -2,15 +2,19 @@
 
 ## 1. 目的
 
-這份流程用來規範 Aquariusgirl Music Room 每次版本更新、提交 GitHub、整理 README、建立 release notes、檢查打包檔與雜湊的步驟，避免只改文件卻漏掉 source code、版本號、打包檔或驗收結果。
+這份流程只負責 GitHub 上傳、同步、版本發布、release notes、打包檔雜湊與讀回確認，不負責播放器功能設計、UI 修正、metadata / cover 資料流或 Electron 功能實作。
+
+它用來避免只改文件卻漏掉 source code、版本號、打包檔或驗收結果。播放器開發規範請使用 `docs/skills/aquariusgirl-music-room-development.md`。
 
 ## 2. 更新前檢查
 
 - 執行 `git status -sb`，工作樹必須乾淨，或清楚列出哪些檔案屬於本次 commit。
 - 執行 `git branch -vv`，確認目前 branch 與 upstream。
 - 執行 `git log --oneline -n 10`，確認最近提交脈絡。
+- 執行 `git diff --name-only`，確認是否已有上一輪殘留變更。
 - 確認本次版本號與修改項目。
 - 確認沒有未保存檔案。
+- 確認是否有未 stage 檔案、已 stage 但尚未提交的檔案、或尚未 push 的 commit。
 - 確認 installer、`release/`、`dist/`、`dist-electron/`、`node_modules/`、大型模型與 build cache 不會被 commit。
 - 若要發布到 GitHub，先 `git fetch origin main` 並比較 `HEAD...origin/main`。
 - 若上一輪因用量限制或權限中斷，接續時必須先重跑 `git status`、`git diff` 與 `git diff --name-only`，再決定本輪 stage 清單。
@@ -104,6 +108,7 @@ README 不放：
 - 不可只改 README 卻忘記 source code；若 README 宣稱新版修正，必須在 source 裡找到對應修改。
 - 不可只改本機不 commit；不可 commit 後忘記 push。
 - 執行 `git diff --name-only`，確認 UI 修正已包含相關 component / CSS，metadata 或 IndexedDB 修正已包含 hooks / storage / electron source。
+- 確認 skill 文件有沒有漏；播放器開發技能與 GitHub 更新流程技能不可混在同一份文件。
 - 明確 stage 本次需要的檔案；不要在混合工作樹用 `git add -A`。
 
 ## 8. Commit 訊息格式
@@ -147,3 +152,14 @@ README 不放：
 - metadata / IndexedDB 修正：stage 前確認 hooks、storage、Electron IPC 或 writer source、source guard 與文件都在 `git diff --name-only` 內。
 - 版本更新：stage 前確認 `package.json`、`package-lock.json`、README、release docs、app 內版本常數與 checksum 文件一致。
 - 本輪新增 source 後不可沿用上一輪驗證結果；必須重新執行 build / check。
+
+## 12. 中斷續接規則
+
+如果 Codex 因使用限制、權限或打包環境中斷，下次接續時必須：
+
+- 先執行 `git status -sb`。
+- 再執行 `git diff` 與 `git diff --name-only`。
+- 不要 reset，不要丟失上一輪修改。
+- 重新讀取最新需求與接續文件。
+- 不要直接沿用上一輪 stage 清單。
+- 確認是否有新的修正需求，再決定 commit / push / release。

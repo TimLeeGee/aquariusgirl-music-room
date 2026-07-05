@@ -1,11 +1,50 @@
 # 版本資訊
 
 產品：Aquariusgirl Music Room / 水瓶罐子的音樂小水池
-版本：0.1.30
+版本：0.1.32
 日期：2026-07-05
 平台目標：Windows x64、macOS arm64
 
-## 2026-07-05 0.1.30 hotfix 發行狀態
+## 2026-07-05 0.1.32 hotfix 狀態（Playlist Column Scroll Restore / 播放清單欄位捲軸復原）
+
+0.1.32 修正 0.1.31 的捲軸位置回歸：playlist 捲軸不是放在左側主欄，應回到右側 playlist 欄位。`AppLayout` 左欄移除 `playlist-scrollbar overflow-y-auto`，回到 `flex min-w-0 flex-col gap-5`；`PlaylistPanel` 高度恢復 0.1.28 的 `max-h-[calc(100vh-10rem)] min-h-[520px]`；真正大量歌曲仍只在 `TrackList` 的原生 `playlist-scrollbar` scroll container 裡捲動。
+
+本版不新增套件、不重做清單、不改 metadata / cover / IndexedDB / playback 資料流。0.1.28 的 TrackList visible-window + overscan 仍保留，避免上萬首歌曲一次 render 全部 DOM row；歌曲卡片仍固定 80px 高度。
+
+驗收：先擴充 `check:track-list-virtualization` 讓 0.1.31 左欄 `playlist-scrollbar overflow-y-auto` 與缺少 0.1.28 `PlaylistPanel` 高度紅燈，再修到 PASS。已通過升權 `npm run dist:release`；流程內通過 prompt、track-display、track-identity、playback-order、track-list-virtualization、playback-restore、metadata-save-loop、all-target AI assets、build、Electron compile、macOS arm64 DMG 與 Windows x64 NSIS 打包。
+
+0.1.32 installer 已同步到 `release-delivery/installers/`；SHA-256 請看 `docs/releases/0.1.32-checksums.md`。DMG `hdiutil verify` VALID；唯讀掛載讀回 `CFBundleShortVersionString` / `CFBundleVersion` 均為 0.1.32，執行檔為 Mach-O arm64，`app.asar` package version 為 0.1.32，mac AI model、三份 prompts 與 `darwin-arm64/llama-server` 存在。Windows EXE static check 為 NSIS installer；未在 Windows 真機執行。
+
+SHA-256：
+
+- EXE：`abfdc05af6254a6701f30010a965ecbfe126e3940efac8cffc0626f750deb771`
+- arm64 DMG：`964aa1b9af7bbd8a1f470b0b80c1531fffc7eebe2d8c719635c154ec4fc8fb8f`
+
+### English Summary
+
+0.1.32 corrects the 0.1.31 scrollbar placement regression. The playlist scrollbar is not owned by the left main column; the left column no longer has `playlist-scrollbar overflow-y-auto`, `PlaylistPanel` restores the 0.1.28 `max-h-[calc(100vh-10rem)] min-h-[520px]` height, and the real song-list scroll stays inside `TrackList`.
+
+Passed: track-list-virtualization, playback-order, playback-restore, metadata-save-loop, prompt / track guards, all-target AI assets, build, Electron compile, elevated `npm run dist:release`, DMG verify, read-only DMG version / arm64 / app.asar / AI model / prompts / runtime checks, and Windows NSIS static check. 0.1.32 checksums are in `docs/releases/0.1.32-checksums.md`. Real Windows QA remains open.
+
+## 2026-07-05 0.1.31 hotfix 狀態（Bounded Playlist Scroll / 播放清單限定捲動）
+
+0.1.31 補完 0.1.30 捲軸修正的誤解殘留：這次不是把歌曲卡片拉長，而是把 app shell 限定在 viewport，讓右側歌曲列表自己的 scroll container 負責大量歌曲。`AppLayout` 從 `min-h-screen` 改為 `h-screen`，內層使用 `h-full min-h-0`；左欄必要時以自己的 `playlist-scrollbar` 捲動，右欄使用 `overflow-hidden`；`PlaylistPanel` 移除 `min-h-[520px]`，不再撐高整頁；`TrackList` 繼續是唯一歌曲列表 scroll area。
+
+全部歌曲、自訂播放清單、搜尋結果與智慧播放清單仍共用 `PlaylistPanel -> TrackList -> TrackItem`，歌曲卡片固定 80px 高度，沒有為了填滿右欄而拉長。metadata / cover / IndexedDB / playback 資料流未改動。
+
+技能拆分：新增 `docs/skills/aquariusgirl-music-room-development.md` 作為播放器功能開發技能；既有 `docs/skills/github-update-flow.md` 改成 GitHub 上傳、同步、版本發布、checksum 與讀回確認專用技能。
+
+驗收：先擴充 `check:track-list-virtualization` 讓舊 `min-h-screen` / 520px 最小高度路徑紅燈，再修到 PASS。已通過 `npm run check:track-list-virtualization`、`npm run check:metadata-save-loop`、`npm run check:playback-restore`、`npm run check:playback-order`、`npm run check:no-track-save-loop`、`npm run check:no-full-db-save-on-playback`、`npm run check:no-audio-load-on-cover-only-update`、`npm run check:cover-update-five-times`、`npm run check:playlist-song-info-restart`、`npm run build`、`npm run electron:compile`、升權 `npm run dist:release`。`dist:release` 內也通過 prompt、track-display、track-identity、playback-order、track-list-virtualization、playback-restore、metadata-save-loop、all-target AI assets、build、Electron compile。
+
+0.1.31 installer 已同步到 `release-delivery/installers/`；SHA-256 請看 `docs/releases/0.1.31-checksums.md`。DMG `hdiutil verify` VALID；唯讀掛載讀回 `CFBundleShortVersionString` / `CFBundleVersion` 均為 0.1.31，執行檔為 Mach-O arm64，`app.asar` package version 為 0.1.31，mac AI model、三份 prompts 與 `darwin-arm64/llama-server` 存在。Windows EXE static check 為 NSIS installer；未在 Windows 真機執行。
+
+### English Summary
+
+0.1.31 bounds the app shell to the viewport so the body no longer owns playlist overflow. The left column can scroll independently when needed, the right column is overflow-hidden, and only the TrackList scrollbar scrolls large song lists. Track cards remain fixed at 80px and the shared `TrackItem` path is still used for all songs, normal playlists, search results, and smart playlists.
+
+Passed: track-list-virtualization, metadata-save-loop, playback-restore, playback-order, metadata aliases, build, Electron compile, elevated `npm run dist:release`, DMG verify, read-only DMG version / arm64 / app.asar / AI model / prompts / runtime checks, and Windows NSIS static check. 0.1.31 checksums are in `docs/releases/0.1.31-checksums.md`. Real Windows QA remains open.
+
+## 2026-07-05 0.1.30 hotfix 發行狀態（歷史）
 
 0.1.30「Playlist Edge Scrollbar / 播放清單外緣捲軸」修正右側歌曲列表捲軸不夠明確、未貼近播放清單面板最外緣，以及底部 mini player 可能遮住最後歌曲的版面問題。
 

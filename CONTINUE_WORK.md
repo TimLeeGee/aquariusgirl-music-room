@@ -1,5 +1,30 @@
 # Aquariusgirl Music Room Continue Work
 
+## 2026-07-05 Playlist Column Scroll Restore hotfix 0.1.32 完成
+
+- 已完成 source 修正：`AppLayout` 左欄移除 0.1.31 放錯位置的 `playlist-scrollbar overflow-y-auto`，回到不承擔 playlist overflow 的 `flex min-w-0 flex-col gap-5`。
+- `PlaylistPanel` 高度恢復 0.1.28 的 `max-h-[calc(100vh-10rem)] min-h-[520px]`；歌曲仍在 `TrackList` 自己的原生 `playlist-scrollbar` scroll container 捲動，保留 visible-window + overscan。
+- 未新增套件、未重做清單、未改 metadata / cover / IndexedDB / playback 資料流；這次只修正捲軸位置與 playlist 欄位高度。
+- 已先讓 `check:track-list-virtualization` 抓到 0.1.31 左欄捲軸紅燈，再修到 PASS；升權 `npm run dist:release` 已通過並同步 0.1.32 EXE / DMG 到 `release-delivery/installers/`，暫存 `release/` 已移除。
+- 已補 `docs/releases/0.1.32-checksums.md`；DMG verify、唯讀掛載讀回版本 / arm64 / app.asar / AI model / prompts / runtime 與 Windows NSIS static check 已完成。Windows 真機與 packaged GUI 大曲庫滑動仍待補驗。
+
+### 接續提示詞
+
+請接續 Aquariusgirl Music Room 0.1.32 Windows / packaged GUI 驗收或 GitHub release readback。最新版 installer 位於 `release-delivery/installers/`：`Aquariusgirl Music Room Setup 0.1.32.exe`、`Aquariusgirl Music Room-0.1.32-arm64.dmg`。SHA-256 請以 `docs/releases/0.1.32-checksums.md` 為準。重點驗證：左側播放器 / 頻譜 / 睡眠定時不出現 playlist 捲軸；playlist 欄位高度回到 0.1.28；右側歌曲列表仍可捲動且只 render 可見窗口；最後歌曲不被 mini player 蓋住；Windows fresh install、播放/暫停、資料夾恢復、AI、Mini/dialog focus。不可打開或修改使用者原始 Music 資料夾，使用暫存音樂複本與隔離 profile。
+
+## 2026-07-05 Bounded Playlist Scroll hotfix 0.1.31 完成待提交
+
+- 已完成 source 修正：`AppLayout` 改成 viewport-bounded `h-screen`，內層 `h-full min-h-0`；左欄必要時自己捲，右欄 `overflow-hidden`；`PlaylistPanel` 移除 `min-h-[520px]`；`body` / `#root` 不再負責播放清單 overflow。
+- 歌曲卡片仍共用 `PlaylistPanel -> TrackList -> TrackItem`，固定 80px 高度；全部歌曲、自訂播放清單、搜尋結果與智慧播放清單沒有分裂成不同卡片樣式。
+- 技能文件已在專案內拆分：`docs/skills/aquariusgirl-music-room-development.md` 與 `docs/skills/github-update-flow.md`。
+- 已通過：`check:track-list-virtualization`、`check:metadata-save-loop`、`check:playback-restore`、`check:playback-order`、`check:no-track-save-loop`、`check:no-full-db-save-on-playback`、`check:no-audio-load-on-cover-only-update`、`check:cover-update-five-times`、`check:playlist-song-info-restart`、`npm run build`、`npm run electron:compile`。
+- 升權 `npm run dist:release` 已通過並同步 0.1.31 EXE / DMG 到 `release-delivery/installers/`；暫存 `release/` 已移除。
+- 已補 `docs/releases/0.1.31-checksums.md`；DMG verify、唯讀掛載讀回與 Windows NSIS static check 已完成。Windows 真機與 100+ 首 packaged GUI 滑動仍待補驗。
+
+### 接續提示詞
+
+請接續 Aquariusgirl Music Room 0.1.31 Bounded Playlist Scroll hotfix。工作樹已有 source / docs / installer checksum 修改，先跑 `git status -sb` 與 `git diff --name-only`，不要 reset。全域 installed `build-music-player` 已把 GitHub 發布流程轉交給 `github-update-flow`；接著跑 final verification，最後才 commit / push / GitHub 讀回確認。
+
 ## 2026-07-05 Playlist Edge Scrollbar hotfix 0.1.30 完成
 
 - 已修正右側歌曲列表捲軸不夠明確、位置不像使用者截圖紅圈所示外緣捲軸的 UI 回歸。

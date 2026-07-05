@@ -1,11 +1,63 @@
 # QA 驗收報告
 
 產品：Aquariusgirl Music Room / 水瓶罐子的音樂小水池
-版本：0.1.30
+版本：0.1.32
 日期：2026-07-05
 驗收角色：PM / QA / Electron 發行工程師
 
-## 2026-07-05 Playlist Edge Scrollbar hotfix 0.1.30
+## 2026-07-05 Playlist Column Scroll Restore hotfix 0.1.32
+
+- 範圍：修正 0.1.31 把捲軸放到左側主欄的 UI 回歸；使用者要求捲軸回到 playlist 欄位，且 playlist 欄位高度回到 0.1.28。
+- 判斷：playlist 捲軸需要存在，但不應由左側播放器 / 頻譜 / 睡眠定時主欄承擔。大量歌曲仍應使用 `TrackList` 的 bounded native scroll + visible-window render，不新增套件、不重做 virtualization。
+- 根因：0.1.31 為了讓 app shell bounded，把 `playlist-scrollbar overflow-y-auto` 加到左欄，並移除 `PlaylistPanel` 的 `min-h-[520px]`。這讓左側主欄出現不該存在的捲軸，且 playlist 欄位高度不再是 0.1.28 的視覺高度。
+- 修正：`src/components/AppLayout.tsx` 左欄回到 `className="flex min-w-0 flex-col gap-5"`；`src/components/PlaylistPanel.tsx` 回到 `max-h-[calc(100vh-10rem)] min-h-[520px]` 並保留 `overflow-hidden`；`TrackList` 原生 `playlist-scrollbar`、visible-window + overscan、80px 卡片高度與 bottom safe space 不改。
+- 失敗先行：`check:track-list-virtualization` 先新增對左欄不得有 `playlist-scrollbar overflow-y-auto`、`PlaylistPanel` 必須恢復 0.1.28 高度的檢查；0.1.31 source 紅燈，修正後 PASS。
+- 檢查：升權 `npm run dist:release` PASS，流程內通過 prompt、track-display、track-identity、playback-order、track-list-virtualization、playback-restore、metadata-save-loop、all-target AI assets、build、Electron compile、macOS arm64 DMG 與 Windows x64 NSIS 打包；同步兩個 installer 到 `release-delivery/installers/`，暫存 `release/` 已移除。
+
+0.1.32 installer 已產生；SHA-256 記錄在 `docs/releases/0.1.32-checksums.md`。
+
+0.1.32 最新 installer：
+
+- EXE：667,497,961 bytes，SHA-256 `abfdc05af6254a6701f30010a965ecbfe126e3940efac8cffc0626f750deb771`
+- arm64 DMG：684,464,416 bytes，SHA-256 `964aa1b9af7bbd8a1f470b0b80c1531fffc7eebe2d8c719635c154ec4fc8fb8f`
+
+DMG / EXE：DMG `hdiutil verify` VALID；唯讀掛載讀回 `CFBundleShortVersionString` / `CFBundleVersion` 均為 0.1.32，執行檔為 Mach-O arm64，`app.asar` package version 為 0.1.32，mac AI model `qwen3.5-0.8b.gguf`、三份 prompts 與 runtime `darwin-arm64/llama-server` 存在，掛載點已卸載。EXE static check PASS，辨識為 Windows NSIS installer；未在 Windows 真機執行。
+
+限制：尚未完成 packaged GUI 100+ 首歌曲滑鼠 / 觸控板 / 拖曳捲軸實測；尚未完成 Windows 真機、簽章與 notarization。
+
+### English QA Summary
+
+- Scope: moves the misplaced 0.1.31 left-column scrollbar back to the playlist column and restores the playlist panel to the 0.1.28 height.
+- Fix: the left column no longer has `playlist-scrollbar overflow-y-auto`; `PlaylistPanel` restores `max-h-[calc(100vh-10rem)] min-h-[520px]`; `TrackList` remains the native windowed song-list scroller.
+- Passed checks: track-list-virtualization, playback-order, playback-restore, metadata-save-loop, prompt / track guards, all-target AI assets, build, Electron compile, elevated `npm run dist:release`, DMG verify, read-only DMG version / arm64 / app.asar / AI model / prompts / runtime checks, and Windows NSIS static check.
+- Limits: packaged GUI 100+ temp-track scroll QA, real Windows QA, signing, and notarization remain open.
+
+## 2026-07-05 Bounded Playlist Scroll hotfix 0.1.31
+
+- 範圍：修正 0.1.30 後仍可能被誤解成「拉長歌曲卡片」的版面路徑；要求 app body 不捲、左欄不跟著右側清單捲、右側歌曲列表自己的 scroll container 顯示垂直捲軸。
+- 判斷：捲軸必須在右側歌曲列表內存在；大量歌曲要靠 bounded native scroll + 既有 TrackList windowing，不靠拉高卡片、不新增套件。
+- 根因：0.1.30 已補 TrackList 外緣捲軸，但 `AppLayout` 仍使用 `min-h-screen` 與內層 `min-h-[calc(100vh-8rem)]`，`PlaylistPanel` 仍有 `min-h-[520px]`。在內容高度超過 viewport 時，整個 app 仍可能被撐高，造成 body 參與捲動。
+- 修正：`AppLayout` 改為 `h-screen`、內層 `h-full min-h-0`、`main min-h-0 flex-1`；左欄加自己的 `playlist-scrollbar overflow-y-auto`；右欄加 `overflow-hidden`；`App.tsx` 右側 wrapper 加 `overflow-hidden`；`PlaylistPanel` 改為 `min-h-0`，移除 520px 最小高度；`html` / `body` / `#root` 固定高度並讓 body `overflow: hidden`。`TrackList` 與 `TrackItem` 不改資料流，歌曲卡片仍固定 80px。
+- 共用卡片：全部歌曲、自訂播放清單、搜尋結果與智慧播放清單仍共用 `PlaylistPanel -> TrackList -> TrackItem`，沒有建立第二套卡片。
+- 技能拆分：新增 `docs/skills/aquariusgirl-music-room-development.md`；`docs/skills/github-update-flow.md` 專責 GitHub 上傳 / 同步 / release / checksum / 讀回確認。
+- 失敗先行：`check:track-list-virtualization` 先新增對 `min-h-screen`、App body bounded layout、右欄 overflow 與 `PlaylistPanel` 520px min-height 的檢查；舊 source 紅燈，修正後 PASS。
+- 檢查：`npm run check:track-list-virtualization` PASS；`npm run check:metadata-save-loop` PASS；`npm run check:playback-restore` PASS；`npm run check:playback-order` PASS；`npm run check:no-track-save-loop` PASS；`npm run check:no-full-db-save-on-playback` PASS；`npm run check:no-audio-load-on-cover-only-update` PASS；`npm run check:cover-update-five-times` PASS；`npm run check:playlist-song-info-restart` PASS；`npm run build` PASS；`npm run electron:compile` PASS。
+- 打包：升權 `npm run dist:release` PASS，流程內通過 prompt、track-display、track-identity、playback-order、track-list-virtualization、playback-restore、metadata-save-loop、all-target AI assets、build、Electron compile、macOS arm64 DMG 與 Windows x64 NSIS 打包；同步兩個 installer 到 `release-delivery/installers/`，暫存 `release/` 已移除。
+
+0.1.31 installer 已產生；SHA-256 記錄在 `docs/releases/0.1.31-checksums.md`。
+
+DMG / EXE：DMG `hdiutil verify` VALID；唯讀掛載讀回 `CFBundleShortVersionString` / `CFBundleVersion` 均為 0.1.31，執行檔為 Mach-O arm64，`app.asar` package version 為 0.1.31，mac AI model `qwen3.5-0.8b.gguf`、三份 prompts 與 runtime `darwin-arm64/llama-server` 存在，掛載點已卸載。EXE static check PASS，辨識為 Windows NSIS installer；未在 Windows 真機執行。
+
+限制：尚未完成 packaged GUI 100+ 首歌曲滑鼠 / 觸控板 / 拖曳捲軸實測；尚未完成 Windows 真機、簽章與 notarization。
+
+### English QA Summary
+
+- Scope: bounds the whole app shell so the body does not scroll and only the TrackList scroll container handles large song lists.
+- Fix: AppLayout is viewport-bounded, the left column scrolls independently when needed, the right column is overflow-hidden, PlaylistPanel no longer has a 520px minimum height, and track cards remain fixed at 80px.
+- Passed checks: track-list-virtualization, metadata-save-loop, playback-restore, playback-order, metadata aliases, build, Electron compile, elevated `npm run dist:release`, DMG verify, read-only DMG version / arm64 / app.asar / AI model / prompts / runtime checks, and Windows NSIS static check.
+- Limits: packaged GUI 100+ temp-track scroll QA, real Windows QA, signing, and notarization remain open.
+
+## 2026-07-05 Playlist Edge Scrollbar hotfix 0.1.30（歷史）
 
 - 範圍：修正使用者截圖回報的右側歌曲列表捲軸不夠明確、未貼近播放清單面板最外緣，以及最後歌曲可能被底部 mini player 覆蓋的版面問題。
 - 判斷：這個捲軸需要存在；播放清單會有大量歌曲，應使用右側清單自己的 bounded native scroll container，不讓 body、左側播放器、視覺頻譜或睡眠定時跟著捲。

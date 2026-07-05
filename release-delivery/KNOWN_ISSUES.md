@@ -1,9 +1,23 @@
 # 已知問題
 
-版本：0.1.30
+版本：0.1.32
 文件更新：2026-07-05
 
-## 0.1.30 仍需人工驗收
+## 0.1.32 仍需完成
+
+- 尚未用 packaged GUI 載入 100+ 首暫存歌曲驗證：左側主欄不出現 playlist 捲軸、右側 playlist 欄位高度回到 0.1.28、滑鼠滾輪 / 觸控板 / 拖曳捲軸都只捲歌曲列表、最後一首不被 mini player 蓋住且無水平捲軸。
+- 尚未在 Windows 真機安裝 0.1.32 EXE 驗證 fresh install、播放/暫停、資料夾恢復、AI、Mini/dialog focus。
+- 0.1.32 source-level guard 已確認左欄不再承擔 playlist overflow，且 `PlaylistPanel` 回到 0.1.28 高度；但這不等於完整 packaged GUI 大曲庫壓力測試。
+- 0.1.32 未新增 virtualization 套件；若未來真實上萬首 GUI 滑動仍不足，應另開成熟 virtualization / thumbnail cache 設計，不混進這個 hotfix。
+
+## 0.1.31 仍需完成（歷史）
+
+- 尚未用 packaged GUI 載入 100+ 首暫存歌曲驗證右側 scroll container 的滑鼠滾輪、觸控板、拖曳捲軸、最後一首不被 mini player 蓋住與無水平捲軸。
+- 尚未在 Windows 真機安裝 0.1.31 EXE 驗證 fresh install、播放/暫停、資料夾恢復、AI、Mini/dialog focus。
+- 0.1.31 source-level guard 已確認 app body 不再負責播放清單 overflow，但這不等於完整 packaged GUI 大曲庫壓力測試。
+- 全域 installed `build-music-player` 已把 GitHub 發布流程轉交給全域 `github-update-flow` 技能；專案內 `docs/skills/` 也已同步拆分。
+
+## 0.1.30 仍需人工驗收（歷史）
 
 - Windows 真機尚未安裝 `Aquariusgirl Music Room Setup 0.1.30.exe` 驗證 fresh install、啟動、右側歌曲列表捲軸位於清單面板最外緣、搜尋 / 排序 header 固定、左側播放器 / 視覺頻譜 / 睡眠定時不跟著捲、底部 mini player 不遮住最後歌曲、沒有水平捲軸、播放/暫停連點、選擇新資料夾後重開恢復最後來源、約 4 GB / 20+ 首音樂資料夾、AI 聊天與 AI 建歌單。
 - Windows EXE 目前只有 NSIS / x64 target static check，不能宣稱 Windows 實機 PASS。
@@ -161,10 +175,24 @@
 
 ## Known Issues
 
-Version: 0.1.30
+Version: 0.1.32
 Document update: 2026-07-05
 
-## 0.1.30 Manual QA Still Needed
+## 0.1.32 Manual QA Still Needed
+
+- Packaged GUI QA with 100+ temp tracks is still needed to verify that the left column has no playlist scrollbar, the playlist panel has the restored 0.1.28 height, mouse wheel / trackpad / scrollbar dragging affect only the song list, the final track stays above the mini player, and no horizontal scrollbar appears.
+- Real Windows 0.1.32 EXE QA is still needed for fresh install, playback/pause, folder restore, AI, Mini player, and dialog focus.
+- The 0.1.32 source-level guard confirms the left column no longer owns playlist overflow and `PlaylistPanel` restores the 0.1.28 height, but it is not a full packaged GUI large-library stress test.
+- 0.1.32 did not add a virtualization dependency; if real 10k-track GUI scrolling still falls short, use a separate mature virtualization / thumbnail-cache design later.
+
+## 0.1.31 Manual QA Still Needed (Historical)
+
+- Packaged GUI QA with 100+ temp tracks is still needed for mouse wheel, trackpad, scrollbar dragging, final-track visibility above the mini player, and no horizontal scrollbar.
+- Real Windows 0.1.31 EXE QA is still needed for fresh install, playback/pause, folder restore, AI, Mini player, and dialog focus.
+- The 0.1.31 source-level guard confirms the app body no longer owns playlist overflow, but it is not a full packaged GUI large-library stress test.
+- The installed global `build-music-player` skill now delegates GitHub publishing to the global `github-update-flow` skill; the project-local `docs/skills/` split is also done.
+
+## 0.1.30 Manual QA Still Needed (Historical)
 
 - `Aquariusgirl Music Room Setup 0.1.30.exe` has not been installed on a real Windows machine for fresh install, launch, right-edge playlist scrollbar behavior, fixed search/sort header, no left-column scrolling, no mini-player overlap on the last tracks, no horizontal scrollbar, playback/pause click testing, latest-folder restore, a roughly 4 GB / 20+ song folder, AI chat, and AI playlist creation.
 - The Windows EXE has only NSIS / x64 target static checks, so Windows runtime behavior is not marked PASS.

@@ -6,6 +6,16 @@ English version: see [English Version](#english-version).
 
 ## 目前最新版本
 
+0.1.32 修正版「Playlist Column Scroll Restore / 播放清單欄位捲軸復原」接續 0.1.31：這次復原使用者指出放錯位置的左側主欄捲軸，`AppLayout` 左欄回到不承擔 playlist scroll 的 `flex min-w-0 flex-col gap-5`；真正垂直捲動仍在右側 playlist 欄位的 `TrackList` 原生 `playlist-scrollbar` 裡。`PlaylistPanel` 高度也回到 0.1.28 的 `max-h-[calc(100vh-10rem)] min-h-[520px]`，搜尋 / 排序 header 留在 playlist 面板上方，歌曲卡片列表自己捲動。
+
+本版不新增套件、不重做 virtualization、不修改 metadata / cover / IndexedDB / playback 資料流。`check:track-list-virtualization` 先紅燈抓到 0.1.31 的左欄 `playlist-scrollbar overflow-y-auto`，再修到 PASS；`npm run dist:release` 已輸出 0.1.32 Windows x64 NSIS EXE 與 macOS arm64 DMG，並通過 DMG verify、唯讀掛載讀回版本 / arm64 / app.asar / AI model / prompts / runtime 檢查與 Windows NSIS static check；未在 Windows 真機執行。
+
+0.1.31 修正版「Bounded Playlist Scroll / 播放清單限定捲動」接續 0.1.30：這次明確把整個 app shell 收斂成固定 viewport，不再讓 `body` 承擔播放清單 overflow。左側播放器、頻譜與睡眠定時在必要時只於左欄自己捲；右側 playlist column 使用 `overflow-hidden`，真正大量歌曲只在 `TrackList` 的 `playlist-scrollbar` scroll container 裡捲動。
+
+本版仍共用同一套 `PlaylistPanel -> TrackList -> TrackItem` 歌曲卡片路徑，全部歌曲、自訂播放清單、搜尋結果與智慧播放清單都使用同一張 80px 固定高度卡片，不靠拉高卡片填滿空間。`PlaylistPanel` 移除會撐高頁面的 `min-h-[520px]`，`AppLayout` 改用 `h-screen`、`h-full min-h-0` 與欄位 overflow 邊界；`src/styles/index.css` 也把 `html` / `body` / `#root` 固定在 viewport，避免整個 app body 出現捲軸。`check:track-list-virtualization` 已先紅燈抓到舊 `min-h-screen`，再修到 PASS，同時繼續守住 dynamic viewport、外緣捲軸、bottom safe space、禁止水平捲軸與卡片高度。metadata / cover / IndexedDB 與播放資料流未改動。
+
+本輪也把技能文件架構拆開：播放器開發規範放在 `docs/skills/aquariusgirl-music-room-development.md`；GitHub 上傳 / 同步 / 版本發布 / checksum / 讀回確認放在 `docs/skills/github-update-flow.md`。0.1.31 已通過 source guards、`npm run build`、`npm run electron:compile`、升權 `npm run dist:release`、DMG verify、DMG 唯讀掛載版本 / arm64 / app.asar / AI model / prompts / runtime 檢查與 Windows NSIS static check；未在 Windows 真機執行。
+
 0.1.30 修正版「Playlist Edge Scrollbar / 播放清單外緣捲軸」把右側歌曲列表的捲軸調整到播放清單面板最右側外緣附近，讓搜尋 / 排序列固定在上方，真正捲動的是下方歌曲卡片列表。這次仍沿用瀏覽器原生 scroll container 與 0.1.28 的 TrackList windowing，不新增套件、不重做清單資料流。
 
 本版最小修法是讓 `TrackList` 量測自己的可視高度，依實際 viewport 計算 visible window；scroll area 加上 `overflow-x-hidden`、`scrollbar-gutter: stable` 與 Apple 風格細捲軸，並用底部安全 padding 避開 mini player。歌曲卡片固定為 80px 高度，搭配 8px 間距，封面、歌名、歌手、時長與操作按鈕維持垂直置中。`check:track-list-virtualization` 已補上捲軸外緣、bottom safe space、動態 viewport 與卡片高度防回歸。0.1.28 的單曲 IndexedDB `put` / `patch`、metadata / cover 不觸發同來源 `audio.load()`、播放清單只保存 trackIds 等資料流防線未改動。
@@ -70,10 +80,10 @@ Electron 桌面版手動選擇音樂資料夾時，會把該次回傳的 `source
 release-delivery/installers/
 ```
 
-- `Aquariusgirl Music Room Setup 0.1.30.exe`
-- `Aquariusgirl Music Room-0.1.30-arm64.dmg`
+- `Aquariusgirl Music Room Setup 0.1.32.exe`
+- `Aquariusgirl Music Room-0.1.32-arm64.dmg`
 
-若需要驗證檔案完整性，請查看 [docs/releases/0.1.30-checksums.md](docs/releases/0.1.30-checksums.md)。0.1.29 checksum 仍保留在 [docs/releases/0.1.29-checksums.md](docs/releases/0.1.29-checksums.md) 作為歷史資料。完整版本歷史與詳細驗收紀錄請看 [release-delivery/VERSION.md](release-delivery/VERSION.md)。
+0.1.32 SHA-256 請查看 [docs/releases/0.1.32-checksums.md](docs/releases/0.1.32-checksums.md)。完整版本歷史與詳細驗收紀錄請看 [release-delivery/VERSION.md](release-delivery/VERSION.md)。
 
 ## 交付檔案索引
 
@@ -562,6 +572,16 @@ Aquariusgirl Music Room is a local-first music player. It can run as a Vite web 
 
 ## Current Version
 
+0.1.32 "Playlist Column Scroll Restore" corrects the 0.1.31 scrollbar placement. The left main column no longer owns a `playlist-scrollbar` or playlist overflow; it is back to `flex min-w-0 flex-col gap-5`. The right playlist column keeps the real native scroll inside `TrackList`, and `PlaylistPanel` restores the 0.1.28 height bounds: `max-h-[calc(100vh-10rem)] min-h-[520px]`.
+
+This release adds no dependency, does not rewrite virtualization, and does not touch metadata, cover, IndexedDB, or playback data flow. `check:track-list-virtualization` first failed on the 0.1.31 left-column `playlist-scrollbar overflow-y-auto` path, then passed after the fix. `npm run dist:release` produced the 0.1.32 Windows x64 NSIS EXE and macOS arm64 DMG, with DMG verify, read-only DMG version / arm64 / app.asar / AI model / prompts / runtime checks, and Windows NSIS static check passing. It was not run on a real Windows machine.
+
+0.1.31 "Bounded Playlist Scroll" continues the 0.1.30 scrollbar fix by bounding the whole app shell to the viewport. The app body no longer owns playlist overflow. The left player column can scroll independently when needed, while the right playlist column is overflow-hidden and only the `TrackList` `playlist-scrollbar` container scrolls through large song lists.
+
+All songs, normal playlists, search results, and smart playlists still share the same `PlaylistPanel -> TrackList -> TrackItem` path. Track cards keep a fixed 80px height; the fix does not stretch cards to fill space. `PlaylistPanel` no longer has the old `min-h-[520px]`, `AppLayout` now uses `h-screen`, `h-full min-h-0`, and column overflow boundaries, and `html` / `body` / `#root` are fixed to the viewport. The regression guard first failed on the old `min-h-screen` body-scroll path, then passed after the fix. Metadata, cover, IndexedDB, and playback data flow were not changed.
+
+The project skills are now split: player development rules live in `docs/skills/aquariusgirl-music-room-development.md`, while GitHub publishing, sync, checksum, and readback rules live in `docs/skills/github-update-flow.md`. 0.1.31 passed the source guards, `npm run build`, `npm run electron:compile`, elevated `npm run dist:release`, DMG verify, read-only DMG version / arm64 / app.asar / AI model / prompts / runtime checks, and Windows NSIS static check. It was not run on a real Windows machine.
+
 0.1.30 "Playlist Edge Scrollbar" moves the right song-list scrollbar close to the outer edge of the playlist panel. The search and sort controls stay fixed at the top, while only the song-card list scrolls. This still uses the browser's native scroll container and the existing 0.1.28 TrackList windowing; no dependency or list rewrite was added.
 
 The minimal fix lets `TrackList` measure its own viewport height, compute the visible window from the real scroll area, and keep `overflow-x-hidden`, `scrollbar-gutter: stable`, and a slim Apple-style scrollbar. The list also keeps bottom safe padding so the bottom mini player does not cover the last tracks. Track cards now have a fixed 80px height plus 8px spacing, keeping artwork, title, artist, duration, and actions vertically centered. `check:track-list-virtualization` now guards the edge scrollbar, bottom safe space, dynamic viewport measurement, and card height. The 0.1.28 single-track IndexedDB `put` / `patch`, metadata / cover no-audio-reload, and playlist trackId-only data flow were not changed.
@@ -624,10 +644,10 @@ Download installers from GitHub Releases. Local delivery artifacts are kept in:
 release-delivery/installers/
 ```
 
-- `Aquariusgirl Music Room Setup 0.1.30.exe`
-- `Aquariusgirl Music Room-0.1.30-arm64.dmg`
+- `Aquariusgirl Music Room Setup 0.1.32.exe`
+- `Aquariusgirl Music Room-0.1.32-arm64.dmg`
 
-For file integrity verification, see [docs/releases/0.1.30-checksums.md](docs/releases/0.1.30-checksums.md). The 0.1.29 checksum file remains at [docs/releases/0.1.29-checksums.md](docs/releases/0.1.29-checksums.md) as history. Full version history and detailed QA notes live in [release-delivery/VERSION.md](release-delivery/VERSION.md).
+0.1.32 SHA-256 values are recorded in [docs/releases/0.1.32-checksums.md](docs/releases/0.1.32-checksums.md). Full version history and detailed QA notes live in [release-delivery/VERSION.md](release-delivery/VERSION.md).
 
 ## Delivery File Index
 

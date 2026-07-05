@@ -1,6 +1,36 @@
 # Installer 狀態
 
-## 2026-07-05 0.1.30 最新狀態（Playlist Edge Scrollbar / 播放清單外緣捲軸）
+## 2026-07-05 0.1.32 狀態（Playlist Column Scroll Restore / 播放清單欄位捲軸復原）
+
+0.1.32 已完成 UI hotfix 並產出 installer。本輪升權 `npm run dist:release` 通過 prompt、track-display、track-identity、playback-order、track-list-virtualization、playback-restore、metadata-save-loop、all-target AI assets、build、Electron compile、macOS arm64 DMG 與 Windows x64 NSIS 打包，並同步到 `release-delivery/installers/`；暫存 `release/` 已移除。
+
+- `Aquariusgirl Music Room Setup 0.1.32.exe`：667,497,961 bytes，SHA-256 `abfdc05af6254a6701f30010a965ecbfe126e3940efac8cffc0626f750deb771`
+- `Aquariusgirl Music Room-0.1.32-arm64.dmg`：684,464,416 bytes，SHA-256 `964aa1b9af7bbd8a1f470b0b80c1531fffc7eebe2d8c719635c154ec4fc8fb8f`
+
+模型仍為 `resources/ai/models/qwen3.5-0.8b.gguf`，532,517,120 bytes，SHA-256 `bd258782e35f7f458f8aced1adc053e6e92e89bc735ba3be89d38a06121dc517`。
+
+驗收：DMG `hdiutil verify` VALID；唯讀掛載讀回版本為 0.1.32、CFBundleVersion 為 0.1.32、執行檔為 Mach-O arm64、`app.asar` package version 為 0.1.32、mac AI model / prompts / `darwin-arm64/llama-server` 存在。EXE static check 為 Windows NSIS installer；未在 Windows 真機執行。
+
+### English Status
+
+0.1.32 installers were produced and synced to `release-delivery/installers/`. DMG verify and read-only DMG version / arm64 / app.asar / AI model / prompts / runtime checks passed. The Windows artifact is a NSIS installer static check only; real Windows QA remains open.
+
+## 2026-07-05 0.1.31 狀態（Bounded Playlist Scroll / 播放清單限定捲動）
+
+0.1.31 已完成 UI / 技能文件修正並產出 installer。本輪升權 `npm run dist:release` 通過 prompt、track-display、track-identity、playback-order、track-list-virtualization、playback-restore、metadata-save-loop、all-target AI assets、build、Electron compile、macOS arm64 DMG 與 Windows x64 NSIS 打包，並同步到 `release-delivery/installers/`；暫存 `release/` 已移除。
+
+- `Aquariusgirl Music Room Setup 0.1.31.exe`：667,497,906 bytes，SHA-256 `81261d447c9d730d73554b6a44d698ad6dae2c730c6ec151fb96d6de5965ab9d`
+- `Aquariusgirl Music Room-0.1.31-arm64.dmg`：684,510,087 bytes，SHA-256 `07b9316e177e7f40998d31e1b75b427a1144fb82d862201b5782b818eefa3bc9`
+
+模型仍為 `resources/ai/models/qwen3.5-0.8b.gguf`，532,517,120 bytes，SHA-256 `bd258782e35f7f458f8aced1adc053e6e92e89bc735ba3be89d38a06121dc517`。
+
+驗收：DMG `hdiutil verify` VALID；唯讀掛載讀回版本為 0.1.31、CFBundleVersion 為 0.1.31、執行檔為 Mach-O arm64、`app.asar` package version 為 0.1.31、mac AI model / prompts / `darwin-arm64/llama-server` 存在。EXE static check 為 Windows NSIS installer；未在 Windows 真機執行。
+
+### English Status
+
+0.1.31 installers were produced and synced to `release-delivery/installers/`. DMG verify and read-only DMG version / arm64 / app.asar / AI model / prompts / runtime checks passed. The Windows artifact is a NSIS installer static check only; real Windows QA remains open.
+
+## 2026-07-05 0.1.30 狀態（歷史：Playlist Edge Scrollbar / 播放清單外緣捲軸）
 
 本輪把版本更新為 0.1.30，重點是讓右側歌曲列表捲軸清楚出現在播放清單面板最外緣附近，搜尋 / 排序 header 固定，歌曲卡片列表自己捲動。修法只用原生 scroll、CSS 與既有 TrackList windowing：`TrackList` 用 `ResizeObserver` 量測實際 viewport，scroll container 加 `playlist-scrollbar`、`overflow-x-hidden`、`scrollbar-gutter: stable` 與 bottom safe space，`PlaylistPanel` list wrapper 讓捲軸靠右，`TrackItem` 固定 80px 高度。未新增套件、未改 metadata / cover / IndexedDB 流程。
 

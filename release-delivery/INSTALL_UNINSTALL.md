@@ -1,31 +1,37 @@
 # 安裝與解除安裝
 
-版本：0.1.30
+版本：0.1.32
 文件更新：2026-07-05
 
-## 0.1.30 Windows 安裝
+## 0.1.32 Windows 安裝
 
-1. 執行 `Aquariusgirl Music Room Setup 0.1.30.exe`。
+1. 執行 `Aquariusgirl Music Room Setup 0.1.32.exe`。
 2. 選擇安裝位置。
 3. 安裝完成後，從桌面捷徑或開始選單開啟。
 4. 第一次啟動後，選擇本機音樂檔或資料夾。
 
 SmartScreen 提醒通常是因為測試版尚未做 Windows code signing。確認檔案來源可信後，可選擇繼續執行。
 
-0.1.30 修正右側歌曲列表外緣捲軸與卡片高度，讓搜尋 / 排序 header 固定，歌曲卡片列表自己捲動，並加 bottom safe space 避免 mini player 蓋住最後幾首歌。仍建議首次在 Windows 真機驗證右側捲軸位置、沒有水平捲軸、底部播放器不遮歌、手動排序 / 檔名排序播放順序、大清單滑動、播放/暫停、資料夾恢復、歌曲資訊與封面寫回。
+0.1.32 修正 0.1.31 把捲軸放到左側主欄的回歸，playlist 欄位高度回到 0.1.28；仍建議首次在 Windows 真機驗證左側主欄不出現 playlist 捲軸、右側歌曲列表可捲動、沒有水平捲軸、底部播放器不遮歌、手動排序 / 檔名排序播放順序、大清單滑動、播放/暫停、資料夾恢復、歌曲資訊與封面寫回。
 
-## 0.1.30 macOS 安裝
+## 0.1.32 macOS 安裝
 
-1. 開啟 `Aquariusgirl Music Room-0.1.30-arm64.dmg`。
+1. 開啟 `Aquariusgirl Music Room-0.1.32-arm64.dmg`。
 2. 將 `Aquariusgirl Music Room.app` 拖曳到 Applications。
 3. 從 Applications 開啟。
 4. 第一次啟動後，選擇本機音樂檔或資料夾。
 
 Gatekeeper 提醒通常是因為測試版尚未做 Apple Developer ID 簽章與 notarization。可在「系統設定 > 隱私權與安全性」允許開啟。
 
-0.1.30 解除安裝方式與下方歷史說明相同；解除安裝 App 不會刪除使用者原始音樂檔。
+0.1.32 已完成 DMG verify 與唯讀掛載讀回版本 / arm64 / app.asar / AI model / prompts / runtime 檢查。解除安裝 App 不會刪除使用者原始音樂檔。
 
-0.1.30 已完成 DMG verify 與唯讀掛載讀回版本 / arm64 / app.asar / AI model / prompts / runtime 檢查。下一輪 packaged GUI 驗收仍須使用暫存音樂複本與隔離 profile，補驗右側外緣捲軸、mini player 不遮歌、手動排序 / 檔名排序的實機播放順序與大清單滑動，不可打開或修改使用者原始 Music 資料夾。
+## 0.1.31 歷史安裝說明
+
+0.1.31 Windows installer 為 `Aquariusgirl Music Room Setup 0.1.31.exe`，macOS installer 為 `Aquariusgirl Music Room-0.1.31-arm64.dmg`。該版 hotfix 修正 app body / 右側播放清單 overflow 邊界，但 0.1.32 已復原左側主欄不應承擔 playlist 捲軸的回歸。
+
+## 0.1.30 歷史安裝說明
+
+0.1.30 Windows installer 為 `Aquariusgirl Music Room Setup 0.1.30.exe`，macOS installer 為 `Aquariusgirl Music Room-0.1.30-arm64.dmg`。該版 hotfix 修正右側歌曲列表外緣捲軸與卡片高度。
 
 歌曲資訊面板提供「儲存到播放器」與「套用到原始檔」。「儲存到播放器」只保存播放器本機 metadata，不修改原始音樂檔；「套用到原始檔」會修改使用者選取的原始 MP3/FLAC/M4A，操作前請確認內容正確，必要時先保留音樂檔備份。
 
@@ -158,32 +164,38 @@ Gatekeeper 提醒通常是因為測試版尚未做 Apple Developer ID 簽章與 
 
 ## Install and Uninstall
 
-Version: 0.1.30
+Version: 0.1.32
 Document update: 2026-07-05
 
-## 0.1.30 Windows Install
+## 0.1.32 Windows Install
 
-1. Run `Aquariusgirl Music Room Setup 0.1.30.exe`.
+1. Run `Aquariusgirl Music Room Setup 0.1.32.exe`.
 2. Choose an install location.
 3. Open the app from the desktop shortcut or Start menu.
 4. Select local music files or a music folder on first launch.
 
 SmartScreen warnings are expected for unsigned test builds.
 
-0.1.30 fixes the right song-list edge scrollbar, card height, and bottom safe space for the mini player. Real Windows QA should still verify the scrollbar position, no horizontal scrollbar, no mini-player overlap, large-list scroll smoothness, playback/pause, latest-folder restore, song-info writeback, and cover writeback.
+0.1.32 fixes the 0.1.31 regression that placed playlist scrolling on the left main column and restores the playlist panel to the 0.1.28 height. Real Windows QA should still verify no left-column playlist scrollbar, right song-list scrolling, no horizontal scrollbar, no mini-player overlap, large-list scroll smoothness, playback/pause, latest-folder restore, song-info writeback, and cover writeback.
 
-## 0.1.30 macOS Install
+## 0.1.32 macOS Install
 
-1. Open `Aquariusgirl Music Room-0.1.30-arm64.dmg`.
+1. Open `Aquariusgirl Music Room-0.1.32-arm64.dmg`.
 2. Drag `Aquariusgirl Music Room.app` into Applications.
 3. Open the app from Applications.
 4. Select local music files or a music folder on first launch.
 
 Gatekeeper warnings are expected until Developer ID signing and notarization are configured.
 
-0.1.30 uses the same uninstall steps as the historical notes below. Uninstalling the app does not delete original music files.
+0.1.32 passed DMG verify and read-only DMG version / arm64 / app.asar / AI model / prompts / runtime checks. Uninstalling the app does not delete original music files.
 
-0.1.30 passed DMG verify and read-only DMG version / arm64 / app.asar / AI model / prompts / runtime checks. Packaged GUI stress QA and large-list scroll QA still need a temp music copy and isolated profile; do not open or modify the user's original Music folder.
+## 0.1.31 Historical Install Notes
+
+0.1.31 used `Aquariusgirl Music Room Setup 0.1.31.exe` and `Aquariusgirl Music Room-0.1.31-arm64.dmg`. It fixed app body / right playlist overflow bounds, but 0.1.32 restores the rule that the left main column should not own playlist scrolling.
+
+## 0.1.30 Historical Install Notes
+
+0.1.30 used `Aquariusgirl Music Room Setup 0.1.30.exe` and `Aquariusgirl Music Room-0.1.30-arm64.dmg`. It fixed the right song-list edge scrollbar, card height, and bottom safe space for the mini player.
 
 The song-info panel has both player-local save and original-file writeback. Player-local save only updates local player metadata; original-file writeback modifies the selected MP3/FLAC/M4A, so keep a backup when needed.
 

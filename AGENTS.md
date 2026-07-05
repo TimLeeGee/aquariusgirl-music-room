@@ -2,8 +2,8 @@
 
 ## 快速接手
 
-- Aquariusgirl Music Room 是 React + TypeScript + Vite + Electron 的本地音樂播放器，目前版本是 `0.1.30`。
-- 0.1.30 最新 hotfix 是 `Playlist Edge Scrollbar`：右側歌曲清單的捲軸移到清單面板最外緣附近，搜尋 / 排序 header 固定，歌曲列自己捲動，並加 mini player 底部安全空間；卡片固定 80px 高度，保留 0.1.28/0.1.29 的 TrackList windowing，不新增套件。0.1.28 的 `Kill Metadata Save Loop` 仍是資料流基底：播放統計、duration、歌曲資訊 / 封面保存走單曲 `put` / `patch`；歌曲資訊面板有「儲存到播放器」與「套用到原始檔」兩條路徑；播放佇列會跟目前歌曲清單排序由上到下播放；歌曲清單只 render 可見窗口，避免上萬首一次產生上萬個 DOM row；dev guard 可警示重複 stored metadata 回灌、播放中非預期原檔 metadata 重讀、同 track source 變動造成的 `audio.load()`。
+- Aquariusgirl Music Room 是 React + TypeScript + Vite + Electron 的本地音樂播放器，目前版本是 `0.1.32`。
+- 0.1.32 最新 hotfix 是 `Playlist Column Scroll Restore`：復原 0.1.31 把捲軸放到左側主欄的方向，左側播放器 / 頻譜 / 睡眠定時不再成為 `playlist-scrollbar`；playlist 欄位恢復 0.1.28 的 `max-h-[calc(100vh-10rem)] min-h-[520px]` 高度，歌曲仍只在 `TrackList` 的原生 `playlist-scrollbar` scroll container 內捲動。歌曲卡片仍固定 80px 高度，全部歌曲 / 自訂播放清單 / 搜尋結果 / 智慧播放清單共用 `TrackItem`。0.1.28 的 `Kill Metadata Save Loop` 仍是資料流基底：播放統計、duration、歌曲資訊 / 封面保存走單曲 `put` / `patch`；歌曲資訊面板有「儲存到播放器」與「套用到原始檔」兩條路徑；播放佇列會跟目前歌曲清單排序由上到下播放；歌曲清單只 render 可見窗口，避免上萬首一次產生上萬個 DOM row；dev guard 可警示重複 stored metadata 回灌、播放中非預期原檔 metadata 重讀、同 track source 變動造成的 `audio.load()`。
 - 主程式在 `src/`，Electron main/preload 在 `electron/`，打包與檢查腳本在 `scripts/`。
 - 發行與驗收紀錄在 `release-delivery/`；改版前先讀 `release-delivery/QA_REPORT.md` 與 `release-delivery/README.md`。
 - AI prompt 在 `private/prompts/`，GGUF 模型與 llama.cpp runtime 放在 `resources/ai/`；大型模型與 installer 不進 Git。
@@ -29,6 +29,7 @@
 - 文件-only 修改：檢查檔案存在、索引引用正確、`git diff` 只含預期 Markdown；不要輸出 EXE / DMG。
 - 程式修改：至少跑 `npm run build` 與 `npm run electron:compile`，再依改動範圍跑相關 `check:*`。
 - 只有 app code、資源、版本或打包設定變更，或使用者明確要求時，才重打 installer。
+- 打包 installer 使用同一條 `npm run dist:release`；若一般 sandbox 卡在 `hdiutil create`，取得允許後升權重跑，不要改打包方式。
 - macOS 可驗 DMG；在 macOS 上只能做 Windows EXE static check，不可宣稱 Windows 真機已驗證。
 - 封面 / 歌曲資訊寫回驗收必須使用暫存音樂複本與隔離 profile，不可打開或修改使用者原始 Music 資料夾；若 macOS 原生檔案對話框無法自動操作，需明確記錄哪些步驟使用受限 harness、哪些步驟由 packaged UI 滑鼠完成。
 - 發佈到 GitHub main 前，根目錄 `README.md` / `CONTINUE_WORK.md` / `AGENTS.md` 與 `release-delivery/*.md` 都要補最新紀錄，保留舊歷史，再 push 並讀回 `origin/main` 確認。

@@ -2,6 +2,29 @@
 
 最後更新：2026-07-05 CST
 
+## 2026-07-05 Playlist Column Scroll Restore hotfix 0.1.32 完成
+
+- 已完成 source 修正：左側主欄不再放 `playlist-scrollbar overflow-y-auto`；playlist 欄位高度恢復 0.1.28 的 `max-h-[calc(100vh-10rem)] min-h-[520px]`。
+- `TrackList` 仍是唯一歌曲列表 scroll container，保留 visible-window + overscan；沒有新增套件、沒有重做清單、沒有改 metadata / cover / IndexedDB / playback。
+- 已通過 source guards、`npm run build`、`npm run electron:compile`、升權 `npm run dist:release`、DMG verify、唯讀掛載讀回與 Windows NSIS static check。
+- 0.1.32 installer 已同步到 `release-delivery/installers/`；`docs/releases/0.1.32-checksums.md` 已建立。Windows 真機與 packaged GUI 大曲庫滑動仍待補驗。
+
+### 接續給下一輪 Codex
+
+請接續 Aquariusgirl Music Room 0.1.32 Windows / packaged GUI 驗收或 GitHub release readback。先執行 `git status -sb`、`git diff --name-only`，不要 reset。最新版 installer 位於 `release-delivery/installers/`，SHA-256 請以 `docs/releases/0.1.32-checksums.md` 為準。重點驗證：左側主欄不再有 playlist 捲軸、playlist 欄位高度回到 0.1.28、右側歌曲列表仍可捲動且保留 windowing、Windows fresh install、播放/暫停、資料夾恢復、AI、Mini/dialog focus。
+
+## 2026-07-05 Bounded Playlist Scroll hotfix 0.1.31 完成待提交
+
+- 已完成 source 修正：app shell 固定 viewport，body 不負責播放清單 overflow；左欄必要時自己捲，右欄限制 overflow，`TrackList` 是唯一歌曲列表 scroll container。
+- `PlaylistPanel` 移除 520px 最小高度；`TrackItem` 仍固定 80px；全部歌曲、自訂播放清單、搜尋結果與智慧播放清單共用同一套歌曲卡片。
+- 已完成專案內技能拆分：播放器開發技能 `docs/skills/aquariusgirl-music-room-development.md`；GitHub 同步技能 `docs/skills/github-update-flow.md`。
+- 已通過 source guards、`npm run build`、`npm run electron:compile`、升權 `npm run dist:release`、DMG verify、唯讀掛載讀回與 Windows NSIS static check。
+- 0.1.31 installer 已同步到 `release-delivery/installers/`；`docs/releases/0.1.31-checksums.md` 已建立。Windows 真機與 100+ 首 packaged GUI 滑動仍待補驗。
+
+### 接續給下一輪 Codex
+
+請接續 Aquariusgirl Music Room 0.1.31 同步。先執行 `git status -sb`、`git diff --name-only`，不要 reset。全域 installed `build-music-player` 已把 GitHub 發布流程轉交給 `github-update-flow`；接著跑 final verification，最後才 commit / push / 讀回 GitHub。
+
 ## 2026-07-05 Playlist Edge Scrollbar hotfix 0.1.30 完成
 
 - 已修正右側歌曲列表捲軸不夠明確、未貼近面板最外緣的 UI 回歸。
