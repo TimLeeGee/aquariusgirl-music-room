@@ -48,6 +48,32 @@ const titleBarOverlay = {
   height: 36,
 };
 
+function normalizeUserDataDirArg(value?: string) {
+  const trimmed = value?.trim();
+  return trimmed && !trimmed.startsWith("--") ? path.resolve(trimmed) : undefined;
+}
+
+function getUserDataDirArg() {
+  const prefixes = ["--aquariusgirl-user-data-dir=", "--user-data-dir="];
+  const inlineArg = process.argv.find((arg) => prefixes.some((prefix) => arg.startsWith(prefix)));
+  if (inlineArg) {
+    const prefix = prefixes.find((item) => inlineArg.startsWith(item))!;
+    return normalizeUserDataDirArg(inlineArg.slice(prefix.length));
+  }
+
+  const argIndex = process.argv.findIndex(
+    (arg) => arg === "--aquariusgirl-user-data-dir" || arg === "--user-data-dir",
+  );
+  return argIndex >= 0 ? normalizeUserDataDirArg(process.argv[argIndex + 1]) : undefined;
+}
+
+const userDataDirArg = getUserDataDirArg() ?? normalizeUserDataDirArg(process.env.AQUARIUSGIRL_USER_DATA_DIR);
+if (userDataDirArg) {
+  // ponytail: QA needs one hard isolation knob; add no profile manager until product users need it.
+  app.setPath("userData", userDataDirArg);
+  app.commandLine.appendSwitch("user-data-dir", userDataDirArg);
+}
+
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
@@ -357,10 +383,16 @@ ipcMain.handle("aquariusgirl:apply-song-info-to-original-file", async (_event, p
   }
 
   try {
-    return await writeSongInfoToOriginalFile(
+    const result = await writeSongInfoToOriginalFile(
       sourcePath,
       metadata && typeof metadata === "object" ? metadata : {},
     );
+
+    if (!app.isPackaged && result.ok && result.receivedCoverHash) {
+      console.debug("[ipc] receivedCoverHash =", result.receivedCoverHash);
+    }
+
+    return result;
   } catch (error) {
     console.error("[song-info] Failed to write original metadata:", error);
     return { ok: false, error: "寫回原始檔失敗，原始檔未修改" };

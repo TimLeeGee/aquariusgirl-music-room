@@ -17,10 +17,24 @@ export type SongInfoDraft = {
   composer: string;
   coverDataUrl?: string;
   coverMimeType?: string;
+  coverHash?: string;
+  coverBytes?: Uint8Array;
 };
 
 const supportedCoverMimeTypes = new Set(["image/jpeg", "image/png"]);
-const supportedCoverExtensions = new Set([".jpg", ".jpeg", ".png"]);
+const coverMimeTypeAliases: Record<string, "image/jpeg" | "image/png"> = {
+  "image/jpeg": "image/jpeg",
+  "image/jpg": "image/jpeg",
+  "image/pjpeg": "image/jpeg",
+  "image/png": "image/png",
+  "image/x-png": "image/png",
+};
+const coverMimeTypeByExtension: Record<string, "image/jpeg" | "image/png"> = {
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".png": "image/png",
+};
+const supportedCoverExtensions = new Set(Object.keys(coverMimeTypeByExtension));
 const supportedOriginalWriteExtensions = new Set([".mp3", ".flac", ".m4a"]);
 
 function getExtension(fileName: string) {
@@ -50,6 +64,8 @@ export function normalizeSongInfoDraft(draft: Partial<SongInfoDraft>): SongInfoD
     composer: clean(draft.composer),
     coverDataUrl: clean(draft.coverDataUrl) || undefined,
     coverMimeType: clean(draft.coverMimeType) || undefined,
+    coverHash: clean(draft.coverHash) || undefined,
+    coverBytes: draft.coverBytes instanceof Uint8Array ? draft.coverBytes : undefined,
   };
 }
 
@@ -67,7 +83,17 @@ export function createSongInfoDraft(track: Track | null): SongInfoDraft {
     composer: track?.composer ?? "",
     coverDataUrl: track?.coverDataUrl,
     coverMimeType: track?.coverMimeType,
+    coverHash: track?.coverHash,
   });
+}
+
+export async function createSongCoverHash(bytes: Uint8Array | ArrayBuffer) {
+  const hashInput = bytes instanceof Uint8Array ? new Uint8Array(bytes) : new Uint8Array(bytes);
+  const digest = await crypto.subtle.digest("SHA-256", hashInput);
+
+  return Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, "0"),
+  ).join("");
 }
 
 export function validateSongInfoDraft(draft: SongInfoDraft) {
@@ -96,9 +122,39 @@ export function isSupportedSongCoverFile(file: Pick<File, "name" | "type" | "siz
   return getSongCoverFileValidationError(file) === "";
 }
 
+export function getSongCoverMimeType(file: Pick<File, "name" | "type">) {
+  const extensionMimeType = coverMimeTypeByExtension[getExtension(file.name)];
+  const mimeType = file.type.toLowerCase();
+  const canonicalMimeType = coverMimeTypeAliases[mimeType];
+
+  if (!extensionMimeType) {
+    return "";
+  }
+
+  if (canonicalMimeType) {
+    return canonicalMimeType;
+  }
+
+  // ponytail: macOS/Electron can return an empty generic MIME for local JPG/PNG picks; infer from extension unless a real unsupported MIME is present.
+  if (!mimeType || mimeType === "application/octet-stream") {
+    return extensionMimeType;
+  }
+
+  return "";
+}
+
+export function normalizeSongCoverDataUrl(dataUrl: string, mimeType: string) {
+  const supportedMimeType = coverMimeTypeAliases[mimeType.toLowerCase()] ?? "";
+
+  if (!supportedMimeType) {
+    return dataUrl;
+  }
+
+  return dataUrl.replace(/^data:[^;]*;base64,/i, `data:${supportedMimeType};base64,`);
+}
+
 export function getSongCoverFileValidationError(file: Pick<File, "name" | "type" | "size">) {
   const extension = getExtension(file.name);
-  const mimeType = file.type.toLowerCase();
 
   if (file.size <= 0) {
     return "封面圖片是空檔案，請換一張 JPG / PNG。";
@@ -108,7 +164,7 @@ export function getSongCoverFileValidationError(file: Pick<File, "name" | "type"
     return `封面圖片太大，請選擇 ${MAX_SONG_COVER_MB} MB 以內的 JPG / PNG。`;
   }
 
-  if (!supportedCoverExtensions.has(extension) || !supportedCoverMimeTypes.has(mimeType)) {
+  if (!supportedCoverExtensions.has(extension) || !getSongCoverMimeType(file)) {
     return "封面只支援 JPG / PNG。";
   }
 

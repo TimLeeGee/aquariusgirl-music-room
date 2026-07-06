@@ -1,29 +1,205 @@
 # 安裝與解除安裝
 
-版本：0.1.33
-文件更新：2026-07-05
+版本：0.1.42
+文件更新：2026-07-06
 
-## 0.1.33 Windows 安裝
+## 0.1.42 安裝狀態
 
-1. 執行 `Aquariusgirl Music Room Setup 0.1.33.exe`。
+0.1.42（播放中保存失敗修正）installer 已產出並同步到 `release-delivery/installers/`；安裝步驟與 0.1.41 相同，檔名改為 0.1.42。SHA-256 請看 `docs/releases/0.1.42-checksums.md`。
+
+## 0.1.41 安裝狀態
+
+0.1.41 修正 packaged 大封面 FLAC 第二次封面寫回後 reload / readback 失敗的問題，並完成 packaged DMG 隔離 profile 滑鼠三輪封面驗收。installer 已產出並同步到 `release-delivery/installers/`，SHA-256 請看 `docs/releases/0.1.41-checksums.md`。
+
+## 0.1.41 Windows 安裝
+
+1. 執行 `Aquariusgirl Music Room Setup 0.1.41.exe`。
 2. 選擇安裝位置。
 3. 安裝完成後，從桌面捷徑或開始選單開啟。
 4. 第一次啟動後，選擇本機音樂檔或資料夾。
 
 SmartScreen 提醒通常是因為測試版尚未做 Windows code signing。確認檔案來源可信後，可選擇繼續執行。
 
-0.1.33 修正主視窗大型卷軸與播放清單內部卷軸的巢狀 scroll 設計：一般主內容區應捲動整個 App，播放清單區應優先捲動歌曲列表，兩者都只在內容超出時出現。仍建議首次在 Windows 真機驗證主視窗卷軸、playlist 內部卷軸、沒有水平卷軸、底部內容與 Mini Player 不被裁切、手動排序 / 檔名排序播放順序、大清單滑動、播放/暫停、資料夾恢復、歌曲資訊與封面寫回。
+0.1.41 已完成 Windows NSIS static check，但尚未在 Windows 真機驗證；首次安裝後請特別確認歌曲資訊 / 封面讀回、同一首歌連續更換封面並「套用到原始檔」、重新讀取音樂標籤、重開後封面與 metadata 保留、播放/暫停、資料夾恢復、AI、Mini/dialog focus。
 
-## 0.1.33 macOS 安裝
+## 0.1.41 macOS 安裝
 
-1. 開啟 `Aquariusgirl Music Room-0.1.33-arm64.dmg`。
+1. 開啟 `Aquariusgirl Music Room-0.1.41-arm64.dmg`。
+2. 將 `Aquariusgirl Music Room.app` 拖曳到 Applications。
+3. 從 Applications 開啟。
+4. 第一次啟動後，選擇本機音樂檔或資料夾。
+
+macOS 可能顯示未認證開發者提醒，因為測試版尚未做 Developer ID signing / notarization。0.1.41 已完成 DMG verify，且 packaged DMG app 已用隔離 userData 與暫存 QA FLAC 完成滑鼠三輪封面驗收；不要用正式 Music 資料夾做測試。
+
+## 0.1.40 安裝狀態
+
+0.1.40 修正第二次選封面後 dirty 可能未成立的狀態機問題，並補 reload metadata 失敗診斷。installer 已產出並同步到 `release-delivery/installers/`，SHA-256 請看 `docs/releases/0.1.40-checksums.md`。
+
+## 0.1.40 Windows 安裝
+
+1. 執行 `Aquariusgirl Music Room Setup 0.1.40.exe`。
+2. 選擇安裝位置。
+3. 安裝完成後，從桌面捷徑或開始選單開啟。
+4. 第一次啟動後，選擇本機音樂檔或資料夾。
+
+SmartScreen 提醒通常是因為測試版尚未做 Windows code signing。確認檔案來源可信後，可選擇繼續執行。
+
+0.1.40 已完成 Windows NSIS static check，但尚未在 Windows 真機驗證；首次安裝後請特別確認同一首歌連續更換封面並「套用到原始檔」時，第二次 dirty 成立、按鈕可按、readback hash 不假成功，重開後仍保存最後一次封面。
+
+## 0.1.40 macOS 安裝
+
+1. 開啟 `Aquariusgirl Music Room-0.1.40-arm64.dmg`。
+2. 將 `Aquariusgirl Music Room.app` 拖曳到 Applications。
+3. 從 Applications 開啟。
+4. 第一次啟動後，選擇本機音樂檔或資料夾。
+
+macOS 可能顯示未認證開發者提醒，因為測試版尚未做 Developer ID signing / notarization。0.1.40 已完成 DMG verify 與唯讀掛載讀回；完整 packaged GUI 純滑鼠連續封面驗收仍需使用暫存音樂複本與隔離 profile 補驗。
+
+## 0.1.39 安裝狀態（歷史）
+
+0.1.39 修正封面 readback hash 保存流程與 playlist / 全部歌曲自訂排序保存。installer 已產出並同步到 `release-delivery/installers/`，SHA-256 請看 `docs/releases/0.1.39-checksums.md`。
+
+## 0.1.39 Windows 安裝
+
+1. 執行 `Aquariusgirl Music Room Setup 0.1.39.exe`。
+2. 選擇安裝位置。
+3. 安裝完成後，從桌面捷徑或開始選單開啟。
+4. 第一次啟動後，選擇本機音樂檔或資料夾。
+
+SmartScreen 提醒通常是因為測試版尚未做 Windows code signing。確認檔案來源可信後，可選擇繼續執行。
+
+0.1.39 已完成 Windows NSIS static check，但尚未在 Windows 真機驗證；首次安裝後請特別確認同一首歌連續更換封面並「套用到原始檔」不會假成功，playlist / 全部歌曲自訂排序重開後仍保存。
+
+## 0.1.39 macOS 安裝
+
+1. 開啟 `Aquariusgirl Music Room-0.1.39-arm64.dmg`。
+2. 將 `Aquariusgirl Music Room.app` 拖曳到 Applications。
+3. 從 Applications 開啟。
+4. 第一次啟動後，選擇本機音樂檔或資料夾。
+
+macOS 可能顯示未認證開發者提醒，因為測試版尚未做 Developer ID signing / notarization。0.1.39 已完成 DMG verify 與唯讀掛載讀回；完整 packaged GUI 純滑鼠連續封面驗收仍需使用暫存音樂複本與隔離 profile 補驗。
+
+## 0.1.38 安裝狀態
+
+0.1.38 修正 playlist 排序選單防回歸與封面 MIME 別名處理。installer 已產出並同步到 `release-delivery/installers/`，SHA-256 請看 `docs/releases/0.1.38-checksums.md`。
+
+## 0.1.38 Windows 安裝
+
+1. 執行 `Aquariusgirl Music Room Setup 0.1.38.exe`。
+2. 選擇安裝位置。
+3. 安裝完成後，從桌面捷徑或開始選單開啟。
+4. 第一次啟動後，選擇本機音樂檔或資料夾。
+
+SmartScreen 提醒通常是因為測試版尚未做 Windows code signing。確認檔案來源可信後，可選擇繼續執行。
+
+0.1.38 已完成 Windows NSIS static check，但尚未在 Windows 真機驗證；首次安裝後請特別確認 playlist 排序下拉選單仍有 7 種排序方式，並確認封面更換與「套用到原始檔」可成功。
+
+## 0.1.38 macOS 安裝
+
+1. 開啟 `Aquariusgirl Music Room-0.1.38-arm64.dmg`。
+2. 將 `Aquariusgirl Music Room.app` 拖曳到 Applications。
+3. 從 Applications 開啟。
+4. 第一次啟動後，選擇本機音樂檔或資料夾。
+
+macOS 可能顯示未認證開發者提醒，因為測試版尚未做 Developer ID signing / notarization。0.1.38 已完成 DMG verify 與唯讀掛載讀回；packaged GUI 已確認排序下拉選單 7 種選項，原生封面選檔器可用真實滑鼠打開，但純滑鼠選檔需要使用者允許 macOS 隱私提示。
+
+## 0.1.37 安裝狀態
+
+0.1.37 修正同一首歌曲第二次更換封面可能因空白 / `application/octet-stream` MIME 失敗的問題。installer 已產出並同步到 `release-delivery/installers/`。SHA-256 請看 `docs/releases/0.1.37-checksums.md`。
+
+## 0.1.37 Windows 安裝
+
+1. 執行 `Aquariusgirl Music Room Setup 0.1.37.exe`。
+2. 選擇安裝位置。
+3. 安裝完成後，從桌面捷徑或開始選單開啟。
+4. 第一次啟動後，選擇本機音樂檔或資料夾。
+
+SmartScreen 提醒通常是因為測試版尚未做 Windows code signing。確認檔案來源可信後，可選擇繼續執行。
+
+0.1.37 已完成 Windows NSIS static check，但尚未在 Windows 真機驗證第二次封面更換與原始檔寫回；首次安裝後請特別確認同一首歌連續更換封面並「套用到原始檔」時，第二次不因空白 / octet-stream MIME 失敗。
+
+## 0.1.37 macOS 安裝
+
+1. 開啟 `Aquariusgirl Music Room-0.1.37-arm64.dmg`。
+2. 將 `Aquariusgirl Music Room.app` 拖曳到 Applications。
+3. 從 Applications 開啟。
+4. 第一次啟動後，選擇本機音樂檔或資料夾。
+
+macOS 可能顯示未認證開發者提醒，因為測試版尚未做 Developer ID signing / notarization。DMG verify 與唯讀掛載讀回版本 / app.asar / unpacked `taglib-web.wasm` 已通過。
+
+## 0.1.36 安裝狀態（歷史）
+
+0.1.36 修正歌曲資訊 metadata 欄位讀回可能漏掉大寫 TagLib property key 的問題，並移除「儲存到播放器」按鈕。installer 已產出並同步到 `release-delivery/installers/`。SHA-256 請看 `docs/releases/0.1.36-checksums.md`。
+
+## 0.1.36 Windows 安裝
+
+1. 執行 `Aquariusgirl Music Room Setup 0.1.36.exe`。
+2. 選擇安裝位置。
+3. 安裝完成後，從桌面捷徑或開始選單開啟。
+4. 第一次啟動後，選擇本機音樂檔或資料夾。
+
+SmartScreen 提醒通常是因為測試版尚未做 Windows code signing。確認檔案來源可信後，可選擇繼續執行。
+
+0.1.36 已完成 Windows NSIS static check，但尚未在 Windows 真機驗證 metadata 讀取；首次安裝後請特別確認歌曲資訊 / 封面不再漏掉歌手、專輯歌手、曲目或光碟欄位。歌曲資訊面板不再有「儲存到播放器」，只保留「套用到原始檔」。
+
+## 0.1.36 macOS 安裝
+
+1. 開啟 `Aquariusgirl Music Room-0.1.36-arm64.dmg`。
+2. 將 `Aquariusgirl Music Room.app` 拖曳到 Applications。
+3. 從 Applications 開啟。
+4. 第一次啟動後，選擇本機音樂檔或資料夾。
+
+macOS 可能顯示未認證開發者提醒，因為測試版尚未做 Developer ID signing / notarization。DMG verify 與唯讀掛載讀回版本 / app.asar / unpacked `taglib-web.wasm` 已通過。
+
+## 0.1.35 安裝狀態
+
+0.1.35 修正 Windows packaged EXE 歌曲資訊讀取可能失敗的 wasm 路徑問題，installer 已產出並同步到 `release-delivery/installers/`。SHA-256 請看 `docs/releases/0.1.35-checksums.md`。
+
+## 0.1.35 Windows 安裝
+
+1. 執行 `Aquariusgirl Music Room Setup 0.1.35.exe`。
+2. 選擇安裝位置。
+3. 安裝完成後，從桌面捷徑或開始選單開啟。
+4. 第一次啟動後，選擇本機音樂檔或資料夾。
+
+SmartScreen 提醒通常是因為測試版尚未做 Windows code signing。確認檔案來源可信後，可選擇繼續執行。
+
+0.1.35 已完成 Windows NSIS static check，但尚未在 Windows 真機驗證 metadata 讀取；首次安裝後請特別確認歌曲資訊 / 封面不再退回檔名 / 未知歌手。
+
+## 0.1.35 macOS 安裝
+
+1. 開啟 `Aquariusgirl Music Room-0.1.35-arm64.dmg`。
+2. 將 `Aquariusgirl Music Room.app` 拖曳到 Applications。
+3. 從 Applications 開啟。
+4. 第一次啟動後，選擇本機音樂檔或資料夾。
+
+macOS 可能顯示未認證開發者提醒，因為測試版尚未做 Developer ID signing / notarization。DMG verify 與唯讀掛載讀回版本 / app.asar / unpacked `taglib-web.wasm` 已通過。
+
+## 0.1.34 Windows 安裝
+
+1. 執行 `Aquariusgirl Music Room Setup 0.1.34.exe`。
+2. 選擇安裝位置。
+3. 安裝完成後，從桌面捷徑或開始選單開啟。
+4. 第一次啟動後，選擇本機音樂檔或資料夾。
+
+SmartScreen 提醒通常是因為測試版尚未做 Windows code signing。確認檔案來源可信後，可選擇繼續執行。
+
+0.1.34 修正 playlist 內部小卷軸消失的回歸：主視窗大型卷軸仍保留，playlist 歌曲列表在歌曲很多時應出現自己的內部垂直卷軸。仍建議首次在 Windows 真機驗證主視窗卷軸、playlist 內部卷軸、沒有水平卷軸、底部內容與 Mini Player 不被裁切、手動排序 / 檔名排序播放順序、大清單滑動、播放/暫停、資料夾恢復、歌曲資訊與封面寫回。
+
+## 0.1.34 macOS 安裝
+
+1. 開啟 `Aquariusgirl Music Room-0.1.34-arm64.dmg`。
 2. 將 `Aquariusgirl Music Room.app` 拖曳到 Applications。
 3. 從 Applications 開啟。
 4. 第一次啟動後，選擇本機音樂檔或資料夾。
 
 Gatekeeper 提醒通常是因為測試版尚未做 Apple Developer ID 簽章與 notarization。可在「系統設定 > 隱私權與安全性」允許開啟。
 
-0.1.33 已完成 DMG verify 與唯讀掛載讀回版本 / app.asar / packaged renderer scroll class / packaged CSS overflow 檢查。解除安裝 App 不會刪除使用者原始音樂檔。
+0.1.34 已完成 DMG verify 與唯讀掛載讀回版本 / app.asar / packaged renderer scroll class / packaged CSS overflow 檢查。解除安裝 App 不會刪除使用者原始音樂檔。
+
+## 0.1.33 歷史安裝說明
+
+0.1.33 Windows installer 為 `Aquariusgirl Music Room Setup 0.1.33.exe`，macOS installer 為 `Aquariusgirl Music Room-0.1.33-arm64.dmg`。該版 hotfix 修正主視窗大型卷軸消失的回歸；0.1.34 已補回 playlist 內部小卷軸的穩定高度邊界。
 
 ## 0.1.32 歷史安裝說明
 
@@ -168,30 +344,178 @@ Gatekeeper 提醒通常是因為測試版尚未做 Apple Developer ID 簽章與 
 
 ## Install and Uninstall
 
-Version: 0.1.33
-Document update: 2026-07-05
+Version: 0.1.41
+Document update: 2026-07-06
 
-## 0.1.33 Windows Install
+## 0.1.41 Install Status
 
-1. Run `Aquariusgirl Music Room Setup 0.1.33.exe`.
+0.1.41 fixes packaged repeated-cover writeback failures caused by TagLib partial metadata reads on large-cover FLAC files. Installers are produced and synced to `release-delivery/installers/`. SHA-256 values are in `docs/releases/0.1.41-checksums.md`.
+
+## 0.1.41 Windows Install
+
+1. Run `Aquariusgirl Music Room Setup 0.1.41.exe`.
+2. Choose an install location.
+3. Open the app from the desktop shortcut or Start menu.
+4. On first launch, select local music files or a local music folder.
+
+SmartScreen warnings are expected for unsigned test builds. If the file source is trusted, choose to continue.
+
+0.1.41 passed Windows NSIS static checks, but real Windows runtime QA was not performed on this macOS machine. On first Windows install, verify song-info / cover readback, repeated cover writeback, reload metadata, restart persistence, playback/pause, folder restore, AI, and Mini/dialog focus.
+
+## 0.1.41 macOS Install
+
+1. Open `Aquariusgirl Music Room-0.1.41-arm64.dmg`.
+2. Drag `Aquariusgirl Music Room.app` into Applications.
+3. Open it from Applications.
+4. On first launch, select local music files or a local music folder.
+
+macOS may show an unidentified-developer warning because this test build is not Developer ID signed or notarized. 0.1.41 passed DMG verify and packaged DMG isolated-profile mouse QA for three repeated cover changes. Use temporary music copies for validation, not the user's real Music folder.
+
+## 0.1.40 Install Status
+
+0.1.40 fixes the repeated-cover dirty-state path and adds reload-metadata diagnostics. Installers are produced and synced to `release-delivery/installers/`. SHA-256 values are in `docs/releases/0.1.40-checksums.md`.
+
+## 0.1.40 Windows Install
+
+1. Run `Aquariusgirl Music Room Setup 0.1.40.exe`.
+2. Choose an install location.
+3. Open the app from the desktop shortcut or Start menu.
+4. On first launch, select local music files or a local music folder.
+
+SmartScreen warnings are expected for unsigned test builds. If the file source is trusted, choose to continue.
+
+0.1.40 passed Windows NSIS static checks, but real Windows runtime QA was not performed on this macOS machine. On first Windows install, verify the second cover replacement becomes dirty, the apply button is enabled, readback hash does not report false success, and the last successful cover remains after restart.
+
+## 0.1.40 macOS Install
+
+1. Open `Aquariusgirl Music Room-0.1.40-arm64.dmg`.
+2. Drag `Aquariusgirl Music Room.app` into Applications.
+3. Open it from Applications.
+4. On first launch, select local music files or a local music folder.
+
+macOS may show an unidentified-developer warning because this test build is not Developer ID signed or notarized. 0.1.40 passed DMG verify and read-only DMG readback. Full packaged GUI mouse-only repeated-cover QA still needs temporary music copies and an isolated profile.
+
+## 0.1.39 Install Status
+
+0.1.39 fixes cover readback-hash persistence and playlist / all-songs custom-order persistence. Installers are produced and synced to `release-delivery/installers/`. SHA-256 values are in `docs/releases/0.1.39-checksums.md`.
+
+## 0.1.39 Windows Install
+
+1. Run `Aquariusgirl Music Room Setup 0.1.39.exe`.
+2. Choose an install location.
+3. Open the app from the desktop shortcut or Start menu.
+4. On first launch, select local music files or a local music folder.
+
+SmartScreen warnings are expected for unsigned test builds. If the file source is trusted, choose to continue.
+
+0.1.39 passed Windows NSIS static checks, but real Windows runtime QA was not performed on this macOS machine. On first Windows install, verify repeated cover replacement does not report false success and custom playlist / all-songs order persists after restart.
+
+## 0.1.39 macOS Install
+
+1. Open `Aquariusgirl Music Room-0.1.39-arm64.dmg`.
+2. Drag `Aquariusgirl Music Room.app` into Applications.
+3. Open it from Applications.
+4. On first launch, select local music files or a local music folder.
+
+macOS may show an unidentified-developer warning because this test build is not Developer ID signed or notarized. 0.1.39 passed DMG verify and read-only DMG readback. Full packaged GUI mouse-only repeated-cover QA still needs temporary music copies and an isolated profile.
+
+## 0.1.38 Install Status
+
+0.1.38 keeps the playlist sort control visible with all seven options and accepts common JPEG / PNG MIME aliases. Installers are produced and synced to `release-delivery/installers/`. SHA-256 values are in `docs/releases/0.1.38-checksums.md`.
+
+## 0.1.38 Windows Install
+
+1. Run `Aquariusgirl Music Room Setup 0.1.38.exe`.
+2. Choose an install location.
+3. Open the app from the desktop shortcut or Start menu.
+4. Select local music files or a local music folder.
+
+SmartScreen warnings are expected for unsigned test builds.
+
+0.1.38 passed Windows NSIS static checks, but real Windows runtime QA was not performed on this macOS machine. On first Windows install, verify the playlist sort dropdown still has seven options, then replace a cover and apply it to the original file.
+
+## 0.1.38 macOS Install
+
+1. Open `Aquariusgirl Music Room-0.1.38-arm64.dmg`.
+2. Drag the app into Applications.
+3. Open the app from Applications.
+4. Select local music files or a local music folder.
+
+macOS may warn about an unidentified developer because this test build is not Developer ID signed or notarized. DMG verify and read-only DMG version / app.asar / packaged alias checks passed. Full mouse-only cover selection needs explicit user approval for the macOS privacy prompt.
+
+## 0.1.36 Install Status (Historical)
+
+0.1.36 restores TagLib property-map metadata readback and removes the player-local "save to player" button. Installers are produced and synced to `release-delivery/installers/`. SHA-256 values are in `docs/releases/0.1.36-checksums.md`.
+
+## 0.1.36 Windows Install
+
+1. Run `Aquariusgirl Music Room Setup 0.1.36.exe`.
+2. Choose an install location.
+3. Open the app from the desktop shortcut or Start menu.
+4. Select local music files or a local music folder.
+
+SmartScreen warnings are expected for unsigned test builds.
+
+0.1.36 passed Windows NSIS static checks, but real Windows metadata runtime QA was not performed on this macOS machine. On first Windows install, verify song metadata / artwork fields no longer miss artist, album artist, track, or disc values. The song-info panel should no longer show "save to player"; it should keep only the original-file apply path.
+
+## 0.1.36 macOS Install
+
+1. Open `Aquariusgirl Music Room-0.1.36-arm64.dmg`.
+2. Drag the app into Applications.
+3. Open the app from Applications.
+4. Select local music files or a local music folder.
+
+macOS may warn about an unidentified developer because this test build is not Developer ID signed or notarized. DMG verify and read-only DMG version / app.asar / unpacked `taglib-web.wasm` checks passed.
+
+## 0.1.35 Install Status
+
+0.1.35 fixes the packaged Windows metadata-read wasm path. Installers are produced and synced to `release-delivery/installers/`. SHA-256 values are in `docs/releases/0.1.35-checksums.md`.
+
+## 0.1.35 Windows Install
+
+1. Run `Aquariusgirl Music Room Setup 0.1.35.exe`.
+2. Choose an install location.
+3. Open the app from the desktop shortcut or Start menu.
+4. Select local music files or a local music folder.
+
+SmartScreen warnings are expected for unsigned test builds.
+
+0.1.35 passed Windows NSIS static checks, but real Windows metadata runtime QA was not performed on this macOS machine. On first Windows install, verify song metadata / artwork no longer falls back to filenames / unknown artist.
+
+## 0.1.35 macOS Install
+
+1. Open `Aquariusgirl Music Room-0.1.35-arm64.dmg`.
+2. Drag the app into Applications.
+3. Open the app from Applications.
+4. Select local music files or a local music folder.
+
+Gatekeeper warnings are expected until Developer ID signing and notarization are configured. DMG verify and read-only DMG version / app.asar / unpacked `taglib-web.wasm` readback passed.
+
+## 0.1.34 Windows Install
+
+1. Run `Aquariusgirl Music Room Setup 0.1.34.exe`.
 2. Choose an install location.
 3. Open the app from the desktop shortcut or Start menu.
 4. Select local music files or a music folder on first launch.
 
 SmartScreen warnings are expected for unsigned test builds.
 
-0.1.33 restores the nested main-window and playlist scroll design. Real Windows QA should still verify main-window scrolling, playlist-internal scrolling, no horizontal scrollbar, no mini-player overlap, large-list scroll smoothness, playback/pause, latest-folder restore, song-info writeback, and cover writeback.
+0.1.34 restores the playlist-internal scrollbar while keeping the main-window scrollbar. Real Windows QA should still verify main-window scrolling, playlist-internal scrolling, no horizontal scrollbar, no mini-player overlap, large-list scroll smoothness, playback/pause, latest-folder restore, song-info writeback, and cover writeback.
 
-## 0.1.33 macOS Install
+## 0.1.34 macOS Install
 
-1. Open `Aquariusgirl Music Room-0.1.33-arm64.dmg`.
+1. Open `Aquariusgirl Music Room-0.1.34-arm64.dmg`.
 2. Drag `Aquariusgirl Music Room.app` into Applications.
 3. Open the app from Applications.
 4. Select local music files or a music folder on first launch.
 
 Gatekeeper warnings are expected until Developer ID signing and notarization are configured.
 
-0.1.33 passed DMG verify and read-only DMG version / app.asar / packaged renderer scroll class / packaged CSS overflow checks. Uninstalling the app does not delete original music files.
+0.1.34 passed DMG verify and read-only DMG version / app.asar / packaged renderer scroll class / packaged CSS overflow checks. Uninstalling the app does not delete original music files.
+
+## 0.1.33 Historical Install Notes
+
+0.1.33 used `Aquariusgirl Music Room Setup 0.1.33.exe` and `Aquariusgirl Music Room-0.1.33-arm64.dmg`. It restored the main-window scrollbar, and 0.1.34 restores the playlist-internal height bound.
 
 ## 0.1.32 Historical Install Notes
 

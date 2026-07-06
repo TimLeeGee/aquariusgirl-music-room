@@ -60,6 +60,7 @@ import {
   defaultThemeColorSettings,
 } from "./types/settings";
 import { createExportPayload, downloadJsonFile, getExportFileName } from "./utils/exportSettings";
+import { isSupportedAudioPath } from "./utils/audioFiles";
 import {
   type ImportedSettings,
   type ImportedTrackMetadata,
@@ -72,7 +73,12 @@ import {
   type CustomImages,
   type CustomImageSlot,
 } from "./utils/platform";
-import { isSupportedOriginalWriteFormat, type SongInfoDraft } from "./utils/songInfo";
+import { parseTrackName } from "./utils/parseTrackName";
+import {
+  isSupportedOriginalWriteFormat,
+  normalizeSongInfoDraft,
+  type SongInfoDraft,
+} from "./utils/songInfo";
 
 function sortTracks(tracks: Track[], sortMode: SortMode) {
   const nextTracks = [...tracks];
@@ -102,6 +108,34 @@ function sortTracks(tracks: Track[], sortMode: SortMode) {
   }
 
   return nextTracks.sort((a, b) => a.addedAt - b.addedAt);
+}
+
+function createTrackWithSongInfo(track: Track, draft: SongInfoDraft): Track {
+  const normalized = normalizeSongInfoDraft(draft);
+  const parsed = parseTrackName(track.file?.name ?? track.name);
+
+  // ponytail: Apply needs a pure readback track before committing UI state; share this if more callsites need it.
+  return {
+    ...track,
+    title: normalized.title || parsed.title,
+    artist: normalized.artist || parsed.artist,
+    album: normalized.album || undefined,
+    albumArtist: normalized.albumArtist || undefined,
+    year: normalized.year || undefined,
+    genre: normalized.genre || undefined,
+    trackNumber: normalized.track || undefined,
+    discNumber: normalized.disc || undefined,
+    comment: normalized.comment || undefined,
+    composer: normalized.composer || undefined,
+    artworkUrl: normalized.coverDataUrl,
+    coverUrl: normalized.coverDataUrl,
+    coverDataUrl: normalized.coverDataUrl,
+    coverMimeType: normalized.coverMimeType,
+    coverHash: normalized.coverHash,
+    metadataLoaded: true,
+    metadataError: undefined,
+    metadataOverride: false,
+  };
 }
 
 function isRepeatMode(value: unknown): value is RepeatMode {
@@ -803,7 +837,10 @@ export default function App() {
             new Set(
               libraryDb.storedTracks
                 .map((track) => track.sourcePath)
-                .filter((sourcePath): sourcePath is string => Boolean(sourcePath)),
+                .filter(
+                  (sourcePath): sourcePath is string =>
+                    typeof sourcePath === "string" && isSupportedAudioPath(sourcePath),
+                ),
             ),
           );
 
@@ -1083,11 +1120,16 @@ export default function App() {
       }
 
       if (playlistsState.activePlaylist?.id === SYSTEM_PLAYLIST_IDS.all) {
-        moveTrack(fromIndex, toIndex);
+        const movedTrack = moveTrack(fromIndex, toIndex, filteredTracks.map((track) => track.id));
+        if (!movedTrack) return;
+
+        void libraryDb.putTrackMetadata(movedTrack).catch(() => {
+          showError("播放順序已更新，但播放器資料庫保存失敗。");
+        });
         showInfo("播放順序已更新。");
       }
     },
-    [moveTrack, playlistsState, showInfo],
+    [filteredTracks, libraryDb, moveTrack, playlistsState, showError, showInfo],
   );
 
   const openCurrentSongInfo = useCallback(() => {
@@ -1112,13 +1154,27 @@ export default function App() {
           );
         }
 
-        const result = await window.aquariusgirlAPI.readSongInfoFromOriginalFile(track.sourcePath);
+        try {
+          const result = await window.aquariusgirlAPI.readSongInfoFromOriginalFile(track.sourcePath);
 
-        if (result.ok && result.metadata) {
-          return replaceTrackSongInfo(track.id, result.metadata);
+          if (result.ok && result.metadata) {
+            return replaceTrackSongInfo(track.id, result.metadata);
+          }
+
+          console.error("[reload-metadata] failed", {
+            trackId: track.id,
+            sourcePath: track.sourcePath,
+            result,
+          });
+          return null;
+        } catch (error) {
+          console.error("[reload-metadata] exception", {
+            trackId: track.id,
+            sourcePath: track.sourcePath,
+            error,
+          });
+          return null;
         }
-
-        return null;
       }
 
       return await reloadTrackMetadata(track.id);
@@ -1178,39 +1234,11 @@ export default function App() {
     }
   }, [player.currentTrack, showError, showInfo]);
 
-  const handleSaveSongInfoToPlayer = useCallback(
-    async (trackId: string, draft: SongInfoDraft) => {
-      const track = tracks.find((item) => item.id === trackId);
-
-      if (!track) {
-        showError("目前沒有選取歌曲。");
-        return false;
-      }
-
-      const validDraft = draft;
-      const savedTrack = replaceTrackSongInfo(track.id, validDraft, { metadataOverride: true });
-
-      if (!savedTrack) {
-        showError("儲存失敗，請稍後再試");
-        return false;
-      }
-
-      try {
-        await libraryDb.putTrackMetadata(savedTrack);
-      } catch {
-        showError("儲存失敗，請稍後再試");
-        return false;
-      }
-
-      showInfo("已儲存到播放器");
-      return true;
-    },
-    [libraryDb, replaceTrackSongInfo, showError, showInfo, tracks],
-  );
-
   const handleApplySongInfoToOriginal = useCallback(
     async (trackId: string, draft: SongInfoDraft) => {
       const track = tracks.find((item) => item.id === trackId);
+      const selectedCoverHash = draft.coverBytes ? draft.coverHash : undefined;
+      const oldCoverHash = track?.coverHash;
 
       if (!track?.sourcePath) {
         showError("寫回原始檔僅支援桌面版。");
@@ -1222,38 +1250,150 @@ export default function App() {
         return false;
       }
 
+      const wantsCoverUpdate = Boolean(draft.coverHash) && draft.coverHash !== oldCoverHash;
+      if (wantsCoverUpdate && !draft.coverBytes) {
+        showError("封面資料不完整，請重新選擇封面。");
+        return false;
+      }
+
       try {
-        const result = await window.aquariusgirlAPI?.applySongInfoToOriginalFile?.({
-          sourcePath: track.sourcePath,
-          metadata: draft,
-        });
+        if (process.env.NODE_ENV !== "production") {
+          console.debug("[apply] currentTrack.coverHash =", oldCoverHash ?? "");
+          console.debug("[apply] selectedCoverHash =", selectedCoverHash ?? "");
+          console.debug("[apply] hasCoverBytes =", Boolean(draft.coverBytes));
+        }
+
+        let oldOriginalCoverHash = oldCoverHash;
+        if (selectedCoverHash && window.aquariusgirlAPI?.readSongInfoFromOriginalFile) {
+          try {
+            const originalBeforeResult = await window.aquariusgirlAPI.readSongInfoFromOriginalFile(
+              track.sourcePath,
+            );
+
+            if (originalBeforeResult.ok && originalBeforeResult.metadata) {
+              oldOriginalCoverHash = originalBeforeResult.metadata.coverHash;
+              if (process.env.NODE_ENV !== "production") {
+                console.debug("[apply] originalFile.coverHash =", oldOriginalCoverHash ?? "");
+              }
+            } else {
+              console.error("[reload-metadata] failed", {
+                trackId: track.id,
+                sourcePath: track.sourcePath,
+                result: originalBeforeResult,
+              });
+            }
+          } catch (error) {
+            console.error("[reload-metadata] exception", {
+              trackId: track.id,
+              sourcePath: track.sourcePath,
+              error,
+            });
+          }
+        }
+
+        // ponytail: Windows keeps the playing file locked by <audio>; release the handle only for the write, then resume position/state.
+        const resumeAudio = player.suspendAudioForFileWrite(track.id);
+        let result;
+        try {
+          result = await window.aquariusgirlAPI?.applySongInfoToOriginalFile?.({
+            sourcePath: track.sourcePath,
+            metadata: draft,
+          });
+        } finally {
+          resumeAudio();
+        }
 
         if (!result?.ok) {
           showError(result?.error ?? "寫回原始檔失敗，原始檔未修改");
           return false;
         }
 
-        const reloadedTrack = await reloadSongInfoFromOriginal(track);
+        let reloadedTrack: Track | null = null;
+        try {
+          const readbackResult = await window.aquariusgirlAPI?.readSongInfoFromOriginalFile?.(
+            track.sourcePath,
+          );
+
+          if (readbackResult?.ok && readbackResult.metadata) {
+            reloadedTrack = createTrackWithSongInfo(track, readbackResult.metadata);
+          } else {
+            console.error("[reload-metadata] failed", {
+              trackId: track.id,
+              sourcePath: track.sourcePath,
+              result: readbackResult,
+            });
+          }
+        } catch (error) {
+          console.error("[reload-metadata] exception", {
+            trackId: track.id,
+            sourcePath: track.sourcePath,
+            error,
+          });
+        }
+
         if (!reloadedTrack) {
           showError("原始檔已處理，但重新讀取音樂標籤失敗。");
           return false;
         }
 
+        if (selectedCoverHash) {
+          if (process.env.NODE_ENV !== "production") {
+            console.debug("[readback] reloadedTrack.coverHash =", reloadedTrack.coverHash ?? "");
+          }
+
+          if (
+            reloadedTrack.coverHash !== selectedCoverHash ||
+            reloadedTrack.coverHash === oldOriginalCoverHash
+          ) {
+            showError("原始檔寫回後讀回不一致。");
+            return false;
+          }
+        }
+
         try {
           await libraryDb.putTrackMetadata(reloadedTrack);
-        } catch {
+          if (process.env.NODE_ENV !== "production") {
+            console.debug("[idb] saved coverHash =", reloadedTrack.coverHash ?? "");
+          }
+        } catch (error) {
+          console.error("[idb] save failed", {
+            trackId: track.id,
+            sourcePath: track.sourcePath,
+            coverHash: reloadedTrack.coverHash,
+            error,
+          });
           showError("原始檔已更新，但播放器資料庫保存失敗，請重新載入音樂資料夾。");
           return false;
         }
 
+        replaceTrackSongInfo(track.id, {
+          title: reloadedTrack.title,
+          artist: reloadedTrack.artist ?? "",
+          album: reloadedTrack.album ?? "",
+          albumArtist: reloadedTrack.albumArtist ?? "",
+          year: reloadedTrack.year ?? "",
+          genre: reloadedTrack.genre ?? "",
+          track: reloadedTrack.trackNumber ?? "",
+          disc: reloadedTrack.discNumber ?? "",
+          comment: reloadedTrack.comment ?? "",
+          composer: reloadedTrack.composer ?? "",
+          coverDataUrl: reloadedTrack.coverDataUrl,
+          coverMimeType: reloadedTrack.coverMimeType,
+          coverHash: reloadedTrack.coverHash,
+        });
         showInfo("已套用到原始檔");
         return true;
-      } catch {
+      } catch (error) {
+        console.error("[apply] exception", {
+          trackId,
+          sourcePath: track.sourcePath,
+          error,
+        });
         showError("寫回原始檔失敗，原始檔未修改");
         return false;
       }
     },
-    [libraryDb, reloadSongInfoFromOriginal, showError, showInfo, tracks],
+    [libraryDb, player.suspendAudioForFileWrite, replaceTrackSongInfo, showError, showInfo, tracks],
   );
 
   const handleDeletePlaylist = useCallback(
@@ -1882,7 +2022,6 @@ export default function App() {
         track={songInfoTrack}
         isDesktopApp={isDesktopApp}
         onClose={() => setSongInfoTrackId(null)}
-        onSaveToPlayer={handleSaveSongInfoToPlayer}
         onApplyToOriginal={handleApplySongInfoToOriginal}
         onError={showError}
       />

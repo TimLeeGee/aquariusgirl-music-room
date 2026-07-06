@@ -3,10 +3,12 @@ import { readFileSync } from "node:fs";
 
 const trackListSource = readFileSync("src/components/TrackList.tsx", "utf8");
 const playlistPanelSource = readFileSync("src/components/PlaylistPanel.tsx", "utf8");
+const sortControlsSource = readFileSync("src/components/SortControls.tsx", "utf8");
 const appSource = readFileSync("src/App.tsx", "utf8");
 const appLayoutSource = readFileSync("src/components/AppLayout.tsx", "utf8");
 const stylesSource = readFileSync("src/styles/index.css", "utf8");
 const packageJson = JSON.parse(readFileSync("package.json", "utf8"));
+const sortOptionCount = (sortControlsSource.match(/value: "/g) ?? []).length;
 
 assert.match(trackListSource, /TRACK_ROW_HEIGHT/);
 assert.match(trackListSource, /TRACK_LIST_OVERSCAN/);
@@ -32,9 +34,18 @@ assert.doesNotMatch(playlistPanelSource, /lg:min-h-0/);
 assert.doesNotMatch(playlistPanelSource, /lg:flex-1/);
 assert.match(
   playlistPanelSource,
-  /className="glass-panel flex max-h-\[calc\(100vh-10rem\)\] min-h-\[520px\] flex-col overflow-hidden p-4 sm:p-5 lg:sticky lg:top-5"/,
+  /className="glass-panel flex h-\[calc\(100vh-10rem\)\] max-h-\[calc\(100vh-10rem\)\] min-h-\[520px\] flex-col overflow-hidden p-4 sm:p-5 lg:sticky lg:top-5"/,
 );
 assert.match(playlistPanelSource, /-mr-3 pr-1/);
+assert.equal(sortOptionCount, 7);
+assert.match(sortControlsSource, /aria-label="播放清單排序方式"/);
+assert.match(sortControlsSource, /min-w-\[9\.5rem\]/);
+assert.match(sortControlsSource, /歌名 A-Z/);
+assert.match(sortControlsSource, /歌手 A-Z/);
+assert.match(sortControlsSource, /專輯 A-Z/);
+assert.match(sortControlsSource, /檔名/);
+assert.match(sortControlsSource, /時長短到長/);
+assert.match(sortControlsSource, /時長長到短/);
 assert.match(trackListSource, /playlist-scrollbar/);
 assert.match(trackListSource, /overflow-x-hidden/);
 assert.match(trackListSource, /pr-3/);

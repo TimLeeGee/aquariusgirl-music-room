@@ -1,5 +1,138 @@
 # Installer 狀態
 
+## 2026-07-06 0.1.42 hotfix 狀態（Playing File Lock Release / 播放中檔案鎖釋放與寫回重試）
+
+0.1.42 修正 Windows EXE 播放中「套用到原始檔」有時保存失敗：`<audio>` 以 `file:` URL 載入原始檔時 Windows 持有檔案 handle，`rename(tempPath, sourcePath)` 被 `EPERM` / `EBUSY` 擋下。修法：renderer 寫回期間暫時卸下 audio src 釋放 handle、寫完自動接回原位置與播放狀態；Electron writer rename 補 3 次重試，仍鎖住時回傳明確錯誤「原始檔正被其他程式使用中，請暫停播放後再試一次。原始檔未修改。」未新增套件、未改 DB schema、未動 0.1.41 讀寫防線；O(1) 只碰目前那一首，上萬首曲庫與 M1 Air 8GB 無額外負擔。
+
+已通過（Linux 沙盒）：`check:metadata-save-loop`（新增 guard）、`check:song-info`、`check:playback-restore`、`check:playlist-logic`、`check:playback-order`、`check:track-list-virtualization`、`check:prompts`、`check:track-display`、`check:track-identity`、`tsc --noEmit`、`npm run electron:compile`。
+
+0.1.42 installer 已於 2026-07-06 由 `打包發行.command`（`npm run dist:release`）在本機產出並同步到 `release-delivery/installers/`：
+
+- `Aquariusgirl Music Room Setup 0.1.42.exe`：667,666,956 bytes，SHA-256 `6d67c44c2c68ecfb838cbeb7d18038cda4fca3d96df1733739d9c58f47e75e7f`
+- `Aquariusgirl Music Room-0.1.42-arm64.dmg`：684,778,895 bytes，SHA-256 `28caa3939b0ed79861cc9763f0d302956adbdce42768669f0ac987156a236f91`
+- DMG `hdiutil verify` VALID；打包時 `dist:release` 內全部 check 再次通過；未簽章、不 push GitHub。詳見 `docs/releases/0.1.42-checksums.md`。
+
+
+## 2026-07-06 0.1.41 狀態（Full-Load Cover Write Guard / Packaged Mouse QA / 完整載入封面寫回防線與打包版滑鼠驗收）
+
+0.1.41 hotfix 已完成並產出 installer。修正內容：packaged Emscripten TagLib 對大封面 FLAC 的 partial metadata read 失敗時，對同一首 user-initiated 原始檔做 `partial:false` full-load retry；writer 仍維持同一 TagLib handle、單次 `saveToFile(tempPath)` 與 rename，不回到雙保存路徑。
+
+已通過：`npm run check:song-info`、`npm run check:playback-restore`、`npm run check:metadata-save-loop`、`npm run build`、`npm run electron:compile`、`npm run dist:release`。`dist:release` 已同步兩個 installer 到 `release-delivery/installers/`。
+
+- `Aquariusgirl Music Room Setup 0.1.41.exe`：667,666,404 bytes，SHA-256 `35d632c4f6f5646f1c4b8e5900e6e438fcdc99048bff71dde4f9f2c2b5b9b404`
+- `Aquariusgirl Music Room-0.1.41-arm64.dmg`：684,798,474 bytes，SHA-256 `494531f0796bef677517826c3c38381d9c12bda2a837af9c7954b7a747d93c6c`
+
+驗收：DMG `hdiutil verify` VALID。`scripts/song-info-writer-check.mjs` 以 Emscripten wasm fixture 完成 Plazma Cover 02 -> Cover 01 -> Cover 02 readback。packaged DMG app 已用隔離 userData 與滑鼠完成 Cover 01 -> Cover 02、Cover 02 -> Cover 01、Cover 01 -> Cover 02 三輪驗收，並確認「重新讀取音樂標籤」成功、重開後最後 Cover 02 與 metadata 仍存在。EXE static check 為 PE32 Nullsoft NSIS installer；未在 Windows 真機執行。本輪依使用者要求不 push GitHub。
+
+### English Status
+
+0.1.41 installers were produced and synced to `release-delivery/installers/`. DMG verify passed. The Emscripten fixture repeated-cover readback and packaged DMG mouse QA for three cover changes passed. The Windows artifact is a PE32 Nullsoft NSIS installer static check only; real Windows runtime QA remains open.
+
+## 2026-07-06 0.1.40 狀態（Selected Cover Dirty Guard / Reload Metadata Diagnostics / 選取封面 dirty 防線與重新讀取診斷）
+
+0.1.40 hotfix 已完成並產出 installer。修正內容：第二次選封面後 dirty 不再被同一首歌的外部 track snapshot reset 吃掉；App 端補上 cover hash 變更但 cover bytes 缺失的防呆；reload metadata 失敗會留下 console.error 診斷。
+
+已通過：`npm run check:song-info`、`npm run check:playlist-logic`、`npm run check:playback-order`、`npm run check:track-list-virtualization`、`npm run check:playback-restore`、`npm run check:metadata-save-loop`、`npm run build`、`npm run electron:compile`、`npm run dist:release`。`dist:release` 已同步兩個 installer 到 `release-delivery/installers/`，並移除暫存 `release/`。
+
+- `Aquariusgirl Music Room Setup 0.1.40.exe`：667,665,700 bytes，SHA-256 `bf36fd3b7674cf2aa9ee8adc5111e5dc4933237764ce63e3fb1bd671f121edba`
+- `Aquariusgirl Music Room-0.1.40-arm64.dmg`：684,776,924 bytes，SHA-256 `e3ec2403a0218ebcb5eda4de9768a2045b33d30c64c225c6654261cb33e7df20`
+
+驗收：DMG `hdiutil verify` VALID；唯讀掛載讀回版本為 0.1.40、CFBundleVersion 為 0.1.40、執行檔為 Mach-O arm64、`app.asar` package version 為 0.1.40，`Contents/Resources/taglib-wasm/taglib-web.wasm` 存在。production bundle 確認 incomplete-cover guard 與 reload failure log 存在；dev debug log 不進 production bundle。EXE static check 為 PE32 Nullsoft NSIS installer；未在 Windows 真機執行。本輪依使用者要求不 push GitHub。
+
+### English Status
+
+0.1.40 installers were produced and synced to `release-delivery/installers/`. DMG verify and read-only DMG version / app.asar / taglib wasm readback passed. The Windows artifact is a PE32 Nullsoft NSIS installer static check only; real Windows runtime QA and full repeated-cover GUI QA remain open.
+
+## 2026-07-05 0.1.39 狀態（Cover Hash Readback / Playlist Order Persistence / 封面 hash 讀回與播放清單排序保存）
+
+0.1.39 hotfix 已完成並產出 installer。修正內容：封面寫回成功必須通過 original-file readback `coverHash` 驗證並等待單曲 IndexedDB 保存；playlist 自訂排序會保存，一般 playlist 保存 trackIds，全部歌曲自訂排序只保存 moved track 的 `addedAt`。
+
+已通過：`npm run check:song-info`、`npm run check:playlist-logic`、`npm run check:playback-order`、`npm run check:track-list-virtualization`、`npm run check:playback-restore`、`npm run check:metadata-save-loop`、`npm run build`、`npm run electron:compile`、`npm run dist:release`。`dist:release` 已同步兩個 installer 到 `release-delivery/installers/`，並移除暫存 `release/`。
+
+- `Aquariusgirl Music Room Setup 0.1.39.exe`：667,665,556 bytes，SHA-256 `a6f6cdffe625ab243e250c535c0b9ba1f76bce1aea5edbe55263e04ef448efd2`
+- `Aquariusgirl Music Room-0.1.39-arm64.dmg`：684,792,267 bytes，SHA-256 `4aec705531cff9b6c207c95f72c9c6370d30b50ff4b2c36908d8b4fdcf0a6d23`
+
+驗收：DMG `hdiutil verify` VALID；唯讀掛載讀回版本為 0.1.39、CFBundleVersion 為 0.1.39、執行檔為 Mach-O arm64、`app.asar` package version 為 0.1.39，`Contents/Resources/taglib-wasm/taglib-web.wasm` 存在。packaged renderer 確認 cover readback mismatch、draft cover hash log 與 playlist order save failure guard 存在；packaged main 確認 IPC received-cover-hash debug guard 存在。EXE static check 為 PE32 Nullsoft NSIS installer；未在 Windows 真機執行。本輪依使用者要求不 push GitHub。
+
+### English Status
+
+0.1.39 installers were produced and synced to `release-delivery/installers/`. DMG verify and read-only DMG version / app.asar / packaged guard readback passed. The Windows artifact is a PE32 Nullsoft NSIS installer static check only; real Windows runtime QA and full repeated-cover GUI QA remain open.
+
+## 2026-07-05 0.1.38 狀態（Cover MIME Alias / Sort Controls Guard / 封面 MIME 別名與排序選單防回歸）
+
+0.1.38 hotfix 已完成並產出 installer。修正內容：排序選單保留原本 7 種模式並新增 source guard；封面 MIME 支援常見 JPEG / PNG 別名，renderer 與 Electron writer 都走同一組 canonical MIME。
+
+已通過：`npm run check:song-info`、真實 Plazma 暫存複本封面 roundtrip、`npm run check:track-list-virtualization`、`npm run check:playback-order`、`npm run check:playback-restore`、`npm run check:metadata-save-loop`、`npm run build`、`npm run electron:compile`、`npm run dist:release`。`dist:release` 已同步兩個 installer 到 `release-delivery/installers/`，並移除暫存 `release/`。
+
+- `Aquariusgirl Music Room Setup 0.1.38.exe`：667,664,556 bytes，SHA-256 `fd07376a35cbeccdec55d98751a2273fe67834904c16f24d9d112f71825d5da8`
+- `Aquariusgirl Music Room-0.1.38-arm64.dmg`：684,757,578 bytes，SHA-256 `66a547f31c535ad9643ba2d7c2ea7bebedc62130b114ba543ca50aa8fccf7a7a`
+
+驗收：DMG `hdiutil verify` VALID；唯讀掛載讀回版本為 0.1.38、CFBundleVersion 為 0.1.38、執行檔為 Mach-O arm64、`app.asar` package version 為 0.1.38，`Contents/Resources/taglib-wasm/taglib-web.wasm` 存在。packaged renderer 確認排序 label 與 cover MIME alias 存在；packaged main 確認 cover MIME alias 存在。EXE static check 為 PE32 Nullsoft NSIS installer；未在 Windows 真機執行。本輪依使用者要求不 push GitHub。
+
+### English Status
+
+0.1.38 installers were produced and synced to `release-delivery/installers/`. DMG verify and read-only DMG version / app.asar / packaged alias readback passed. The Windows artifact is a PE32 Nullsoft NSIS installer static check only; real Windows runtime QA remains open.
+
+## 2026-07-05 0.1.37 狀態（Cover MIME Fallback / Second Cover Save / 封面 MIME fallback 與第二次封面保存）
+
+0.1.37 source hotfix 已完成並產出 installer。修正內容：renderer 對空白 / `application/octet-stream` 的 `.jpg` / `.png` 封面選檔做副檔名限定 MIME fallback 並正規化 data URL；Electron writer 只對空白 / octet-stream data URL 使用 `draft.coverMimeType` fallback，避免第二次更換封面被 MIME prefix 擋掉。
+
+已通過：`npm run check:song-info`、真實 Plazma 暫存複本 Cover 02 -> Cover 01 roundtrip、`npm run check:playback-restore`、`npm run check:metadata-save-loop`、`npm run build`、`npm run electron:compile`、升權 `npm run dist:release`。`dist:release` 已同步兩個 installer 到 `release-delivery/installers/`，並移除暫存 `release/`。
+
+- `Aquariusgirl Music Room Setup 0.1.37.exe`：667,664,607 bytes，SHA-256 `5c51648e3fb68c14187f373967cd6893b0429df37f6a105667b0326641515602`
+- `Aquariusgirl Music Room-0.1.37-arm64.dmg`：684,802,297 bytes，SHA-256 `a742bfb5a333bf4a5651e5c62eaabe337d951bff9ab028eac198935685be7539`
+
+驗收：DMG `hdiutil verify` VALID；唯讀掛載讀回版本為 0.1.37、CFBundleVersion 為 0.1.37、執行檔為 Mach-O arm64、`app.asar` package version 為 0.1.37，`Contents/Resources/taglib-wasm/taglib-web.wasm` 存在。packaged renderer / main 確認 cover MIME fallback 存在。EXE static check 為 PE32 Nullsoft NSIS installer；未在 Windows 真機執行。本輪依使用者要求不 push GitHub。
+
+### English Status
+
+0.1.37 installers were produced and synced to `release-delivery/installers/`. DMG verify and read-only DMG version / app.asar / unpacked `taglib-web.wasm` checks passed. Packaged renderer/main readback confirms the cover MIME fallback exists. The Windows artifact is a PE32 Nullsoft NSIS installer static check only; real Windows repeated-cover QA remains open.
+
+## 2026-07-05 0.1.36 狀態（Song Info Single Save Path / TagLib Property Map Restore / 歌曲資訊單一路徑與 TagLib 欄位映射復原）
+
+0.1.36 source hotfix 已完成並產出 installer。修正內容：`electron/songInfoWriter.ts` 補 TagLib property-map alias，讓 uppercase metadata keys 正確映射；`SongInfoPanel` / `App.tsx` 移除「儲存到播放器」player-local save path，只保留「套用到原始檔」。
+
+已通過：`npm run check:song-info`、`npm run check:playback-restore`、`npm run check:metadata-save-loop`、`npm run build`、`npm run electron:compile`、升權 `npm run dist:release`。`dist:release` 已通過前段檢查、all-target AI assets、build、Electron compile、macOS arm64 DMG 與 Windows x64 NSIS 打包，同步兩個 installer 到 `release-delivery/installers/`，並移除暫存 `release/`。
+
+- `Aquariusgirl Music Room Setup 0.1.36.exe`：667,664,404 bytes，SHA-256 `417bcc3717b961516dc8eba0e3511f667aeb681fa8d8595e303cc12d6514142e`
+- `Aquariusgirl Music Room-0.1.36-arm64.dmg`：684,786,586 bytes，SHA-256 `0709142e5fdbdb3230433488d0f661dcf3b39b09c1044a56f14b6e24d172e73e`
+
+驗收：DMG `hdiutil verify` VALID；唯讀掛載讀回版本為 0.1.36、CFBundleVersion 為 0.1.36、執行檔為 Mach-O arm64、`app.asar` package version 為 0.1.36，`Contents/Resources/taglib-wasm/taglib-web.wasm` 存在。packaged renderer 確認「儲存到播放器」已不存在且「套用到原始檔」仍存在；packaged main 確認 property alias 與 wasm path 存在。EXE static check 為 PE32 Nullsoft NSIS installer；本機 `bsdtar` 無法拆 NSIS，未在 Windows 真機執行。本輪依使用者要求不 push GitHub。
+
+### English Status
+
+0.1.36 installers were produced and synced to `release-delivery/installers/`. DMG verify and read-only DMG version / app.asar / unpacked `taglib-web.wasm` checks passed. Packaged renderer readback confirms the player-local save button is gone, and packaged main readback confirms the TagLib property aliases remain. The Windows artifact is a PE32 Nullsoft NSIS installer static check only; real Windows metadata QA remains open.
+
+## 2026-07-05 0.1.35 狀態（Packaged EXE Metadata Wasm Restore / 打包版 EXE 歌曲資訊 wasm 復原）
+
+0.1.35 source hotfix 已完成並產出 installer。修正內容：`electron/songInfoWriter.ts` 改用可指定 unpacked wasm 的共用 TagLib 實例，`package.json` 外帶 `node_modules/taglib-wasm/dist/taglib-web.wasm` 到 `resources/taglib-wasm/taglib-web.wasm`，並新增 `check:taglib-wasm-packaging` 防止 EXE / DMG packaged metadata 讀取再次漏帶 wasm。
+
+已通過：`npm run check:taglib-wasm-packaging`、`npm run check:song-info`、`npm run build`、`npm run electron:compile`、升權 `npm run dist:release`。`dist:release` 已通過前段檢查、all-target AI assets、build、Electron compile、macOS arm64 DMG 與 Windows x64 NSIS 打包，同步兩個 installer 到 `release-delivery/installers/`，並移除暫存 `release/`。
+
+- `Aquariusgirl Music Room Setup 0.1.35.exe`：667,664,174 bytes，SHA-256 `39547c366f8c1e92e725d0a2d21ca8e842e41258ba38ad0f858196916842c35a`
+- `Aquariusgirl Music Room-0.1.35-arm64.dmg`：684,823,587 bytes，SHA-256 `ffd83022e96735655c71fddb82eca0fa452f7dbaa617d0eb6065d84e0c93c4b7`
+
+驗收：DMG `hdiutil verify` VALID；唯讀掛載讀回版本為 0.1.35、CFBundleVersion 為 0.1.35、執行檔為 Mach-O arm64、`app.asar` package version 為 0.1.35，`Contents/Resources/taglib-wasm/taglib-web.wasm` 存在。EXE static check 為 PE32 Nullsoft NSIS installer；本機 `bsdtar` 無法拆 NSIS，未在 Windows 真機執行。本輪依使用者要求不 push GitHub。
+
+### English Status
+
+0.1.35 installers were produced and synced to `release-delivery/installers/`. DMG verify and read-only DMG version / app.asar / unpacked `taglib-web.wasm` checks passed. The Windows artifact is a PE32 Nullsoft NSIS installer static check only; real Windows metadata QA remains open.
+
+## 2026-07-05 0.1.34 狀態（Playlist Panel Scroll Restore / 播放清單面板捲軸復原）
+
+0.1.34 已完成 UI hotfix 並產出 installer。本輪升權 `npm run dist:release` 通過 prompt、track-display、track-identity、playback-order、track-list-virtualization、playback-restore、metadata-save-loop、all-target AI assets、build、Electron compile、macOS arm64 DMG 與 Windows x64 NSIS 打包，並同步到 `release-delivery/installers/`；暫存 `release/` 已移除。
+
+- `Aquariusgirl Music Room Setup 0.1.34.exe`：667,497,871 bytes，SHA-256 `cbf66e9d77fd97b7f4e65c059da476e7d3f17390aaa53f046904b046a03c84ed`
+- `Aquariusgirl Music Room-0.1.34-arm64.dmg`：684,440,370 bytes，SHA-256 `ef131d2f09a94c1f123bce82f3a8c2b7545949c8e742f9996ccdb8eb57cf5274`
+
+模型仍為 `resources/ai/models/qwen3.5-0.8b.gguf`，532,517,120 bytes，SHA-256 `bd258782e35f7f458f8aced1adc053e6e92e89bc735ba3be89d38a06121dc517`。
+
+驗收：DMG `hdiutil verify` VALID；唯讀掛載讀回版本為 0.1.34、CFBundleVersion 為 0.1.34、執行檔為 Mach-O arm64、`app.asar` package version 為 0.1.34，mac AI model 與 `darwin-arm64/llama-server` 存在。packaged renderer bundle 含 `PlaylistPanel` stable height class、主視窗 scroll container class 與 TrackList scroll container class；packaged CSS 確認 body 不含 `overflow:hidden`、只含 `overflow-x:hidden`，並保留 `scrollbar-gutter:stable`。EXE static check 為 Windows NSIS installer；未在 Windows 真機執行。本輪依使用者要求未同步 / push 到 GitHub。
+
+### English Status
+
+0.1.34 installers were produced and synced to `release-delivery/installers/`. DMG verify and read-only DMG version / app.asar / packaged renderer scroll class / packaged CSS overflow checks passed. The Windows artifact is a NSIS installer static check only; real Windows QA and GitHub sync remain open.
+
 ## 2026-07-05 0.1.33 狀態（Nested Main and Playlist Scroll / 巢狀主視窗與播放清單卷軸）
 
 0.1.33 已完成 UI hotfix 並產出 installer。本輪升權 `npm run dist:release` 通過 prompt、track-display、track-identity、playback-order、track-list-virtualization、playback-restore、metadata-save-loop、all-target AI assets、build、Electron compile、macOS arm64 DMG 與 Windows x64 NSIS 打包，並同步到 `release-delivery/installers/`；暫存 `release/` 已移除。

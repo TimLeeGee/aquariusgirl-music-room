@@ -2,9 +2,12 @@ import { ImagePlus, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Track } from "../types/track";
 import {
+  createSongCoverHash,
   createSongInfoDraft,
   getSongCoverFileValidationError,
+  getSongCoverMimeType,
   isSupportedOriginalWriteFormat,
+  normalizeSongCoverDataUrl,
   normalizeSongInfoDraft,
   type SongInfoDraft,
   validateSongInfoDraft,
@@ -16,7 +19,6 @@ type SongInfoPanelProps = {
   track: Track | null;
   isDesktopApp: boolean;
   onClose: () => void;
-  onSaveToPlayer: (trackId: string, draft: SongInfoDraft) => Promise<boolean>;
   onApplyToOriginal: (trackId: string, draft: SongInfoDraft) => Promise<boolean>;
   onError: (message: string) => void;
 };
@@ -28,6 +30,13 @@ type TextFieldProps = {
   multiline?: boolean;
 };
 
+type SelectedCoverDraft = {
+  bytes: Uint8Array;
+  mime: string;
+  hash: string;
+  previewUrl: string;
+};
+
 function readFileAsDataUrl(file: File) {
   return new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
@@ -37,9 +46,28 @@ function readFileAsDataUrl(file: File) {
   });
 }
 
+async function readFileAsBytes(file: File) {
+  return new Uint8Array(await file.arrayBuffer());
+}
+
 const isDevRuntime = Boolean(
   (import.meta as ImportMeta & { env?: { DEV?: boolean } }).env?.DEV,
 );
+
+function isTextDraftDirty(draft: SongInfoDraft, savedDraft: SongInfoDraft) {
+  return (
+    draft.title !== savedDraft.title ||
+    draft.artist !== savedDraft.artist ||
+    draft.album !== savedDraft.album ||
+    draft.albumArtist !== savedDraft.albumArtist ||
+    draft.year !== savedDraft.year ||
+    draft.genre !== savedDraft.genre ||
+    draft.track !== savedDraft.track ||
+    draft.disc !== savedDraft.disc ||
+    draft.comment !== savedDraft.comment ||
+    draft.composer !== savedDraft.composer
+  );
+}
 
 function TextField({ label, value, onChange, multiline = false }: TextFieldProps) {
   const className =
@@ -70,14 +98,15 @@ export function SongInfoPanel({
   track,
   isDesktopApp,
   onClose,
-  onSaveToPlayer,
   onApplyToOriginal,
   onError,
 }: SongInfoPanelProps) {
   const [draft, setDraft] = useState<SongInfoDraft>(() => createSongInfoDraft(track));
   const [savedDraft, setSavedDraft] = useState<SongInfoDraft>(() => createSongInfoDraft(track));
+  const [selectedCover, setSelectedCover] = useState<SelectedCoverDraft | null>(null);
   const [busy, setBusy] = useState(false);
   const savingRef = useRef(false);
+  const activeTrackIdRef = useRef<string | null>(null);
   const coverInputRef = useRef<HTMLInputElement | null>(null);
   const trackDraftSnapshot = useMemo(
     () => createSongInfoDraft(track),
@@ -88,6 +117,7 @@ export function SongInfoPanel({
       track?.comment,
       track?.composer,
       track?.coverDataUrl,
+      track?.coverHash,
       track?.coverMimeType,
       track?.discNumber,
       track?.genre,
@@ -100,11 +130,15 @@ export function SongInfoPanel({
   const resetDraftState = useCallback((nextDraft: SongInfoDraft) => {
     setDraft(nextDraft);
     setSavedDraft(nextDraft);
+    setSelectedCover(null);
   }, []);
-  const dirty = useMemo(
-    () => JSON.stringify(normalizeSongInfoDraft(draft)) !== JSON.stringify(savedDraft),
-    [draft, savedDraft],
+  const normalizedDraft = useMemo(() => normalizeSongInfoDraft(draft), [draft]);
+  const textDirty = useMemo(
+    () => isTextDraftDirty(normalizedDraft, savedDraft),
+    [normalizedDraft, savedDraft],
   );
+  const coverDirty = Boolean(selectedCover) && selectedCover?.hash !== track?.coverHash;
+  const dirty = textDirty || coverDirty;
   const unsupportedWriteFormat = Boolean(
     track?.sourcePath && !isSupportedOriginalWriteFormat(track.sourcePath),
   );
@@ -137,17 +171,28 @@ export function SongInfoPanel({
       resetDraftState(createSongInfoDraft(null));
       savingRef.current = false;
       setBusy(false);
+      activeTrackIdRef.current = null;
       return;
     }
 
-    resetDraftState(trackDraftSnapshot);
-  }, [open, resetDraftState, trackDraftSnapshot]);
+    const nextTrackId = track?.id ?? null;
+    if (activeTrackIdRef.current !== nextTrackId) {
+      resetDraftState(trackDraftSnapshot);
+      activeTrackIdRef.current = nextTrackId;
+    }
+  }, [open, resetDraftState, track?.id, trackDraftSnapshot]);
 
   useEffect(() => {
     if (open && writeBackDisabledReason && isDevRuntime) {
       console.debug("[SongInfoPanel] writeback disabled:", writeBackDisabledReason);
     }
   }, [open, writeBackDisabledReason]);
+
+  useEffect(() => {
+    if (!open || !isDevRuntime) return;
+    console.debug("[SongInfoPanel] coverDirty =", coverDirty);
+    console.debug("[SongInfoPanel] textDirty =", textDirty);
+  }, [coverDirty, open, textDirty]);
 
   if (!open || !track) {
     return null;
@@ -158,6 +203,11 @@ export function SongInfoPanel({
   };
 
   const closePanel = () => {
+    if (busy) {
+      onError("正在套用到原始檔，請稍候。");
+      return;
+    }
+
     if (dirty && !window.confirm("表單尚未儲存，是否放棄修改？")) {
       return;
     }
@@ -166,17 +216,33 @@ export function SongInfoPanel({
 
   const getValidDraft = () => {
     const normalized = normalizeSongInfoDraft(draft);
-    const errors = validateSongInfoDraft(normalized);
+    if (
+      selectedCover &&
+      (!selectedCover.bytes?.byteLength || !selectedCover.hash || !selectedCover.mime)
+    ) {
+      onError("封面資料不完整，請重新選擇封面。");
+      return null;
+    }
+
+    const validDraft: SongInfoDraft = {
+      ...normalized,
+      coverBytes: selectedCover?.bytes,
+      coverMimeType: selectedCover?.mime ?? normalized.coverMimeType,
+      coverHash: selectedCover?.hash ?? normalized.coverHash,
+      coverDataUrl: selectedCover?.previewUrl ?? normalized.coverDataUrl,
+    };
+    const errors = validateSongInfoDraft(validDraft);
 
     if (errors.length > 0) {
       onError(errors[0]);
       return null;
     }
 
-    return normalized;
+    return validDraft;
   };
 
   const handleCoverSelected = async (file?: File) => {
+    if (busy) return;
     if (!file) return;
 
     const coverError = getSongCoverFileValidationError(file);
@@ -186,12 +252,28 @@ export function SongInfoPanel({
     }
 
     try {
-      const coverDataUrl = await readFileAsDataUrl(file);
-      setDraft((current) => ({
-        ...current,
-        coverDataUrl,
-        coverMimeType: file.type,
-      }));
+      const coverBytes = await readFileAsBytes(file);
+      const coverMimeType = getSongCoverMimeType(file);
+      const coverHash = await createSongCoverHash(coverBytes);
+      const coverDataUrl = normalizeSongCoverDataUrl(
+        await readFileAsDataUrl(file),
+        coverMimeType,
+      );
+
+      if (isDevRuntime) {
+        console.debug("[select] draftCoverHash =", coverHash);
+      }
+
+      setSelectedCover(
+        coverHash === track.coverHash
+          ? null
+          : {
+              bytes: coverBytes,
+              mime: coverMimeType,
+              hash: coverHash,
+              previewUrl: coverDataUrl,
+            },
+      );
     } catch {
       onError("封面讀取失敗，請換一張圖片。");
     }
@@ -234,27 +316,7 @@ export function SongInfoPanel({
     }
   };
 
-  const handleSaveToPlayer = async () => {
-    if (!dirty || busy || savingRef.current) return;
-
-    const validDraft = getValidDraft();
-    if (!validDraft) return;
-
-    savingRef.current = true;
-    setBusy(true);
-    try {
-      const ok = await onSaveToPlayer(track.id, validDraft);
-      if (ok) {
-        resetDraftState(createSongInfoDraft(null));
-        onClose();
-      }
-    } catch {
-      onError("儲存失敗，請稍後再試");
-    } finally {
-      savingRef.current = false;
-      setBusy(false);
-    }
-  };
+  const previewCoverUrl = selectedCover?.previewUrl ?? draft.coverDataUrl ?? track.coverDataUrl;
 
   return (
     <div className="fixed inset-0 z-[80] bg-aquarius-navy/60 backdrop-blur-sm">
@@ -281,8 +343,8 @@ export function SongInfoPanel({
               <TrackArtwork
                 track={{
                   ...track,
-                  artworkUrl: draft.coverDataUrl ?? track.artworkUrl,
-                  coverUrl: draft.coverDataUrl ?? track.coverUrl,
+                  artworkUrl: previewCoverUrl ?? track.artworkUrl,
+                  coverUrl: previewCoverUrl ?? track.coverUrl,
                 }}
                 size="lg"
               />
@@ -296,6 +358,7 @@ export function SongInfoPanel({
                 <button
                   type="button"
                   className="mt-4 inline-flex items-center gap-2 rounded-lg border border-aquarius-blue/[0.35] bg-aquarius-blue/[0.14] px-3 py-2 text-xs font-bold text-white transition hover:bg-aquarius-blue/[0.22]"
+                  disabled={busy}
                   onClick={() => coverInputRef.current?.click()}
                 >
                   <ImagePlus className="h-4 w-4" />
@@ -341,14 +404,6 @@ export function SongInfoPanel({
             onClick={closePanel}
           >
             取消
-          </button>
-          <button
-            type="button"
-            className="rounded-lg border border-aquarius-pink/[0.36] bg-aquarius-pink/[0.12] px-4 py-2 text-sm font-bold text-white transition hover:bg-aquarius-pink/[0.2] disabled:cursor-not-allowed disabled:opacity-40"
-            disabled={!dirty || busy}
-            onClick={() => void handleSaveToPlayer()}
-          >
-            儲存到播放器
           </button>
           <button
             type="button"

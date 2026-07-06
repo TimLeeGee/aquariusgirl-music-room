@@ -1,5 +1,134 @@
 # Aquariusgirl Music Room Continue Work
 
+## 2026-07-06 Playing File Lock Release hotfix 0.1.42 完成
+
+- 已修正 Windows EXE 播放中「套用到原始檔」有時保存失敗：根因是 `<audio>` 以 `file:` URL 載入原始檔時 Windows 持有檔案 handle，`rename(tempPath, sourcePath)` 覆蓋被 `EPERM` / `EBUSY` 擋下；macOS rename 可覆蓋開啟中檔案，所以 DMG 驗收不會重現。
+- `src/hooks/useAudioPlayer.ts` 新增 `suspendAudioForFileWrite(trackId)`：僅當寫回目標就是目前載入的歌時，暫停並卸下 audio src 釋放 OS handle，回傳 restore 函式；restore 以一次性 `loadedmetadata` listener 接回同一來源、原播放位置與播放狀態。
+- `src/App.tsx` `handleApplySongInfoToOriginal` 只在 IPC 寫回期間 suspend，`finally` 立刻 resume；pre-read / readback / `putTrackMetadata` 不受影響。
+- `electron/songInfoWriter.ts` 補 `renameWithRetry`（`EPERM` / `EBUSY` / `EACCES` 重試 3 次、150ms）擋防毒短暫鎖檔；重試後仍鎖住回傳明確錯誤「原始檔正被其他程式使用中，請暫停播放後再試一次。原始檔未修改。」
+- 效能：釋放 / 接回 O(1) 只碰目前那一首，不掃曲庫、不重載清單；未新增套件、未改 DB schema、未動 0.1.41 partial-read / full-load retry 與 readback hash 路徑；M1 Air 8GB 與上萬首曲庫無額外負擔。
+- 已通過（Linux 沙盒）：`check:metadata-save-loop`（新增鎖釋放與 rename retry guard）、`check:song-info`（含 writer 真實 wasm roundtrip）、`check:playback-restore`、`check:playlist-logic`、`check:playback-order`、`check:track-list-virtualization`、`check:prompts`、`check:track-display`、`check:track-identity`、`tsc --noEmit`、`npm run electron:compile`。
+- 版本已升 0.1.42（package.json / package-lock.json / exportSettings）。新增 `打包發行.command`：雙擊即在本機跑 `npm run dist:release` 並輸出 log 到 `qa-temp/dist-release.log`；本輪已由 Claude 透過桌面控制執行完成，build exit=0，DMG `hdiutil verify` VALID。0.1.42 installer：
+- `Aquariusgirl Music Room Setup 0.1.42.exe`：667,666,956 bytes，SHA-256 `6d67c44c2c68ecfb838cbeb7d18038cda4fca3d96df1733739d9c58f47e75e7f`
+- `Aquariusgirl Music Room-0.1.42-arm64.dmg`：684,778,895 bytes，SHA-256 `28caa3939b0ed79861cc9763f0d302956adbdce42768669f0ac987156a236f91`
+- DMG `hdiutil verify` VALID；打包時 `dist:release` 內全部 check 再次通過；未簽章、不 push GitHub。詳見 `docs/releases/0.1.42-checksums.md`。
+- 本輪依使用者要求不 push GitHub。
+
+### 接續提示詞
+
+請接續 Aquariusgirl Music Room 0.1.42 後續驗收。先執行 `git status -sb` 與 `git diff --name-only`，不要 reset、不要 push GitHub。0.1.42 已完成 code 修正（播放中檔案鎖釋放 `suspendAudioForFileWrite` + writer `renameWithRetry`）、全部 source check、installer 產出（`release-delivery/installers/`，SHA-256 見 `docs/releases/0.1.42-checksums.md`）。驗收重點：播放中對目前播放那首「套用到原始檔」保存文字與封面各至少兩次，保存瞬間音訊短暫中斷後應自動回到原位置繼續播放；Windows 真機 fresh install 播放中保存不再失敗；重開後 metadata / 封面仍在。不可打開或修改使用者原始 Music 資料夾；使用暫存音樂複本與隔離 profile。
+
+## 2026-07-06 Full-Load Cover Write Guard / Packaged Mouse QA hotfix 0.1.41 完成
+
+- 已修正 packaged Emscripten TagLib 對大封面 FLAC partial read 的 reload / readback 失敗：`electron/songInfoWriter.ts` 先走既有 partial read，只有遇到 `InvalidFormatError` 才對同一首 user-initiated 原始檔做 `partial:false` full-load retry。
+- 已保留單一路徑原則：同一個 TagLib handle 內設定文字與封面，最後只 `saveToFile(tempPath)` 一次再 rename；不恢復 `copyWithTags` / `edit(tempPath)` 雙保存路徑。
+- 已保留 0.1.40 的 selectedCover dirty、防 incomplete cover bytes、original-file readback hash 驗證與 `await putTrackMetadata(reloadedTrack)`。
+- 已通過：`npm run check:song-info`、`npm run check:playback-restore`、`npm run check:metadata-save-loop`、`npm run build`、`npm run electron:compile`、`npm run dist:release`。
+- `scripts/song-info-writer-check.mjs` 已強制 fixture 使用 `node_modules/taglib-wasm/dist` 的 Emscripten wasm，並對 Plazma QA 複本完成 Cover 02 -> Cover 01 -> Cover 02 readback。
+- 0.1.41 installer 已同步到 `release-delivery/installers/`，DMG `hdiutil verify` 為 VALID；`docs/releases/0.1.41-checksums.md` 已建立。
+- packaged DMG app 已用隔離 userData 與暫存 QA FLAC 完成純滑鼠三輪封面驗收：Cover 01 -> Cover 02、Cover 02 -> Cover 01、Cover 01 -> Cover 02。每輪 preview、dirty/apply、busy lock、自動關閉與 readback hash 都通過；「重新讀取音樂標籤」成功；重開同隔離 profile 後最後 Cover 02 與 metadata 仍存在。
+- 0.1.41 最新 installer：EXE 667,666,404 bytes，SHA-256 `35d632c4f6f5646f1c4b8e5900e6e438fcdc99048bff71dde4f9f2c2b5b9b404`；arm64 DMG 684,798,474 bytes，SHA-256 `494531f0796bef677517826c3c38381d9c12bda2a837af9c7954b7a747d93c6c`。
+- Windows 真機仍待補；本輪依使用者要求不要同步 / push GitHub。
+
+### 接續提示詞
+
+請接續 Aquariusgirl Music Room 0.1.41 後續驗收。先執行 `git status -sb` 與 `git diff --name-only`，不要 reset、不要 push GitHub。最新版 installer 位於 `release-delivery/installers/`：`Aquariusgirl Music Room Setup 0.1.41.exe`、`Aquariusgirl Music Room-0.1.41-arm64.dmg`；SHA-256 請以 `docs/releases/0.1.41-checksums.md` 為準。已完成 packaged macOS DMG 隔離 profile 滑鼠三輪封面驗收；下一步若要補，重點是 Windows 真機 fresh install、歌曲資訊 / 封面讀回、播放 / 暫停、資料夾恢復、AI、Mini/dialog focus、簽章與 notarization。不可打開或修改使用者原始 Music 資料夾；使用暫存音樂複本與隔離 profile。
+
+## 2026-07-06 Selected Cover Dirty Guard / Reload Metadata Diagnostics hotfix 0.1.40 完成
+
+- 已完成第二次選封面 dirty 防線：`SongInfoPanel` 以獨立 `selectedCover` 保存同一份 bytes / MIME / hash / preview，文字 dirty 與封面 dirty 分開判斷，不再用 draft 內的 cover 欄位決定封面是否變更。
+- 已修正同一首歌面板開啟期間的 reset 時機：關閉、重新開啟或切換 track id 才重建 draft/savedDraft/selectedCover；同一首歌 dirty 或 busy 時不會被外部 track snapshot 無條件覆蓋。
+- 已保留 apply/readback/IDB 單一路徑：apply 時才組合文字 draft + selected cover；App 端若 cover hash 要更新但 bytes 不見會提示「封面資料不完整，請重新選擇封面。」；成功仍必須 readback hash 通過並 `await putTrackMetadata(reloadedTrack)`。
+- 已補重新讀取診斷：`reloadSongInfoFromOriginal` 對 ok=false / 無 metadata / exception 會輸出 `[reload-metadata] failed` 或 `[reload-metadata] exception`。dev runtime 可看到 `[select] draftCoverHash`、coverDirty/textDirty、apply selected hash、readback hash 與 IDB saved hash。
+- 已通過：`npm run check:song-info`、`npm run check:playlist-logic`、`npm run check:playback-order`、`npm run check:track-list-virtualization`、`npm run check:playback-restore`、`npm run check:metadata-save-loop`、`npm run build`、`npm run electron:compile`、`npm run dist:release`。
+- 0.1.40 installer 已同步到 `release-delivery/installers/`，`docs/releases/0.1.40-checksums.md` 已建立；DMG verify、唯讀掛載讀回版本 / app.asar / taglib wasm 與 Windows NSIS static check 已完成。
+- 0.1.40 最新 installer：EXE 667,665,700 bytes，SHA-256 `bf36fd3b7674cf2aa9ee8adc5111e5dc4933237764ce63e3fb1bd671f121edba`；arm64 DMG 684,776,924 bytes，SHA-256 `e3ec2403a0218ebcb5eda4de9768a2045b33d30c64c225c6654261cb33e7df20`。
+- Windows 真機與完整 packaged GUI 純滑鼠連續封面驗收仍待補；本輪依使用者要求不要同步 / push GitHub。
+
+### 接續提示詞
+
+請接續 Aquariusgirl Music Room 0.1.40 後續驗收。先執行 `git status -sb` 與 `git diff --name-only`，不要 reset。最新版 installer 位於 `release-delivery/installers/`：`Aquariusgirl Music Room Setup 0.1.40.exe`、`Aquariusgirl Music Room-0.1.40-arm64.dmg`；SHA-256 請以 `docs/releases/0.1.40-checksums.md` 為準。重點補驗：使用暫存音樂複本與隔離 profile，對同一首歌連續更換封面至少兩次並「套用到原始檔」，確認第二次 selectedCover dirty 成立、按鈕可按、readback hash 不假成功、重開後封面仍是最後一次成功寫回；再補 Windows 真機 fresh install、播放/暫停、資料夾恢復、AI、Mini/dialog focus。不要新增套件、不要清 IndexedDB、不要重掃曲庫、不要加 `coverRevision`，不要 push GitHub，除非使用者明確要求。
+
+## 2026-07-05 Cover Hash Readback / Playlist Order Persistence hotfix 0.1.39 完成
+
+- 已完成封面保存單一路徑：前端選圖保存同一份 `selectedCoverBytes` / MIME / hash / preview；Electron 寫回原始檔後必須重新讀回 cover bytes 並計算 `coverHash`，readback hash 與 selected hash 不一致或仍等於舊 hash 時不顯示成功。
+- 已完成歌曲資訊面板狀態防線：apply 期間鎖住更換封面 / 套用 / 關閉；成功必須等待 `putTrackMetadata(reloadedTrack)`；第二次開啟面板會清掉 draft / selected bytes / hash / preview / saving / dirty / error，再從最新 current track 建 draft。
+- 已完成 playlist 自訂排序保存：一般 playlist 繼續用 localStorage write-through 與 IndexedDB `savePlaylists`；全部歌曲自訂排序只更新被移動歌曲的 `addedAt` 排序鍵並 `putTrackMetadata(movedTrack)`，避免每次拖曳重寫上萬首。
+- 已通過：`npm run check:song-info`、`npm run check:playlist-logic`、`npm run check:playback-order`、`npm run check:track-list-virtualization`、`npm run check:playback-restore`、`npm run check:metadata-save-loop`、`npm run build`、`npm run electron:compile`、`npm run dist:release`。
+- 0.1.39 installer 已同步到 `release-delivery/installers/`，`docs/releases/0.1.39-checksums.md` 已建立；DMG verify、唯讀掛載讀回版本 / app.asar / packaged guard 字串與 Windows NSIS static check 已完成。
+- 0.1.39 最新 installer：EXE 667,665,556 bytes，SHA-256 `a6f6cdffe625ab243e250c535c0b9ba1f76bce1aea5edbe55263e04ef448efd2`；arm64 DMG 684,792,267 bytes，SHA-256 `4aec705531cff9b6c207c95f72c9c6370d30b50ff4b2c36908d8b4fdcf0a6d23`。
+- Windows 真機與完整 packaged GUI 連續封面滑鼠驗收仍待補；本輪依使用者要求不要同步 / push GitHub。
+
+### 接續提示詞
+
+請接續 Aquariusgirl Music Room 0.1.39 後續驗收。先執行 `git status -sb` 與 `git diff --name-only`，不要 reset。最新版 installer 位於 `release-delivery/installers/`：`Aquariusgirl Music Room Setup 0.1.39.exe`、`Aquariusgirl Music Room-0.1.39-arm64.dmg`；SHA-256 請以 `docs/releases/0.1.39-checksums.md` 為準。重點補驗：Windows 真機 fresh install、同一首歌連續更換封面至少兩次並「套用到原始檔」、readback hash 不假成功、重開後封面仍是最後一次成功寫回、playlist / 全部歌曲自訂排序重開後仍保存、播放/暫停、資料夾恢復、AI、Mini/dialog focus。不要新增套件、不要清 IndexedDB、不要重掃曲庫、不要加 `coverRevision`，不要 push GitHub，除非使用者明確要求。
+
+## 2026-07-05 Cover MIME Alias / Sort Controls Guard hotfix 0.1.38 完成
+
+- 已完成 source 修正：`SortControls` 保留原生 select，補 `aria-label` 與 `min-w-[9.5rem]`，讓 playlist 排序選單在 packaged UI 不會看起來只剩單一排序。
+- 已補 source guard：`scripts/track-list-virtualization-check.mjs` 會檢查原本 7 種排序 option 與標籤，防止後續改版把多樣排序方式拿掉。
+- 已完成封面 MIME alias 修正：`src/utils/songInfo.ts` 與 `electron/songInfoWriter.ts` 將 `image/jpg` / `image/pjpeg` canonicalize 成 `image/jpeg`，`image/x-png` canonicalize 成 `image/png`；GIF / WebP / 真實不支援 MIME 仍拒絕。
+- 已通過：`npm run check:song-info`、真實 Plazma 暫存複本封面 roundtrip、`npm run check:track-list-virtualization`、`npm run check:playback-order`、`npm run check:playback-restore`、`npm run check:metadata-save-loop`、`npm run build`、`npm run electron:compile`、`npm run dist:release`。
+- 0.1.38 installer 已同步到 `release-delivery/installers/`，`docs/releases/0.1.38-checksums.md` 已建立；DMG verify、唯讀掛載讀回版本 / app.asar / packaged alias 字串與 Windows NSIS static check 已完成。
+- packaged macOS GUI 已用隔離 profile 開啟，排序下拉選單 7 種選項都可讀回；原生封面選檔器可用真實滑鼠打開，但純滑鼠選檔被 macOS 隱私提示擋住，需要使用者明確允許後才能完成。封面寫回核心已用暫存複本 writer/readback 驗證。
+- 本輪依使用者要求不要同步 / push GitHub。
+
+### 接續提示詞
+
+請接續 Aquariusgirl Music Room 0.1.38 後續驗收。先執行 `git status -sb` 與 `git diff --name-only`，不要 reset。最新版 installer 位於 `release-delivery/installers/`：`Aquariusgirl Music Room Setup 0.1.38.exe`、`Aquariusgirl Music Room-0.1.38-arm64.dmg`；SHA-256 請以 `docs/releases/0.1.38-checksums.md` 為準。重點補驗：Windows 真機 fresh install、排序下拉選單 7 種選項、封面更換與「套用到原始檔」、播放/暫停、資料夾恢復、AI、Mini/dialog focus；若要在 macOS 完成純滑鼠原生選檔流程，需要使用者手動允許 Codex / System Events 的隱私提示。不要新增套件、不要清 IndexedDB、不要重掃曲庫，不要 push GitHub，除非使用者明確要求。
+
+## 2026-07-05 Cover MIME Fallback / Second Cover Save hotfix 0.1.37 完成
+
+- 已完成 source 修正：`src/utils/songInfo.ts` 新增空白 / `application/octet-stream` MIME fallback，只有副檔名為 `.jpg` / `.jpeg` / `.png` 時才推回 `image/jpeg` / `image/png`；`SongInfoPanel` 會正規化 `FileReader` 產生的 data URL prefix。
+- 已完成 Electron writer 防線：`electron/songInfoWriter.ts` 的 `decodeCoverDataUrl()` 允許空白 / octet-stream data URL 使用 `draft.coverMimeType` fallback，但真實不支援 MIME 仍會拒絕；5 MB 封面上限、MP3/FLAC/M4A 原始檔寫回與單曲 IndexedDB 保存路徑不改。
+- 已先讓新增檢查紅燈：舊程式無法接受空白 / octet-stream cover MIME；修正後 `scripts/song-info-check.mjs` 與 `scripts/song-info-writer-check.mjs` PASS。
+- 已通過：`npm run check:song-info`、真實 Plazma 暫存複本 Cover 02 -> Cover 01 roundtrip、`npm run check:playback-restore`、`npm run check:metadata-save-loop`、`npm run build`、`npm run electron:compile`。
+- 升權 `npm run dist:release` 已通過並同步 0.1.37 EXE / DMG 到 `release-delivery/installers/`，暫存 `release/` 已移除。
+- 已完成 DMG `hdiutil verify` VALID、唯讀掛載讀回 `CFBundleShortVersionString` / `CFBundleVersion` / `app.asar` package version 均為 0.1.37、Mach-O arm64、`Contents/Resources/taglib-wasm/taglib-web.wasm` 存在；packaged main / renderer 讀回確認 cover MIME fallback 存在。Windows EXE static check 為 PE32 Nullsoft NSIS installer，未在 Windows 真機執行。
+- 已補 `docs/releases/0.1.37-checksums.md`。依使用者要求，本輪不要 push GitHub。
+
+### 接續提示詞
+
+請接續 Aquariusgirl Music Room 0.1.37 Windows 真機 / packaged GUI 封面寫回驗收。先執行 `git status -sb` 與 `git diff --name-only`，不要 reset。最新版 installer 位於 `release-delivery/installers/`：`Aquariusgirl Music Room Setup 0.1.37.exe`、`Aquariusgirl Music Room-0.1.37-arm64.dmg`；SHA-256 請以 `docs/releases/0.1.37-checksums.md` 為準。重點驗證：使用暫存音樂複本與隔離 profile，對同一首米津玄師 / Plazma 連續 Cover 02 -> Cover 01 -> Cover 02 或至少兩次更換封面並「套用到原始檔」，第二次不因空白 / octet-stream MIME 失敗；重開後封面仍是最後一次成功寫回的封面；播放中切歌再切回不卡；Windows fresh install、歌曲資訊 / 封面讀回、播放 / 暫停、資料夾恢復、AI、Mini/dialog focus。若要發布到 GitHub，必須等使用者明確指示後再 commit / push / readback。本輪目前依使用者要求未同步 / push GitHub。
+
+## 2026-07-05 Song Info Single Save Path / TagLib Property Map Restore hotfix 0.1.36 完成
+
+- 已完成 source 修正：`electron/songInfoWriter.ts` 補 TagLib property-map alias，讓 `TITLE` / `ARTIST` / `ALBUMARTIST` / `TRACKNUMBER` / `DISCNUMBER` 等大寫 metadata key 正確映射回歌曲資訊欄位；保留 0.1.35 的 unpacked `taglib-web.wasm` 與 `forceWasmType: "emscripten"`。
+- 已依使用者要求移除歌曲資訊面板「儲存到播放器」按鈕與 `App.tsx` player-local save handler，避免播放器 IndexedDB override 與原始檔 tag 雙路徑再次互相打架；目前只保留「套用到原始檔」：寫回原檔、重新讀回該首、再 `putTrackMetadata(reloadedTrack)`。
+- 已通過：`npm run check:song-info`、`npm run check:playback-restore`、`npm run check:metadata-save-loop`、`npm run build`、`npm run electron:compile`。
+- 升權 `npm run dist:release` 已通過並同步 0.1.36 EXE / DMG 到 `release-delivery/installers/`，暫存 `release/` 已移除。
+- 已完成 DMG `hdiutil verify` VALID、唯讀掛載讀回 `CFBundleShortVersionString` / `CFBundleVersion` / `app.asar` package version 均為 0.1.36、Mach-O arm64、`Contents/Resources/taglib-wasm/taglib-web.wasm` 存在；packaged renderer 確認「儲存到播放器」已不存在且「套用到原始檔」仍存在；packaged main 確認 property alias 與 wasm path 存在。Windows EXE static check 為 PE32 Nullsoft NSIS installer，本機 `bsdtar` 無法拆 NSIS，未在 Windows 真機執行。
+- 已補 `docs/releases/0.1.36-checksums.md`，並更新 installed `build-music-player` 技能到 0.1.36 歷史脈絡。依使用者要求，本輪不要 push GitHub。
+
+### 接續提示詞
+
+請接續 Aquariusgirl Music Room 0.1.36 Windows 真機 / GitHub 後續驗收。先執行 `git status -sb` 與 `git diff --name-only`，不要 reset。最新版 installer 位於 `release-delivery/installers/`：`Aquariusgirl Music Room Setup 0.1.36.exe`、`Aquariusgirl Music Room-0.1.36-arm64.dmg`；SHA-256 請以 `docs/releases/0.1.36-checksums.md` 為準。重點驗證：Windows fresh install 後加入同一批歌曲，歌曲資訊 / 封面 metadata 可正常讀回，不再因 TagLib 大寫 property key 漏掉歌手 / 專輯歌手 / 曲目；歌曲資訊面板不再有「儲存到播放器」，只保留「套用到原始檔」；播放 / 暫停、資料夾恢復、AI、Mini/dialog focus。若要發布到 GitHub，依使用者明確指示後再 commit / push / readback。本輪目前依使用者要求未同步 / push GitHub。
+
+## 2026-07-05 Packaged EXE Metadata Wasm Restore hotfix 0.1.35 完成
+
+- 已完成 source 修正：`electron/songInfoWriter.ts` 不再使用無法指定 wasm 路徑的 `taglib-wasm/simple`，改為共用 `TagLib.initialize(createTagLibLoadOptions())`，packaged 時優先讀 `resources/taglib-wasm/taglib-web.wasm` 並 `forceWasmType: "emscripten"`。
+- 已完成打包設定：`package.json` 升到 0.1.35，`extraResources` 外帶 `node_modules/taglib-wasm/dist/taglib-web.wasm`，新增 `check:taglib-wasm-packaging` 並串入 `check:song-info`、`dist:release`、`dist:mac`、`dist:win`；`package-lock.json` 與 `src/utils/exportSettings.ts` 版本也已同步到 0.1.35。
+- 已通過：紅燈先行 `node scripts/taglib-wasm-packaging-check.mjs` 在舊設定失敗；修正後 `npm run check:taglib-wasm-packaging` PASS、`npm run check:song-info` PASS、`npm run build` PASS、`npm run electron:compile` PASS。
+- 升權 `npm run dist:release` 已通過並同步 0.1.35 EXE / DMG 到 `release-delivery/installers/`，暫存 `release/` 已移除。
+- 已完成 DMG `hdiutil verify` VALID、唯讀掛載讀回 `CFBundleShortVersionString` / `CFBundleVersion` / `app.asar` package version 均為 0.1.35、Mach-O arm64、`Contents/Resources/taglib-wasm/taglib-web.wasm` 存在；Windows EXE static check 為 PE32 Nullsoft NSIS installer，本機 `bsdtar` 無法拆 NSIS，未在 Windows 真機執行。
+- 已補 `docs/releases/0.1.35-checksums.md`，並更新 installed `build-music-player` 技能到 0.1.35 歷史脈絡。依使用者要求，本輪不要 push GitHub。
+
+### 接續提示詞
+
+請接續 Aquariusgirl Music Room 0.1.35 Windows 真機 / GitHub 後續驗收。先執行 `git status -sb` 與 `git diff --name-only`，不要 reset。最新版 installer 位於 `release-delivery/installers/`：`Aquariusgirl Music Room Setup 0.1.35.exe`、`Aquariusgirl Music Room-0.1.35-arm64.dmg`；SHA-256 請以 `docs/releases/0.1.35-checksums.md` 為準。重點驗證：Windows fresh install 後加入同一批歌曲，歌曲資訊 / 封面 metadata 不再退回檔名 / 未知歌手；播放 / 暫停、資料夾恢復、AI、Mini/dialog focus；若要發布到 GitHub，依使用者明確指示後再 commit / push / readback。本輪目前依使用者要求未同步 / push GitHub。
+
+## 2026-07-05 Playlist Panel Scroll Restore hotfix 0.1.34 完成
+
+- 已完成 source 修正：`PlaylistPanel` 從只有 `max-h-[calc(100vh-10rem)] min-h-[520px]` 改為同時具備 `h-[calc(100vh-10rem)] max-h-[calc(100vh-10rem)] min-h-[520px]`，讓既有 `TrackList` 內部 `overflow-y-auto` 有穩定父層高度可捲。
+- 主視窗卷軸保留：`AppLayout` 仍是 `playlist-scrollbar relative z-10 h-screen overflow-y-auto overflow-x-hidden`；`body` 仍只 `overflow-x: hidden`，沒有把主視窗捲軸鎖死。
+- 未新增套件、未重做清單、未改 metadata / cover / IndexedDB / playback / Mini Player；只補 playlist 面板高度邊界。
+- 已先讓 `check:track-list-virtualization` 對缺少 playlist 實際高度紅燈，再修到 PASS；已通過 `npm run build`、`npm run electron:compile`、升權 `npm run dist:release`。
+- 已補 `docs/releases/0.1.34-checksums.md`；DMG verify、唯讀掛載讀回版本 / app.asar、packaged renderer scroll class、packaged CSS overflow 與 Windows NSIS static check 已完成。依使用者要求，本輪沒有同步 / push 到 GitHub。Windows 真機與 packaged GUI 大曲庫滑鼠 / 觸控板滾動仍待補驗。
+
+### 接續提示詞
+
+請接續 Aquariusgirl Music Room 0.1.34 Windows / packaged GUI 大曲庫卷軸驗收。最新版 installer 位於 `release-delivery/installers/`：`Aquariusgirl Music Room Setup 0.1.34.exe`、`Aquariusgirl Music Room-0.1.34-arm64.dmg`。SHA-256 請以 `docs/releases/0.1.34-checksums.md` 為準。重點驗證：主視窗右側大型卷軸仍在；playlist 歌曲列表在歌曲很多時出現自己的內部小卷軸；滾輪在 playlist 區優先捲歌曲列表；兩個卷軸都只在內容超出時出現；沒有水平卷軸；底部內容與 Mini Player 不被裁切；Windows fresh install、播放/暫停、資料夾恢復、AI、Mini/dialog focus。不可打開或修改使用者原始 Music 資料夾，使用暫存音樂複本與隔離 profile。注意：0.1.34 目前本機已完成，但依使用者要求未 push GitHub。
+
 ## 2026-07-05 Nested Main and Playlist Scroll hotfix 0.1.33 完成
 
 - 已完成 source 修正：`AppLayout` 外層主內容容器改成 `h-screen overflow-y-auto overflow-x-hidden`，主視窗內容超出 viewport 時恢復右側大型垂直卷軸；`body` 不再全域 `overflow: hidden` 鎖死主視窗，只保留 `overflow-x: hidden`。

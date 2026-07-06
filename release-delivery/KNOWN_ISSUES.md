@@ -1,7 +1,76 @@
 # 已知問題
 
-版本：0.1.33
-文件更新：2026-07-05
+版本：0.1.42
+文件更新：2026-07-06
+
+## 0.1.42 仍需完成
+
+- 尚未在 Windows 真機驗證「播放中保存」修正：重點是播放中對目前那首連續套用文字與封面各兩次，保存瞬間音訊短暫中斷後自動回到原位置續播。
+- 保存瞬間音訊會短暫中斷（釋放檔案 handle 的必要代價）；若使用者回報中斷過長，升級路徑是只在 Windows 平台 suspend。
+- 其餘 0.1.41 已知問題（簽章 / notarization、WAV 不支援寫回等）不變。
+
+## 0.1.41 仍需完成
+
+- 尚未在 Windows 真機安裝 0.1.41 EXE 驗證歌曲資訊 / 封面讀回、連續封面寫回、重新讀取音樂標籤、重開保存、播放/暫停、資料夾恢復、AI、Mini/dialog focus；目前 Windows 只有 NSIS static check。
+- 0.1.41 packaged macOS DMG 已用隔離 userData 與暫存 Plazma FLAC 完成三輪滑鼠封面驗收，最終 Cover 02 與 metadata 重開後仍存在；這不代表使用者正式 Music 資料夾或 Windows 真機已驗證。
+- 0.1.41 只補 packaged TagLib partial read 失敗時的單曲 full-load retry；沒有新增套件、沒有清 IndexedDB、沒有重掃曲庫、沒有改 DB schema、沒有加 `coverRevision`、沒有補新的 MIME 側門、沒有恢復「儲存到播放器」。
+- 原始檔寫回目前仍只支援 MP3、FLAC、M4A；WAV 等格式不提供原始檔 tag 寫回。
+- macOS DMG 未做 Developer ID signing / notarization；Windows EXE 未做 code signing。
+- 本輪依使用者要求不同步 / push 到 GitHub。
+
+## 0.1.40 仍需完成
+
+- 尚未在 Windows 真機安裝 0.1.40 EXE 驗證 selectedCover dirty、防呆、readback hash、播放/暫停、資料夾恢復、AI、Mini/dialog focus；目前已完成 source-level、防回歸檢查、installer 打包、DMG verify、唯讀掛載讀回與 Windows NSIS static check。
+- 尚未做完整 packaged GUI 純滑鼠連續封面驗收；後續需使用暫存音樂複本與隔離 profile，對同一首歌連續更換封面至少兩次並「套用到原始檔」，確認第二次 dirty 成立、按鈕可按、readback hash 不假成功、重開後仍保留最後一次封面。不可打開或修改使用者原始 Music 資料夾。
+- 0.1.40 只補 `SongInfoPanel` selectedCover 狀態機、App 端 cover bytes 防呆與 reload metadata 診斷；沒有新增套件、沒有清 IndexedDB、沒有重掃曲庫、沒有改 DB schema、沒有加 `coverRevision`、沒有補新的 MIME 側門、沒有恢復「儲存到播放器」。
+- 原始檔寫回目前仍只支援 MP3、FLAC、M4A；WAV 等格式不提供原始檔 tag 寫回。
+- 本輪依使用者要求不同步 / push 到 GitHub。
+
+## 0.1.39 仍需完成（歷史）
+
+- 尚未在 Windows 真機安裝 0.1.39 EXE 驗證封面 readback hash 流程、playlist / 全部歌曲自訂排序保存、播放/暫停、資料夾恢復、AI、Mini/dialog focus；目前已完成 source-level、防回歸檢查、installer 打包、DMG verify、唯讀掛載讀回與 Windows NSIS static check。
+- 尚未做完整 packaged GUI 純滑鼠連續封面驗收；後續需使用暫存音樂複本與隔離 profile，對同一首歌連續更換封面至少兩次並「套用到原始檔」，確認第二次 readback hash 不假成功、重開後仍保留最後一次封面。不可打開或修改使用者原始 Music 資料夾。
+- 0.1.39 只補封面 readback hash 單一路徑與 playlist 排序保存；沒有新增套件、沒有清 IndexedDB、沒有重掃曲庫、沒有改 DB schema、沒有加 `coverRevision`、沒有補新的 MIME 側門。
+- 原始檔寫回目前仍只支援 MP3、FLAC、M4A；WAV 等格式不提供原始檔 tag 寫回。
+- 本輪依使用者要求不同步 / push 到 GitHub。
+
+## 0.1.38 仍需完成
+
+- 尚未在 Windows 真機安裝 0.1.38 EXE 驗證排序選單、封面更換與原始檔寫回；目前已完成 source-level、防回歸檢查、真實 Plazma 暫存複本 writer/readback、installer 打包、DMG verify、唯讀掛載讀回與 Windows NSIS static check。
+- packaged macOS GUI 已用隔離 profile 開啟並確認排序下拉選單可看到原本 7 種模式；原生封面選檔器可用真實滑鼠打開，但純滑鼠選檔被 macOS 隱私提示擋住，需要使用者明確允許 Codex / System Events 權限後才能完整驗證。封面寫回核心已用暫存音樂複本 writer/readback 驗證。
+- 0.1.38 只補排序選單防回歸與封面 MIME 別名；沒有新增套件、沒有重掃曲庫、沒有改 DB schema、沒有壓縮封面。若未來真實上萬首曲庫仍需要效能改善，另開縮圖 / cover store / 背景索引設計，不混進本 hotfix。
+- 原始檔寫回目前仍只支援 MP3、FLAC、M4A；WAV 等格式不提供原始檔 tag 寫回。
+- 本輪依使用者要求不同步 / push 到 GitHub。
+
+## 0.1.37 仍需完成
+
+- 尚未在 Windows 真機安裝 0.1.37 EXE 驗證第二次封面更換與原始檔寫回；目前已完成 source-level、防回歸檢查、真實 Plazma 暫存複本 writer roundtrip、installer 打包、DMG verify、唯讀掛載讀回與 Windows NSIS static check。
+- 尚未做完整 packaged GUI 滑鼠流程：仍需使用暫存音樂複本與隔離 profile 驗證同一首歌連續 Cover 02 -> Cover 01 -> Cover 02 或至少兩次更換封面並「套用到原始檔」，第二次不因空白 / `application/octet-stream` MIME 失敗，重開後仍保留最後一次封面。
+- 0.1.37 只補封面 MIME fallback；沒有新增套件、沒有重掃曲庫、沒有改 DB schema、沒有壓縮封面。若未來真實上萬首曲庫仍需要更進一步效能改善，另開縮圖 / cover store / 背景索引設計，不混進本 hotfix。
+- 原始檔寫回目前仍只支援 MP3、FLAC、M4A；WAV 等格式不提供原始檔 tag 寫回。
+- 本輪依使用者要求不同步 / push 到 GitHub。
+
+## 0.1.36 仍需完成
+
+- 尚未在 Windows 真機安裝 0.1.36 EXE 驗證歌曲資訊 metadata / cover 是否完整讀回；目前已完成 source-level、防回歸檢查、installer 打包、DMG verify、唯讀掛載讀回與 Windows NSIS static check。
+- 0.1.36 移除「儲存到播放器」是刻意設計：目前只保留原始檔寫回路徑，避免播放器 IndexedDB override 與原始檔 tag 雙路徑互相覆蓋。若未來真的需要「只保存到播放器」，需另設明確 UI 文案、資料來源標記與驗收，不混進本 hotfix。
+- 0.1.36 只補 TagLib property-key alias；若未來真實上萬首 metadata 讀取效能不足，再另開 WASI path-mode / 背景索引設計，不混進這個 hotfix。
+- 原始檔寫回目前仍只支援 MP3、FLAC、M4A；WAV 等格式不提供原始檔 tag 寫回。
+- 本輪依使用者要求不同步 / push 到 GitHub。
+
+## 0.1.35 仍需完成
+
+- 尚未在 Windows 真機安裝 0.1.35 EXE 驗證歌曲資訊 metadata / cover 是否恢復；目前已完成 source-level、防回歸檢查、installer 打包、DMG verify、唯讀掛載讀回與 Windows NSIS static check。
+- 0.1.35 使用 Emscripten buffer mode 解決 packaged wasm 路徑問題；若未來真實上萬首 metadata 讀取效能不足，再另開 WASI path-mode / 背景索引設計，不混進這個 hotfix。
+- 本輪依使用者要求不同步 / push 到 GitHub。
+
+## 0.1.34 仍需完成
+
+- 尚未用 packaged GUI 載入 100+ 首暫存歌曲驗證：主視窗右側大型卷軸仍在、playlist 歌曲列表在歌曲很多時出現自己的內部小卷軸、滾輪在 playlist 區優先捲歌曲列表、兩個卷軸都只在內容超出時出現、沒有水平卷軸、底部內容不被 Mini Player 裁切。
+- 尚未在 Windows 真機安裝 0.1.34 EXE 驗證 fresh install、主視窗卷軸、playlist 內部卷軸、播放/暫停、資料夾恢復、AI、Mini/dialog focus。
+- 0.1.34 source-level guard 與 packaged asar/CSS 讀回已確認主視窗與 playlist 是兩個不同 scroll container，且 `PlaylistPanel` 有實際高度；但這不等於完整 packaged GUI 大曲庫壓力測試。
+- 0.1.34 未新增 virtualization 套件；若未來真實上萬首 GUI 滑動仍不足，應另開成熟 virtualization / thumbnail cache 設計，不混進這個 hotfix。
+- 本輪依使用者要求未同步 / push 到 GitHub；若之後要發布到遠端，需另行 commit / push / 讀回 `origin/main`。
 
 ## 0.1.33 仍需完成
 
@@ -183,10 +252,56 @@
 
 ## Known Issues
 
-Version: 0.1.33
+Version: 0.1.39
 Document update: 2026-07-05
 
-## 0.1.33 Manual QA Still Needed
+## 0.1.39 Manual QA Still Needed
+
+- Real Windows 0.1.39 EXE QA is still needed to verify cover readback-hash writeback, playlist / all-songs custom-order persistence, playback/pause, folder restore, AI, and Mini/dialog focus. Current evidence includes source-level checks, installer build, DMG verify, read-only DMG readback, packaged guard readback, and Windows NSIS static check.
+- Full packaged GUI mouse-only repeated-cover QA is still needed with temporary music copies and an isolated profile: replace the same track cover at least twice, apply to the original file, confirm readback hash prevents false success, and restart to confirm the final cover remains. Do not open or modify the user's original Music folder.
+- 0.1.39 only adds the cover readback-hash path and playlist order persistence. It does not add dependencies, clear IndexedDB, rescan the library, change the DB schema, add `coverRevision`, or add new MIME side doors.
+- Original-file tag writeback is still limited to MP3, FLAC, and M4A.
+- This round was not synced or pushed to GitHub per user request.
+
+## 0.1.38 Manual QA Still Needed
+
+- Real Windows 0.1.38 EXE QA is still needed to verify the seven-option sort dropdown, cover replacement, and original-file writeback. Current evidence includes source-level checks, real Plazma temp-copy writer/readback, installer build, DMG verify, read-only DMG readback, packaged alias readback, and Windows NSIS static check.
+- Packaged macOS GUI was opened from the DMG with an isolated profile, and the seven sort options were confirmed. The native cover file picker can be opened by real mouse click, but full mouse-only cover selection needs explicit user approval for the macOS privacy prompt; Codex did not grant that permission on the user's behalf.
+- 0.1.38 only adds sort-control guarding and cover MIME aliases. It does not add dependencies, rescan the library, change the DB schema, or compress covers.
+- Original-file tag writeback is still limited to MP3, FLAC, and M4A.
+- This round was not synced or pushed to GitHub per user request.
+
+## 0.1.37 Manual QA Still Needed
+
+- Real Windows 0.1.37 EXE QA is still needed to verify repeated cover replacement and original-file writeback. Current evidence includes source-level checks, real Plazma temp-copy writer roundtrip, installer build, DMG verify, read-only DMG readback, packaged fallback readback, and Windows NSIS static check.
+- Full packaged GUI mouse QA is still needed with temporary music copies and an isolated profile: replace the same track cover at least twice, apply to the original file, confirm the second write does not fail because of empty / `application/octet-stream` MIME, and restart to confirm the final cover remains.
+- 0.1.37 only adds cover MIME fallback. It does not add dependencies, rescan the library, change the DB schema, or compress covers.
+- Original-file tag writeback is still limited to MP3, FLAC, and M4A.
+- This round was not synced or pushed to GitHub per user request.
+
+## 0.1.36 Manual QA Still Needed
+
+- Real Windows 0.1.36 EXE QA is still needed to verify metadata / cover reads are complete. Current evidence includes source-level checks, packaging regression checks, installer build, DMG verify, read-only DMG readback, packaged renderer/main readback, and Windows NSIS static check.
+- Removing the player-local "save to player" button is intentional. The current song-info save path writes supported MP3/FLAC/M4A files back to the original file, rereads the track, and saves that refreshed single-track metadata record.
+- 0.1.36 only adds TagLib property-key aliases. If real 10k-track metadata performance is not enough, design WASI path mode / background indexing separately later.
+- Original-file tag writeback is still limited to MP3, FLAC, and M4A.
+- This round was not synced or pushed to GitHub per user request.
+
+## 0.1.35 Manual QA Still Needed
+
+- Real Windows 0.1.35 EXE QA is still needed to verify metadata / cover reads are restored. Current evidence includes source-level checks, packaging regression checks, installer build, DMG verify, read-only DMG readback, and Windows NSIS static check.
+- 0.1.35 intentionally uses Emscripten buffer mode for packaged metadata reads. If real 10k-track metadata performance is not enough, design WASI path mode / background indexing separately later.
+- This round was not synced or pushed to GitHub per user request.
+
+## 0.1.34 Manual QA Still Needed
+
+- Packaged GUI QA with 100+ temp tracks is still needed to verify the main-window scrollbar remains available, the playlist song list shows its own internal scrollbar when long, mouse wheel events over the playlist prioritize the song list, both scrollbars appear only on overflow, no horizontal scrollbar appears, and bottom content is not clipped by the mini player.
+- Real Windows 0.1.34 EXE QA is still needed for fresh install, main-window scrollbar, playlist-internal scrollbar, playback/pause, folder restore, AI, Mini player, and dialog focus.
+- The 0.1.34 source-level guard and packaged asar/CSS readback confirm the main window and playlist are separate scroll containers and `PlaylistPanel` has a real height bound, but this is not a full packaged GUI large-library stress test.
+- 0.1.34 did not add a virtualization dependency; if real 10k-track GUI scrolling still falls short, use a separate mature virtualization / thumbnail-cache design later.
+- This round was not synced or pushed to GitHub per user request; a later release step must commit / push / read back `origin/main` if remote publishing is needed.
+
+## 0.1.33 Manual QA Still Needed (Historical)
 
 - Packaged GUI QA with 100+ temp tracks is still needed to verify main-window scrolling over general content, playlist-internal scrolling over the song list, both scrollbars appearing only on overflow, no horizontal scrollbar, and no bottom-content clipping by the mini player.
 - Real Windows 0.1.33 EXE QA is still needed for fresh install, main-window scrollbar, playlist scrollbar, playback/pause, folder restore, AI, Mini player, and dialog focus.

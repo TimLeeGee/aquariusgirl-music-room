@@ -60,6 +60,9 @@ assert.deepEqual(excludeFromSmartPlaylist(["song-1"], "song-1"), ["song-1"]);
 
 const appSource = readFileSync("src/App.tsx", "utf8");
 const playlistHookSource = readFileSync("src/hooks/usePlaylists.ts", "utf8");
+const localTracksSource = readFileSync("src/hooks/useLocalTracks.ts", "utf8");
+const localStorageSource = readFileSync("src/hooks/useLocalStorage.ts", "utf8");
+const musicLibraryDbSource = readFileSync("src/hooks/useMusicLibraryDb.ts", "utf8");
 const smartPlaylistSource = readFileSync("src/utils/evaluateSmartPlaylist.ts", "utf8");
 const deleteHandlerSource = appSource.slice(
   appSource.indexOf("const handleDeletePlaylist"),
@@ -86,5 +89,12 @@ assert.doesNotMatch(trackItemSource, /max-w-32/);
 assert.match(appSource, /excludeTrackFromSmartPlaylist/);
 assert.match(playlistHookSource, /excludedTrackIds: Array\.from\(new Set/);
 assert.match(smartPlaylistSource, /excludedTrackIds\.has\(track\.id\)/);
+assert.match(localStorageSource, /window\.localStorage\.setItem\(key, JSON\.stringify\(resolvedValue\)\)/);
+assert.match(musicLibraryDbSource, /savePlaylists\(playlists\)/);
+assert.match(localTracksSource, /return nextMovedTrack/);
+assert.match(localTracksSource, /createMovedTrackAddedAt/);
+assert.match(localTracksSource, /orderTracksForReorder/);
+assert.match(appSource, /const movedTrack = moveTrack\(fromIndex, toIndex, filteredTracks\.map/);
+assert.match(appSource, /libraryDb\.putTrackMetadata\(movedTrack\)/);
 
 console.log("playlist logic check passed");

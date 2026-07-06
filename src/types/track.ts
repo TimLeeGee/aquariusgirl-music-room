@@ -22,6 +22,7 @@ export type Track = {
   coverUrl?: string;
   coverDataUrl?: string;
   coverMimeType?: string;
+  coverHash?: string;
   metadataLoaded?: boolean;
   metadataError?: string;
   metadataOverride?: boolean;

@@ -3,6 +3,7 @@ import type { Track } from "../types/track";
 import {
   createFileSignature,
   createSafeTrackId,
+  isSupportedAudioPath,
   partitionAudioFiles,
 } from "../utils/audioFiles";
 import { parseTrackName } from "../utils/parseTrackName";
@@ -46,8 +47,47 @@ function hasStoredMetadata(stored: StoredTrackMetadata) {
       stored.discNumber?.trim() ||
       stored.comment?.trim() ||
       stored.composer?.trim() ||
-      stored.coverDataUrl,
+      stored.coverDataUrl ||
+      stored.coverHash,
   );
+}
+
+function createMovedTrackAddedAt(tracksWithoutMoved: Track[], toIndex: number) {
+  const previousAddedAt = tracksWithoutMoved[toIndex - 1]?.addedAt;
+  const nextAddedAt = tracksWithoutMoved[toIndex]?.addedAt;
+
+  if (
+    typeof previousAddedAt === "number" &&
+    typeof nextAddedAt === "number" &&
+    Number.isFinite(previousAddedAt) &&
+    Number.isFinite(nextAddedAt) &&
+    nextAddedAt > previousAddedAt
+  ) {
+    return previousAddedAt + (nextAddedAt - previousAddedAt) / 2;
+  }
+
+  if (typeof previousAddedAt === "number" && Number.isFinite(previousAddedAt)) {
+    return previousAddedAt + 1;
+  }
+
+  if (typeof nextAddedAt === "number" && Number.isFinite(nextAddedAt)) {
+    return nextAddedAt - 1;
+  }
+
+  return Date.now();
+}
+
+function orderTracksForReorder(currentTracks: Track[], orderedTrackIds?: string[]) {
+  if (!orderedTrackIds || orderedTrackIds.length !== currentTracks.length) {
+    return currentTracks;
+  }
+
+  const tracksById = new Map(currentTracks.map((track) => [track.id, track]));
+  const orderedTracks = orderedTrackIds
+    .map((trackId) => tracksById.get(trackId))
+    .filter((track): track is Track => Boolean(track));
+
+  return orderedTracks.length === currentTracks.length ? orderedTracks : currentTracks;
 }
 
 export function useLocalTracks({
@@ -183,6 +223,7 @@ export function useLocalTracks({
         coverUrl: artworkUrl || track.coverUrl,
         coverDataUrl: track.coverDataUrl,
         coverMimeType: metadata.coverMimeType || track.coverMimeType,
+        coverHash: track.coverHash,
         metadataLoaded: metadata.metadataLoaded,
         metadataError: metadata.metadataError,
         metadataOverride: false,
@@ -227,6 +268,7 @@ export function useLocalTracks({
           coverUrl: normalized.coverDataUrl,
           coverDataUrl: normalized.coverDataUrl,
           coverMimeType: normalized.coverMimeType,
+          coverHash: normalized.coverHash,
           metadataLoaded: true,
           metadataError: undefined,
           metadataOverride: options.metadataOverride ?? false,
@@ -297,6 +339,7 @@ export function useLocalTracks({
         coverUrl: artworkUrl,
         coverDataUrl: undefined,
         coverMimeType: metadata.coverMimeType,
+        coverHash: undefined,
         metadataLoaded: metadata.metadataLoaded,
         metadataError: metadata.metadataError,
         metadataOverride: false,
@@ -390,6 +433,7 @@ export function useLocalTracks({
             coverDataUrl: stored.coverDataUrl,
             coverUrl: stored.coverDataUrl ?? track.coverUrl,
             artworkUrl: stored.coverDataUrl ?? track.artworkUrl,
+            coverHash: stored.coverHash ?? track.coverHash,
             coverMimeType: stored.coverMimeType ?? track.coverMimeType,
             metadataLoaded: track.metadataLoaded || hasStoredMetadata(stored),
             metadataOverride: stored.metadataOverride,
@@ -406,7 +450,8 @@ export function useLocalTracks({
             nextTrack.discNumber !== track.discNumber ||
             nextTrack.comment !== track.comment ||
             nextTrack.composer !== track.composer ||
-            nextTrack.coverDataUrl !== track.coverDataUrl
+            nextTrack.coverDataUrl !== track.coverDataUrl ||
+            nextTrack.coverHash !== track.coverHash
           ) {
             if (stored.coverDataUrl && stored.coverDataUrl !== track.coverDataUrl) {
               revokeTrackArtworkUrls(track);
@@ -458,6 +503,11 @@ export function useLocalTracks({
         const localFile = file as LocalAudioFile;
         const parsed = parseTrackName(file.name);
         const songInfo = localFile.songInfo ? normalizeSongInfoDraft(localFile.songInfo) : null;
+        const sourcePathCandidate = localFile.sourcePath ?? localFile.path;
+        const sourcePath =
+          sourcePathCandidate && isSupportedAudioPath(sourcePathCandidate)
+            ? sourcePathCandidate
+            : undefined;
 
         return {
           id: createSafeTrackId(file),
@@ -476,10 +526,11 @@ export function useLocalTracks({
           coverDataUrl: songInfo?.coverDataUrl,
           coverUrl: songInfo?.coverDataUrl,
           artworkUrl: songInfo?.coverDataUrl,
+          coverHash: songInfo?.coverHash,
           coverMimeType: songInfo?.coverMimeType,
           size: localFile.sourceSize ?? file.size,
           type: file.type,
-          sourcePath: localFile.sourcePath ?? localFile.path,
+          sourcePath,
           localUrl: localFile.localUrl ?? URL.createObjectURL(file),
           metadataLoaded: Boolean(songInfo),
           liked: likedNameSet.has(parsed.name),
@@ -523,23 +574,28 @@ export function useLocalTracks({
     onInfo?.("播放清單已清空，本地音樂連結也釋放囉。");
   }, [onInfo, revokeTrackUrls]);
 
-  const moveTrack = useCallback((fromIndex: number, toIndex: number) => {
-    setTracks((currentTracks) => {
-      if (
-        fromIndex === toIndex ||
-        fromIndex < 0 ||
-        toIndex < 0 ||
-        fromIndex >= currentTracks.length ||
-        toIndex >= currentTracks.length
-      ) {
-        return currentTracks;
-      }
+  const moveTrack = useCallback((fromIndex: number, toIndex: number, orderedTrackIds?: string[]) => {
+    const currentTracks = orderTracksForReorder(tracksRef.current, orderedTrackIds);
+    if (
+      fromIndex === toIndex ||
+      fromIndex < 0 ||
+      toIndex < 0 ||
+      fromIndex >= currentTracks.length ||
+      toIndex >= currentTracks.length
+    ) {
+      return null;
+    }
 
-      const nextTracks = [...currentTracks];
-      const [movedTrack] = nextTracks.splice(fromIndex, 1);
-      nextTracks.splice(toIndex, 0, movedTrack);
-      return nextTracks.map((track, index) => ({ ...track, addedAt: Date.now() + index }));
-    });
+    const nextTracks = [...currentTracks];
+    const [movedTrack] = nextTracks.splice(fromIndex, 1);
+    const nextMovedTrack = {
+      ...movedTrack,
+      addedAt: createMovedTrackAddedAt(nextTracks, toIndex),
+    };
+    nextTracks.splice(toIndex, 0, nextMovedTrack);
+    tracksRef.current = nextTracks;
+    setTracks(nextTracks);
+    return nextMovedTrack;
   }, []);
 
   const toggleLike = useCallback(

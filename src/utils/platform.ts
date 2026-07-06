@@ -67,6 +67,7 @@ export type AquariusgirlElectronAPI = {
     metadata: SongInfoDraft;
   }) => Promise<{
     ok: boolean;
+    receivedCoverHash?: string;
     unsupported?: boolean;
     error?: string;
   }>;

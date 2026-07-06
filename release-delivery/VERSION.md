@@ -1,9 +1,188 @@
 # 版本資訊
 
 產品：Aquariusgirl Music Room / 水瓶罐子的音樂小水池
-版本：0.1.33
-日期：2026-07-05
+版本：0.1.42
+日期：2026-07-06
 平台目標：Windows x64、macOS arm64
+
+## 2026-07-06 0.1.42 hotfix 狀態（Playing File Lock Release / 播放中檔案鎖釋放與寫回重試）
+
+0.1.42 修正 Windows EXE 播放中「套用到原始檔」有時保存失敗：`<audio>` 以 `file:` URL 載入原始檔時 Windows 持有檔案 handle，`rename(tempPath, sourcePath)` 被 `EPERM` / `EBUSY` 擋下。修法：renderer 寫回期間暫時卸下 audio src 釋放 handle、寫完自動接回原位置與播放狀態；Electron writer rename 補 3 次重試，仍鎖住時回傳明確錯誤「原始檔正被其他程式使用中，請暫停播放後再試一次。原始檔未修改。」未新增套件、未改 DB schema、未動 0.1.41 讀寫防線；O(1) 只碰目前那一首，上萬首曲庫與 M1 Air 8GB 無額外負擔。
+
+已通過（Linux 沙盒）：`check:metadata-save-loop`（新增 guard）、`check:song-info`、`check:playback-restore`、`check:playlist-logic`、`check:playback-order`、`check:track-list-virtualization`、`check:prompts`、`check:track-display`、`check:track-identity`、`tsc --noEmit`、`npm run electron:compile`。
+
+0.1.42 installer 已於 2026-07-06 由 `打包發行.command`（`npm run dist:release`）在本機產出並同步到 `release-delivery/installers/`：
+
+- `Aquariusgirl Music Room Setup 0.1.42.exe`：667,666,956 bytes，SHA-256 `6d67c44c2c68ecfb838cbeb7d18038cda4fca3d96df1733739d9c58f47e75e7f`
+- `Aquariusgirl Music Room-0.1.42-arm64.dmg`：684,778,895 bytes，SHA-256 `28caa3939b0ed79861cc9763f0d302956adbdce42768669f0ac987156a236f91`
+- DMG `hdiutil verify` VALID；打包時 `dist:release` 內全部 check 再次通過；未簽章、不 push GitHub。詳見 `docs/releases/0.1.42-checksums.md`。
+
+
+## 2026-07-06 0.1.41 hotfix 狀態（Full-Load Cover Write Guard / Packaged Mouse QA / 完整載入封面寫回防線與打包版滑鼠驗收）
+
+0.1.41 修正 0.1.40 後仍可能發生的第二次封面保存失敗：第一次更換封面成功，但第二次保存後面板不關、重新讀取 metadata 失敗，重開後該首歌可能失去封面與資料。這次不清 IndexedDB、不重掃曲庫、不加 `coverRevision`、不補 MIME 側門、不重寫 metadata 架構、不恢復「儲存到播放器」第二路徑。
+
+本版最小修法在 Electron writer：metadata read 先使用既有 partial read，只有遇到 `InvalidFormatError` 時，才對同一首 user-initiated 原始檔做 `partial:false` full-load retry，補足 packaged Emscripten TagLib 對大封面 FLAC 預設 partial header 讀取不足的情境。原始檔寫回仍維持同一個 TagLib handle 內設定文字與封面，最後只 `saveToFile(tempPath)` 一次再 rename；不回到 `copyWithTags` / `edit(tempPath)` 雙保存路徑。
+
+0.1.41 保留 0.1.40 的成功條件：selectedCover hash 證明使用者選了什麼；original-file readback hash 證明原始檔真的存了什麼；`await putTrackMetadata(reloadedTrack)` 成功後才代表播放器資料同步完成。`scripts/song-info-writer-check.mjs` 已強制 fixture 走 Emscripten wasm，並用 Plazma QA 複本做 Cover 02 -> Cover 01 -> Cover 02 readback。
+
+驗收已通過 `npm run check:song-info`、`npm run check:playback-restore`、`npm run check:metadata-save-loop`、`npm run build`、`npm run electron:compile` 與 `npm run dist:release`。0.1.41 installer 已同步到 `release-delivery/installers/`；SHA-256 請看 `docs/releases/0.1.41-checksums.md`。DMG `hdiutil verify` VALID。packaged DMG app 已用隔離 userData 與滑鼠完成 Cover 01 -> Cover 02、Cover 02 -> Cover 01、Cover 01 -> Cover 02 三輪驗收；每輪 preview、dirty/apply、busy lock、自動關閉與 readback hash 都通過。「重新讀取音樂標籤」成功；重開同隔離 profile 後最後 Cover 02 與 metadata 仍存在。Windows EXE static check 為 PE32 Nullsoft NSIS installer；未在 Windows 真機執行。本輪依使用者要求不 push GitHub。
+
+SHA-256：
+
+- EXE：`35d632c4f6f5646f1c4b8e5900e6e438fcdc99048bff71dde4f9f2c2b5b9b404`
+- arm64 DMG：`494531f0796bef677517826c3c38381d9c12bda2a837af9c7954b7a747d93c6c`
+
+### English Summary
+
+0.1.41 fixes packaged repeated-cover writeback failures caused by TagLib partial metadata reads on large-cover FLAC files. It retries a full single-file metadata read only after partial read throws `InvalidFormatError`, while preserving one write handle, original-file readback hash verification, and awaited single-track IndexedDB persistence.
+
+Passed: song-info, playback-restore, metadata-save-loop, build, Electron compile, `npm run dist:release`, DMG verify, Emscripten fixture Cover 02 -> Cover 01 -> Cover 02 readback, packaged DMG mouse QA for three cover changes, reload metadata success, and restart persistence. Checksums are in `docs/releases/0.1.41-checksums.md`. Real Windows runtime QA remains open.
+
+## 2026-07-06 0.1.40 hotfix 狀態（Selected Cover Dirty Guard / Reload Metadata Diagnostics / 選取封面 dirty 防線與重新讀取診斷）
+
+0.1.40 修正 0.1.39 後仍可能發生的第二次選封面 dirty 未成立問題。這次只針對 `App.tsx` 與 `SongInfoPanel.tsx`，不清 IndexedDB、不重掃曲庫、不加 `coverRevision`、不補 MIME 側門、不重寫多格式 metadata 架構，也不恢復「儲存到播放器」第二路徑。
+
+本版最小修法：`SongInfoPanel` 新增獨立 `selectedCover` 保存 bytes / MIME / hash / preview，hash 用哪份 bytes 算，apply 就傳同一份 bytes。`textDirty` 只比較文字欄位，`coverDirty` 只看 `selectedCover.hash !== track.coverHash`。面板 reset 只在關閉、重新開啟或 track id 改變時發生；同一首歌 open=true 時，不再因 track cover / metadata snapshot 變動無條件 reset draft/savedDraft/selectedCover。
+
+App 端保留 0.1.39 的 readback 成功條件：writeback 後重新讀原始檔，若有封面更新則要求 `reloadedTrack.coverHash === selectedCoverHash` 且 `reloadedTrack.coverHash !== oldCoverHash`，然後 `await libraryDb.putTrackMetadata(reloadedTrack)` 成功才顯示「已套用到原始檔」。若 cover hash 顯示要更新但 `coverBytes` 不存在，會提示「封面資料不完整，請重新選擇封面。」。`reloadSongInfoFromOriginal` 失敗會輸出 `[reload-metadata] failed` 或 `[reload-metadata] exception`，方便分辨卡在 reload、IPC、readback 或 IDB。
+
+驗收已通過 `npm run check:song-info`、`npm run check:playlist-logic`、`npm run check:playback-order`、`npm run check:track-list-virtualization`、`npm run check:playback-restore`、`npm run check:metadata-save-loop`、`npm run build`、`npm run electron:compile` 與 `npm run dist:release`。0.1.40 installer 已同步到 `release-delivery/installers/`；SHA-256 請看 `docs/releases/0.1.40-checksums.md`。DMG `hdiutil verify` VALID；唯讀掛載讀回版本 / app.asar / taglib wasm 通過。Windows EXE static check 為 PE32 Nullsoft NSIS installer；未在 Windows 真機執行。本輪依使用者要求不 push GitHub。
+
+SHA-256：
+
+- EXE：`bf36fd3b7674cf2aa9ee8adc5111e5dc4933237764ce63e3fb1bd671f121edba`
+- arm64 DMG：`e3ec2403a0218ebcb5eda4de9768a2045b33d30c64c225c6654261cb33e7df20`
+
+### English Summary
+
+0.1.40 keeps selected cover bytes, MIME, hash, and preview outside the text draft so repeated cover selection cannot lose dirty state through same-track snapshot resets. It preserves original-file readback hash verification and awaited single-track IndexedDB persistence before reporting success.
+
+Passed: song-info, playlist-logic, playback-order, track-list-virtualization, playback-restore, metadata-save-loop, build, Electron compile, `npm run dist:release`, DMG verify, read-only DMG version / app.asar readback, and Windows NSIS static check. Checksums are in `docs/releases/0.1.40-checksums.md`. Real Windows runtime QA and full packaged GUI mouse-only repeated-cover QA remain open.
+
+## 2026-07-05 0.1.39 hotfix 狀態（Cover Hash Readback / Playlist Order Persistence / 封面 hash 讀回與播放清單排序保存）
+
+0.1.39 修正封面第一次可換、第二次未真正保存到歌曲資料的問題。這次不再補 MIME 側門、不清 IndexedDB、不重掃曲庫、不加 `coverRevision`；核心改為只相信 Electron 寫回後重新讀取原始檔得到的 cover bytes hash。前端 selected hash 只代表使用者選了哪張圖，readback hash 才代表原始檔真的存了什麼，`await putTrackMetadata(reloadedTrack)` 成功後才代表播放器資料同步完成。
+
+本版最小修法：`SongInfoPanel` 選圖時保存同一份 `selectedCoverBytes` / `selectedCoverMime` / `selectedCoverHash` / preview，hash 用哪份 bytes 算，IPC 就送哪份 bytes；apply 期間鎖住選圖、套用與關閉。Electron writer 寫入後立刻讀回 metadata / cover，從 readback cover bytes 重新算 `coverHash` 回傳。App 端要求 `readbackHash === selectedCoverHash` 且 `readbackHash !== oldCoverHash` 才更新 tracks / current track 並等待單曲 IndexedDB put。失敗時不關面板、不清 dirty、不顯示成功。第二次開面板會清掉 draft / selected bytes / preview / saving / dirty / error，再從最新 current track 建 draft。
+
+同版修正 playlist 自訂排序不保存：一般 playlist 繼續靠 `trackIds`、localStorage write-through 與 IndexedDB `savePlaylists`；全部歌曲自訂排序現在只更新被移動歌曲的 `addedAt` 排序鍵並 `putTrackMetadata(movedTrack)`，避免在上萬首曲庫中每次拖曳都重寫全庫。
+
+驗收已通過 `npm run check:song-info`、`npm run check:playlist-logic`、`npm run check:playback-order`、`npm run check:track-list-virtualization`、`npm run check:playback-restore`、`npm run check:metadata-save-loop`、`npm run build`、`npm run electron:compile` 與 `npm run dist:release`。0.1.39 installer 已同步到 `release-delivery/installers/`；SHA-256 請看 `docs/releases/0.1.39-checksums.md`。DMG `hdiutil verify` VALID；唯讀掛載讀回版本 / app.asar / packaged guard 字串通過。Windows EXE static check 為 PE32 Nullsoft NSIS installer；未在 Windows 真機執行。本輪依使用者要求不 push GitHub。
+
+SHA-256：
+
+- EXE：`a6f6cdffe625ab243e250c535c0b9ba1f76bce1aea5edbe55263e04ef448efd2`
+- arm64 DMG：`4aec705531cff9b6c207c95f72c9c6370d30b50ff4b2c36908d8b4fdcf0a6d23`
+
+### English Summary
+
+0.1.39 makes cover writeback success depend on original-file readback hash, not renderer draft state or write success. It also persists all-songs custom order by saving only the moved track's order key, while normal playlists keep persisted track-id order.
+
+Passed: song-info, playlist-logic, playback-order, track-list-virtualization, playback-restore, metadata-save-loop, build, Electron compile, `npm run dist:release`, DMG verify, read-only DMG version / app.asar readback, packaged guard readback, and Windows NSIS static check. Checksums are in `docs/releases/0.1.39-checksums.md`. Real Windows runtime QA and full packaged GUI mouse-only repeated-cover QA remain open.
+
+## 2026-07-05 0.1.38 hotfix 狀態（Cover MIME Alias / Sort Controls Guard / 封面 MIME 別名與排序選單防回歸）
+
+0.1.38 修正 0.1.37 後使用者在 DMG / EXE 實測回報的兩個回歸：playlist 原本的多樣排序方式看起來被拿掉，以及封面一次也無法保存。判斷上，排序原本 7 種模式仍在 source，不需要新增模式或重做播放清單；封面也不需要清 IndexedDB、重掃曲庫、壓縮封面或改 DB schema。
+
+本版最小修法：`SortControls` 保留原生 select，補 `aria-label` 與穩定 `min-w-[9.5rem]`，並讓 `check:track-list-virtualization` 守住 7 個排序 option 與標籤。封面路徑則在 `src/utils/songInfo.ts` / `electron/songInfoWriter.ts` canonicalize 常見 MIME 別名：`image/jpg` / `image/pjpeg` -> `image/jpeg`，`image/x-png` -> `image/png`；真實不支援 MIME 仍拒絕。
+
+驗收已通過 `npm run check:song-info`、真實 Plazma 暫存複本封面 roundtrip、`npm run check:track-list-virtualization`、`npm run check:playback-order`、`npm run check:playback-restore`、`npm run check:metadata-save-loop`、`npm run build`、`npm run electron:compile` 與 `npm run dist:release`。0.1.38 installer 已同步到 `release-delivery/installers/`；SHA-256 請看 `docs/releases/0.1.38-checksums.md`。DMG `hdiutil verify` VALID；唯讀掛載讀回版本 / app.asar / packaged alias 字串通過。Windows EXE static check 為 PE32 Nullsoft NSIS installer；未在 Windows 真機執行。packaged macOS GUI 已用隔離 profile 開啟並確認排序下拉選單 7 種選項；原生封面選檔器可由真實滑鼠打開，但純滑鼠選檔被 macOS 隱私提示擋住，需使用者明確允許後才能完成。本輪依使用者要求不 push GitHub。
+
+SHA-256：
+
+- EXE：`fd07376a35cbeccdec55d98751a2273fe67834904c16f24d9d112f71825d5da8`
+- arm64 DMG：`66a547f31c535ad9643ba2d7c2ea7bebedc62130b114ba543ca50aa8fccf7a7a`
+
+### English Summary
+
+0.1.38 keeps the original seven playlist sort modes visible and guarded, and accepts common JPEG / PNG MIME aliases without changing the original-file writeback or IndexedDB flow.
+
+Passed: song-info, real Plazma temp-copy cover roundtrip, track-list-virtualization, playback-order, playback-restore, metadata-save-loop, build, Electron compile, `npm run dist:release`, DMG verify, read-only DMG version / app.asar readback, packaged alias readback, and Windows NSIS static check. Checksums are in `docs/releases/0.1.38-checksums.md`. Real Windows runtime QA and full mouse-only macOS cover selection remain open.
+
+## 2026-07-05 0.1.37 hotfix 狀態（Cover MIME Fallback / Second Cover Save / 封面 MIME fallback 與第二次封面保存）
+
+0.1.37 修正同一首米津玄師歌曲第一次更換封面可成功、第二次可能失敗的回歸。根因不是播放器資料庫或全曲庫保存，而是 macOS / Electron 可能讓第二次選到的 `.jpg` / `.png` 帶空白或 `application/octet-stream` MIME，且 `FileReader` 可能產生 `data:;base64,...` 或 `data:application/octet-stream;base64,...`。舊 renderer 驗證與 Electron writer 只接受明確 `image/jpeg` / `image/png`，所以第二次封面可能被擋掉。
+
+本版不新增套件、不重掃曲庫、不改 IndexedDB schema、不壓縮封面、不重做 UI。最小修法是在 `src/utils/songInfo.ts` 只對 `.jpg` / `.jpeg` / `.png` 且 MIME 空白 / octet-stream 的檔案推回正確 image MIME，並正規化 data URL prefix；`SongInfoPanel` 保存推回的 `coverMimeType`；`electron/songInfoWriter.ts` 只對空白 / octet-stream data URL 使用 `draft.coverMimeType` fallback，真實不支援 MIME 仍拒絕。5 MB 封面上限、單曲原始檔寫回、單曲 IndexedDB 保存與 TrackList windowing 都保留。
+
+驗收：先讓 `scripts/song-info-check.mjs` 與 `scripts/song-info-writer-check.mjs` 對空白 / octet-stream MIME 紅燈，再修到 PASS。已通過 `npm run check:song-info`、真實 Plazma 暫存複本 Cover 02 -> Cover 01 roundtrip、`npm run check:playback-restore`、`npm run check:metadata-save-loop`、`npm run build`、`npm run electron:compile`。升權 `npm run dist:release` PASS，並同步 installer 到 `release-delivery/installers/`。
+
+0.1.37 installer 已同步到 `release-delivery/installers/`；SHA-256 請看 `docs/releases/0.1.37-checksums.md`。DMG `hdiutil verify` VALID；唯讀掛載讀回 `CFBundleShortVersionString` / `CFBundleVersion` 均為 0.1.37，執行檔為 Mach-O arm64，`app.asar` package version 為 0.1.37，`Contents/Resources/taglib-wasm/taglib-web.wasm` 存在且位於 app.asar 外。packaged renderer / main 讀回確認 cover MIME fallback 存在。Windows EXE static check 為 PE32 Nullsoft NSIS installer；未在 Windows 真機執行。本輪依使用者要求不 push GitHub。
+
+SHA-256：
+
+- EXE：`5c51648e3fb68c14187f373967cd6893b0429df37f6a105667b0326641515602`
+- arm64 DMG：`a742bfb5a333bf4a5651e5c62eaabe337d951bff9ab028eac198935685be7539`
+
+### English Summary
+
+0.1.37 fixes repeated cover replacement when file selection or data URLs report empty / `application/octet-stream` MIME values. The renderer now infers JPEG / PNG only from safe extensions in that narrow case and normalizes the data URL; the Electron writer uses the draft MIME fallback only for empty / octet-stream data URLs.
+
+Passed: song-info, real Plazma temp-copy Cover 02 -> Cover 01 roundtrip, playback-restore, metadata-save-loop, build, Electron compile, elevated `npm run dist:release`, DMG verify, read-only DMG version / app.asar / unpacked `taglib-web.wasm` readback, packaged fallback readback, and Windows NSIS static check. 0.1.37 checksums are in `docs/releases/0.1.37-checksums.md`. Real Windows QA remains open.
+
+## 2026-07-05 0.1.36 hotfix 狀態（Song Info Single Save Path / TagLib Property Map Restore / 歌曲資訊單一路徑與 TagLib 欄位映射復原）
+
+0.1.36 修正 0.1.35 後歌曲資訊欄位可能讀不完整的回歸。根因不是 0.1.28 的整庫保存迴圈重現，而是 0.1.35 從 `taglib-wasm/simple` 改到 `audioFile.properties()` 後，只處理 lowercase 欄位；TagLib property map 常以 `TITLE` / `ARTIST` / `ALBUMARTIST` / `TRACKNUMBER` / `DISCNUMBER` 等大寫鍵回傳，導致歌手、專輯歌手、曲目、光碟等欄位讀回時漏掉。
+
+本版不新增套件、不重掃曲庫、不改 playlist / playback / IndexedDB 架構。最小修法是在 `electron/songInfoWriter.ts` 補小型 property-key alias map，並繼續沿用 0.1.35 的 unpacked `taglib-web.wasm` 與 `forceWasmType: "emscripten"`。同時依使用者要求移除歌曲資訊面板「儲存到播放器」按鈕與 `App.tsx` player-local save handler，避免播放器 DB metadata override 與原始檔 tag 雙路徑互相覆蓋；目前只保留「套用到原始檔」：寫回原檔、重新讀回該首、再 `putTrackMetadata(reloadedTrack)`。
+
+驗收：先讓 `scripts/song-info-writer-check.mjs` 檢查 uppercase TagLib property map；再讓 `scripts/playback-restore-check.mjs` 防守 player-local save path 不得回來。已通過 `npm run check:song-info`、`npm run check:playback-restore`、`npm run check:metadata-save-loop`、`npm run build`、`npm run electron:compile`。升權 `npm run dist:release` PASS，流程內通過 prompts、track-display、track-identity、playback-order、track-list-virtualization、playback-restore、metadata-save-loop、taglib-wasm-packaging、all-target AI assets、build、Electron compile、macOS arm64 DMG 與 Windows x64 NSIS 打包，並同步 installer 到 `release-delivery/installers/`。
+
+0.1.36 installer 已同步到 `release-delivery/installers/`；SHA-256 請看 `docs/releases/0.1.36-checksums.md`。DMG `hdiutil verify` VALID；唯讀掛載讀回 `CFBundleShortVersionString` / `CFBundleVersion` 均為 0.1.36，執行檔為 Mach-O arm64，`app.asar` package version 為 0.1.36，`Contents/Resources/taglib-wasm/taglib-web.wasm` 存在且位於 app.asar 外。packaged renderer 讀回確認「儲存到播放器」與「已儲存到播放器」不存在、「套用到原始檔」存在；packaged main 讀回確認 property alias 與 unpacked wasm path 存在。Windows EXE static check 為 PE32 Nullsoft NSIS installer；本機 `bsdtar` 無法拆 NSIS，未在 Windows 真機執行。本輪依使用者要求不 push GitHub。
+
+SHA-256：
+
+- EXE：`417bcc3717b961516dc8eba0e3511f667aeb681fa8d8595e303cc12d6514142e`
+- arm64 DMG：`0709142e5fdbdb3230433488d0f661dcf3b39b09c1044a56f14b6e24d172e73e`
+
+### English Summary
+
+0.1.36 restores TagLib property-map metadata readback for uppercase keys such as `TITLE`, `ARTIST`, `ALBUMARTIST`, and `TRACKNUMBER`, while preserving the 0.1.35 unpacked wasm packaging fix. It also removes the player-local "save to player" path, leaving one song-info save path: write to the original supported audio file, reread that track, then save the refreshed single-track metadata record.
+
+Passed: song-info, playback-restore, metadata-save-loop, build, Electron compile, elevated `npm run dist:release`, DMG verify, read-only DMG version / app.asar / unpacked `taglib-web.wasm` readback, packaged renderer no-local-save readback, packaged main alias / wasm readback, and Windows NSIS static check. 0.1.36 checksums are in `docs/releases/0.1.36-checksums.md`. Real Windows QA remains open.
+
+## 2026-07-05 0.1.35 hotfix 狀態（Packaged EXE Metadata Wasm Restore / 打包版 EXE 歌曲資訊 wasm 復原）
+
+0.1.35 修正 Windows EXE 版歌曲資訊可能讀不到、退回檔名 / 未知歌手的回歸；macOS DMG 版同一路徑可正常抓到 metadata。根因判斷是 `taglib-wasm/simple` 在 packaged app 內使用套件預設 `.wasm` 位置，Windows app.asar 路徑較不穩，且 Electron `toSelectedFile()` 會吞掉 metadata 讀取錯誤後回傳空 metadata。
+
+本版不新增套件、不重掃曲庫、不改 renderer / IndexedDB / playlist / playback。最小修法是讓 `electron/songInfoWriter.ts` 使用可指定 `wasmUrl` 的共用 `TagLib.initialize()` 實例，packaged 時優先讀 `resources/taglib-wasm/taglib-web.wasm`，並以 `forceWasmType: "emscripten"` 走 buffer mode；`package.json` `extraResources` 外帶 `node_modules/taglib-wasm/dist/taglib-web.wasm`，新增 `check:taglib-wasm-packaging` 並串入 `check:song-info`、`dist:release`、`dist:mac`、`dist:win`。
+
+驗收：先新增 `scripts/taglib-wasm-packaging-check.mjs`，舊設定缺少外帶 wasm 時紅燈；修正後 `npm run check:taglib-wasm-packaging` PASS、`npm run check:song-info` PASS、`npm run build` PASS、`npm run electron:compile` PASS。升權 `npm run dist:release` PASS，流程內通過 prompts、track-display、track-identity、playback-order、track-list-virtualization、playback-restore、metadata-save-loop、taglib-wasm-packaging、all-target AI assets、build、Electron compile、macOS arm64 DMG 與 Windows x64 NSIS 打包，並同步 installer 到 `release-delivery/installers/`。
+
+0.1.35 installer 已同步到 `release-delivery/installers/`；SHA-256 請看 `docs/releases/0.1.35-checksums.md`。DMG `hdiutil verify` VALID；唯讀掛載讀回 `CFBundleShortVersionString` / `CFBundleVersion` 均為 0.1.35，執行檔為 Mach-O arm64，`app.asar` package version 為 0.1.35，`Contents/Resources/taglib-wasm/taglib-web.wasm` 存在且位於 app.asar 外。Windows EXE static check 為 PE32 Nullsoft NSIS installer；本機 `bsdtar` 無法拆 NSIS，未在 Windows 真機執行。本輪依使用者要求不 push GitHub。
+
+SHA-256：
+
+- EXE：`39547c366f8c1e92e725d0a2d21ca8e842e41258ba38ad0f858196916842c35a`
+- arm64 DMG：`ffd83022e96735655c71fddb82eca0fa452f7dbaa617d0eb6065d84e0c93c4b7`
+
+### English Summary
+
+0.1.35 fixes the packaged Windows EXE metadata-read path by copying `taglib-web.wasm` outside app.asar and making the Electron song-info layer initialize TagLib with an explicit unpacked `wasmUrl` in Emscripten buffer mode. This does not add dependencies or change renderer, playlist, IndexedDB, or playback flows.
+
+Passed: red/green taglib wasm packaging guard, song-info, build, Electron compile, elevated `npm run dist:release`, DMG verify, read-only DMG version / app.asar / unpacked `taglib-web.wasm` readback, and Windows NSIS static check. 0.1.35 checksums are in `docs/releases/0.1.35-checksums.md`. Real Windows QA remains open.
+
+## 2026-07-05 0.1.34 hotfix 狀態（Playlist Panel Scroll Restore / 播放清單面板捲軸復原）
+
+0.1.34 修正 0.1.33 後 playlist 內部小卷軸消失的回歸：主視窗大型卷軸已恢復，但歌曲多時 playlist 面板仍會被撐開，看不到後面的歌曲。`TrackList` 本身仍是 `playlist-scrollbar h-full min-h-0 overflow-y-auto overflow-x-hidden pr-3`，問題在 `PlaylistPanel` 只有 `max-h-[calc(100vh-10rem)] min-h-[520px]`，缺少實際高度。
+
+本版不新增套件、不重做清單、不改 metadata / cover / IndexedDB / playback / Mini Player。最小修法是將 `PlaylistPanel` 改為 `h-[calc(100vh-10rem)] max-h-[calc(100vh-10rem)] min-h-[520px]`，讓 TrackList 的內部 `overflow-y-auto` 能接手大量歌曲；同時保留 0.1.33 的主視窗 `AppLayout` `h-screen overflow-y-auto overflow-x-hidden` 與 `body overflow-x: hidden`。
+
+驗收：先擴充 `check:track-list-virtualization` 讓缺少 playlist 實際高度紅燈，再修到 PASS。已通過 `npm run check:track-list-virtualization`、`npm run build`、`npm run electron:compile`、升權 `npm run dist:release`；`dist:release` 內通過 prompt、track-display、track-identity、playback-order、track-list-virtualization、playback-restore、metadata-save-loop、all-target AI assets、build、Electron compile、macOS arm64 DMG 與 Windows x64 NSIS 打包。
+
+0.1.34 installer 已同步到 `release-delivery/installers/`；SHA-256 請看 `docs/releases/0.1.34-checksums.md`。DMG `hdiutil verify` VALID；唯讀掛載讀回 `CFBundleShortVersionString` / `CFBundleVersion` 均為 0.1.34，執行檔為 Mach-O arm64，`app.asar` package version 為 0.1.34；packaged renderer bundle 含 `PlaylistPanel` stable height class、主視窗 scroll container class 與 TrackList scroll container class；packaged CSS 確認 body 不含 `overflow:hidden`、含 `overflow-x:hidden` 與 `scrollbar-gutter:stable`。Windows EXE static check 為 NSIS installer；未在 Windows 真機執行。本輪依使用者要求未同步 / push 到 GitHub。
+
+SHA-256：
+
+- EXE：`cbf66e9d77fd97b7f4e65c059da476e7d3f17390aaa53f046904b046a03c84ed`
+- arm64 DMG：`ef131d2f09a94c1f123bce82f3a8c2b7545949c8e742f9996ccdb8eb57cf5274`
+
+### English Summary
+
+0.1.34 restores the playlist-internal scrollbar after 0.1.33 restored the main-window scrollbar. PlaylistPanel now has a real `h-[calc(100vh-10rem)]` height so the existing TrackList `overflow-y-auto` container can scroll long song lists.
+
+Passed: playlist height source guard, build, Electron compile, elevated `npm run dist:release`, DMG verify, read-only DMG version / app.asar / packaged renderer scroll class / packaged CSS overflow checks, and Windows NSIS static check. 0.1.34 checksums are in `docs/releases/0.1.34-checksums.md`. Real Windows QA and GitHub sync remain open.
 
 ## 2026-07-05 0.1.33 hotfix 狀態（Nested Main and Playlist Scroll / 巢狀主視窗與播放清單卷軸）
 

@@ -1,5 +1,6 @@
 import type { Playlist } from "../types/playlist";
 import type { Track } from "../types/track";
+import { isSupportedAudioPath } from "../utils/audioFiles";
 
 const DB_NAME = "aquariusgirl-music-room";
 const DB_VERSION = 1;
@@ -94,9 +95,14 @@ async function withStore<T>(
 
 export function toStoredTrackMetadata(track: Track): StoredTrackMetadata {
   const { file, localUrl, coverUrl, artworkUrl, ...metadata } = track;
+  const sourcePath =
+    metadata.sourcePath && isSupportedAudioPath(metadata.sourcePath)
+      ? metadata.sourcePath
+      : undefined;
 
   return {
     ...metadata,
+    sourcePath,
     fileName: file?.name ?? track.name,
   };
 }
@@ -240,7 +246,11 @@ export async function getSetting<T>(key: string) {
 
 export async function saveMusicSourcePaths(sourcePaths: string[]) {
   const cleanPaths = Array.from(
-    new Set(sourcePaths.map((sourcePath) => sourcePath.trim()).filter(Boolean)),
+    new Set(
+      sourcePaths
+        .map((sourcePath) => sourcePath.trim())
+        .filter((sourcePath) => sourcePath && isSupportedAudioPath(sourcePath)),
+    ),
   );
   await saveSetting(MUSIC_SOURCE_PATHS_KEY, cleanPaths);
 }
@@ -250,7 +260,10 @@ export async function getMusicSourcePaths() {
   if (!Array.isArray(value)) {
     return [];
   }
-  return value.filter((item): item is string => typeof item === "string" && item.length > 0);
+  return value.filter(
+    (item): item is string =>
+      typeof item === "string" && item.length > 0 && isSupportedAudioPath(item),
+  );
 }
 
 export async function saveDirectoryHandle(handle: FileSystemDirectoryHandle) {

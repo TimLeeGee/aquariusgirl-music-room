@@ -14,3 +14,4 @@ public/**/*.svg
 resources/ai/models/*.gguf
 resources/ai/bin/darwin-x64/
 *.log
+qa-temp/

@@ -120,6 +120,40 @@ export function useAudioPlayer({
     setIsPlaying(false);
   }, []);
 
+  const suspendAudioForFileWrite = useCallback((trackId: string) => {
+    const audio = audioRef.current;
+
+    // ponytail: Windows locks a file while <audio> has it loaded, so rename-over-original fails mid-playback.
+    // Detach to release the OS handle and hand the caller a restore function; no-op when the edited track is not the loaded one.
+    if (!audio || loadedTrackIdRef.current !== trackId || !loadedTrackSourceRef.current) {
+      return () => {};
+    }
+
+    const source = loadedTrackSourceRef.current;
+    const position = audio.currentTime;
+    const wasPlaying = !audio.paused;
+
+    audio.pause();
+    audio.removeAttribute("src");
+    audio.load();
+
+    return () => {
+      audio.src = source;
+      audio.load();
+      audio.addEventListener(
+        "loadedmetadata",
+        () => {
+          audio.currentTime = position;
+
+          if (wasPlaying) {
+            void audio.play().catch(() => setIsPlaying(false));
+          }
+        },
+        { once: true },
+      );
+    };
+  }, []);
+
   const stop = useCallback(() => {
     const audio = audioRef.current;
 
@@ -493,6 +527,7 @@ export function useAudioPlayer({
     play,
     pause,
     stop,
+    suspendAudioForFileWrite,
     togglePlay,
     previous,
     next,

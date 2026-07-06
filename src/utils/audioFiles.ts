@@ -20,6 +20,13 @@ export function isSupportedAudioFile(file: File) {
   );
 }
 
+export function isSupportedAudioPath(filePath: string) {
+  const extension = getFileExtension(filePath);
+  return SUPPORTED_AUDIO_EXTENSIONS.includes(
+    extension as (typeof SUPPORTED_AUDIO_EXTENSIONS)[number],
+  );
+}
+
 export function partitionAudioFiles(files: FileList | File[]) {
   const allFiles = Array.from(files);
   const audioFiles = allFiles.filter(isSupportedAudioFile);

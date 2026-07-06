@@ -21,7 +21,8 @@ export function SortControls({ value, onChange }: SortControlsProps) {
       <span className="whitespace-nowrap">排序</span>
       <select
         value={value}
-        className="bg-transparent text-sm font-semibold text-white outline-none"
+        aria-label="播放清單排序方式"
+        className="min-w-[9.5rem] bg-transparent text-sm font-semibold text-white outline-none"
         onChange={(event) => onChange(event.currentTarget.value as SortMode)}
       >
         {options.map((option) => (

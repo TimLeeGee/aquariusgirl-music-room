@@ -60,7 +60,7 @@ export function PlaylistPanel({
 
   // ponytail: Native scroll bounds plus the existing windowed TrackList are enough until real large-library QA proves a heavier virtualizer is needed.
   return (
-    <aside className="glass-panel flex max-h-[calc(100vh-10rem)] min-h-[520px] flex-col overflow-hidden p-4 sm:p-5 lg:sticky lg:top-5">
+    <aside className="glass-panel flex h-[calc(100vh-10rem)] max-h-[calc(100vh-10rem)] min-h-[520px] flex-col overflow-hidden p-4 sm:p-5 lg:sticky lg:top-5">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div className="min-w-0">
           <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-aquarius-blue">
