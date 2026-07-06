@@ -1,5 +1,18 @@
 # Installer 狀態
 
+## 2026-07-07 0.1.43 hotfix 狀態（Big Cover Readback Crash / Save Feedback / 大封面讀回崩潰與保存提示）
+
+0.1.43 修正 4.3MB 大封面「套用到原始檔」後讀回 WASM 崩潰（寫回成功但播放器讀不回、「重新讀取音樂標籤」一直失敗），以及保存成功/失敗提示被歌曲資訊面板蓋住的問題。修法：單檔讀取預設完整讀取、partial 崩潰 fallback 完整讀取、掃描維持 partial 快速路徑、toast 升 z-[90]、保存中顯示「套用中…」。零新套件、不改 DB schema；上萬首曲庫與 M1 Air 8GB 無額外負擔。
+
+已通過（Linux 沙盒）：打包版 wasm 設定重現與修復驗證（320KB / 4.3MB 封面寫入＋讀回 hash）、`check:song-info`、`check:metadata-save-loop`、`check:playback-restore`、`check:playlist-logic`、`check:playback-order`、`check:track-list-virtualization`、`check:prompts`、`check:track-display`、`check:track-identity`、`check:taglib-wasm-packaging`、`tsc --noEmit`、`npm run electron:compile`。
+
+0.1.43 installer 已於 2026-07-07 由 `打包發行.command`（`npm run dist:release`）在 Mac 本機產出（build exit=0）並同步到 `release-delivery/installers/`：
+
+- `Aquariusgirl Music Room Setup 0.1.43.exe`：667,667,342 bytes，SHA-256 `2be0007e5f8869bc253818ab24cc57705ce90b13306d0161a77cb27e41cebd36`
+- `Aquariusgirl Music Room-0.1.43-arm64.dmg`：684,779,166 bytes，SHA-256 `c6da0dba496ee3f9d607e1e3727689ac8bb70e3a15bff2ec3b8de06ee8120cc0`
+- DMG `hdiutil verify` VALID；打包時 `dist:release` 內全部 check 再次通過；未簽章、不 push GitHub。詳見 `docs/releases/0.1.43-checksums.md`。
+- Windows 為 NSIS 打包（未於 Windows 真機驗證）；macOS DMG 驗證為 hdiutil verify 與打包流程內建檢查。
+
 ## 2026-07-06 0.1.42 hotfix 狀態（Playing File Lock Release / 播放中檔案鎖釋放與寫回重試）
 
 0.1.42 修正 Windows EXE 播放中「套用到原始檔」有時保存失敗：`<audio>` 以 `file:` URL 載入原始檔時 Windows 持有檔案 handle，`rename(tempPath, sourcePath)` 被 `EPERM` / `EBUSY` 擋下。修法：renderer 寫回期間暫時卸下 audio src 釋放 handle、寫完自動接回原位置與播放狀態；Electron writer rename 補 3 次重試，仍鎖住時回傳明確錯誤「原始檔正被其他程式使用中，請暫停播放後再試一次。原始檔未修改。」未新增套件、未改 DB schema、未動 0.1.41 讀寫防線；O(1) 只碰目前那一首，上萬首曲庫與 M1 Air 8GB 無額外負擔。

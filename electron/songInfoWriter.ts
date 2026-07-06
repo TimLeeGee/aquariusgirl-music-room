@@ -245,33 +245,35 @@ function readAudioFileTagsAndPictures(audioFile: AudioFile) {
   }
 }
 
-function shouldRetryFullTagRead(error: unknown) {
-  return error instanceof InvalidFormatError;
-}
-
-async function readTagsAndPictures(sourcePath: string) {
+async function readTagsAndPictures(sourcePath: string, partialRead: boolean) {
   const taglib = await getTagLib();
 
-  try {
-    return readAudioFileTagsAndPictures(await taglib.open(sourcePath));
-  } catch (error) {
-    if (!shouldRetryFullTagRead(error)) {
-      throw error;
+  if (partialRead) {
+    try {
+      return readAudioFileTagsAndPictures(await taglib.open(sourcePath));
+    } catch (error) {
+      if (process.env.NODE_ENV !== "production") {
+        console.debug("[song-info] retry full tag read after partial read failed", { sourcePath, error });
+      }
+      // ponytail: taglib's 1MB partial header truncates tags with big embedded covers; the packaged
+      // emscripten build then throws InvalidFormatError OR crashes with WebAssembly RuntimeError
+      // ("unreachable"). Either way the full read below is authoritative, so retry on any error.
     }
-
-    if (process.env.NODE_ENV !== "production") {
-      console.debug("[song-info] retry full tag read after partial read failed", { sourcePath });
-    }
-
-    // ponytail: taglib defaults to a 1MB partial header; big FLAC covers need one full retry.
-    return readAudioFileTagsAndPictures(await taglib.open(sourcePath, { partial: false }));
   }
+
+  return readAudioFileTagsAndPictures(await taglib.open(sourcePath, { partial: false }));
 }
 
 function readPicturesSafely(audioFile: AudioFile) {
   try {
     return audioFile.getPictures();
-  } catch {
+  } catch (error) {
+    // ponytail: a WASM crash here means the loaded buffer is truncated/corrupted; rethrow so the
+    // partial-read fallback retries with a full read instead of silently reporting "no cover".
+    if (error instanceof WebAssembly.RuntimeError) {
+      throw error;
+    }
+
     return [] as Picture[];
   }
 }
@@ -509,7 +511,15 @@ export async function writeSongInfoToOriginalFile(
   }
 }
 
-export async function readSongInfoFromOriginalFile(sourcePath: string) {
+export async function readSongInfoFromOriginalFile(
+  sourcePath: string,
+  options: { partialRead?: boolean } = {},
+) {
+  // ponytail: single-file reads (song info readback / manual reload) default to a full read so a
+  // 4-5MB cover can never hit the truncated-tag WASM crash; only bulk folder scanning opts into
+  // the partial fast path and self-heals via the full-read fallback.
+  const { partialRead = false } = options;
+
   if (!path.isAbsolute(sourcePath) || !isWritableSongInfoPath(sourcePath)) {
     return { ok: false, error: "這個音樂格式目前不支援重新讀取標籤。" };
   }
@@ -519,7 +529,7 @@ export async function readSongInfoFromOriginalFile(sourcePath: string) {
     return { ok: false, error: "重新讀取音樂標籤失敗，請確認原始檔仍可讀取。" };
   }
 
-  const { tags, pictures } = await readTagsAndPictures(sourcePath);
+  const { tags, pictures } = await readTagsAndPictures(sourcePath, partialRead);
 
   return {
     ok: true,

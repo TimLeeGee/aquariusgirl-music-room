@@ -1,9 +1,24 @@
 # QA 驗收報告
 
 產品：Aquariusgirl Music Room / 水瓶罐子的音樂小水池
-版本：0.1.42
-日期：2026-07-06
+版本：0.1.43
+日期：2026-07-07
 驗收角色：PM / QA / Electron 發行工程師
+
+## 2026-07-07 Big Cover Readback Crash / Save Feedback hotfix 0.1.43
+
+- 範圍：macOS DMG 使用者實測回報 — MP3 用 320KB `cover 01.jpeg` 換封面成功；改用 4.3MB `Cover 01.jpg` 保存後卡住、「重新讀取音樂標籤」一直失敗；Finder 顯示新封面、播放器仍舊圖。另要求保存成功/失敗都必須跳出提示。
+- 根因 1（PASS，Linux 沙盒以打包版 wasm 設定 100% 重現）：taglib-wasm 預設 partial read（前 1MB + 尾 128KB）在寫入 4.3MB 封面後截斷約 4.3MB 的 ID3v2 標籤區，packaged Emscripten TagLib 解析截斷 buffer 時 WASM `RuntimeError: unreachable`（`isValid()` 仍回 true、崩潰在 properties / getPictures / dispose），非 `InvalidFormatError`，0.1.41 的 retry 接不到；寫回成功但 readback / reload 永遠失敗。與 .jpg / .jpeg 副檔名無關。
+- 根因 2（PASS）：`MessageToast` z-[60] 低於歌曲資訊面板 overlay z-[80]，保存失敗時面板不關、錯誤提示被蓋住，使用者感覺「卡住、無提示」。
+- 修法：`readSongInfoFromOriginalFile(sourcePath, { partialRead })` 預設完整讀取（單檔 user-initiated：寫前預讀 / readback / 重新讀取）；partial 路徑任何錯誤（含 WASM RuntimeError）fallback 一次 `partial:false`；`readPicturesSafely` 遇 `WebAssembly.RuntimeError` rethrow 交給 fallback；`electron/selectedFile.ts` 掃描明確走 `partialRead: true`（上萬首效能不變）；`MessageToast` 升 z-[90]；`SongInfoPanel` 保存中顯示「套用中…」。4 檔案約 40 行、零新套件、不清 IndexedDB、不改 DB schema、不動寫回與 readback hash 路徑。
+- PASS（Linux 沙盒，打包版 wasm 設定 `forceWasmType: "emscripten"` + buffer 模式）：修正前重現 BIG(4.3MB) 讀回 `RuntimeError: unreachable`；修正後 SMALL(320KB) 與 BIG(4.3MB) 寫入＋讀回 coverHash 全數一致；崩潰後同一 TagLib 實例仍可用（無需重啟）。
+- PASS：掃描路徑 `readSongInfoFromOriginalFile({ partialRead: true })` 與 `toSelectedFile` 對大封面檔 fallback 完整讀取後 metadata 與封面正確。
+- PASS：`check:song-info`（含 writer 真實 wasm roundtrip）、`check:metadata-save-loop`、`check:playback-restore`、`check:playlist-logic`、`check:playback-order`、`check:track-list-virtualization`、`check:prompts`、`check:track-display`、`check:track-identity`、`check:taglib-wasm-packaging`、`check:ai-assets`、`tsc --noEmit`、`npm run electron:compile`；Mac 本機 `dist:release` 內全部 check 與 vite build 再次通過。
+- installer 已產出（`打包發行.command` / `npm run dist:release` exit=0，DMG hdiutil verify VALID）：
+- `Aquariusgirl Music Room Setup 0.1.43.exe`：667,667,342 bytes，SHA-256 `2be0007e5f8869bc253818ab24cc57705ce90b13306d0161a77cb27e41cebd36`
+- `Aquariusgirl Music Room-0.1.43-arm64.dmg`：684,779,166 bytes，SHA-256 `c6da0dba496ee3f9d607e1e3727689ac8bb70e3a15bff2ec3b8de06ee8120cc0`
+- NOT VERIFIED：packaged GUI 對使用者實際 nonoc-Memento 檔案的滑鼠實測（本輪修復驗證在 Linux 沙盒以同等 wasm 設定完成）；Windows 真機；簽章 / notarization。
+- 殘餘風險（已知並記錄於 KNOWN_ISSUES）：掃描 partial 路徑理論上存在「不崩潰但漏圖」情境（實測觀察皆為崩潰、已被 fallback 接住）；單檔操作已改預設完整讀取，不受影響。
 
 ## 2026-07-06 Playing File Lock Release hotfix 0.1.42
 

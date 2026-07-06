@@ -412,7 +412,7 @@ export function SongInfoPanel({
             title={writeBackDisabledLabel || "套用到原始檔"}
             onClick={() => void handleApplyToOriginal()}
           >
-            套用到原始檔
+            {busy ? "套用中…" : "套用到原始檔"}
           </button>
         </div>
         {writeBackDisabledLabel && (

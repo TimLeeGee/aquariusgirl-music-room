@@ -1,11 +1,20 @@
 # Aquariusgirl Music Room 交付說明
 
-版本：0.1.42
-發行日期：2026-07-06
-文件更新：2026-07-06
+版本：0.1.43
+發行日期：2026-07-07
+文件更新：2026-07-07
 產品名稱：Aquariusgirl Music Room / 水瓶罐子的音樂小水池
 
-## 0.1.42 狀態
+## 0.1.43 狀態
+
+0.1.43（大封面讀回崩潰與保存提示修正）installer 已產出並同步到本資料夾 `installers/`（installers/ 只保留這一組最新版）：
+
+- `Aquariusgirl Music Room Setup 0.1.43.exe`：667,667,342 bytes，SHA-256 `2be0007e5f8869bc253818ab24cc57705ce90b13306d0161a77cb27e41cebd36`
+- `Aquariusgirl Music Room-0.1.43-arm64.dmg`：684,779,166 bytes，SHA-256 `c6da0dba496ee3f9d607e1e3727689ac8bb70e3a15bff2ec3b8de06ee8120cc0`
+- DMG `hdiutil verify` VALID；打包時 `dist:release` 內全部 check 再次通過；未簽章、不 push GitHub。詳見 `docs/releases/0.1.43-checksums.md`。
+- 修正內容：4.3MB 大封面寫回後讀回 WASM 崩潰（單檔讀取改預設完整讀取 + partial 崩潰 fallback）、保存成功/失敗提示被面板蓋住（toast 升 z-[90]）、保存中按鈕顯示「套用中…」。資料夾掃描維持 partial 快速路徑，上萬首效能不變。
+
+## 0.1.42 狀態（歷史）
 
 0.1.42（播放中保存失敗修正）installer 已產出並同步到本資料夾 `installers/`：
 

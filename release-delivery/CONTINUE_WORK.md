@@ -1,6 +1,12 @@
 # 接續工作狀態
 
-最後更新：2026-07-06 CST
+最後更新：2026-07-07 CST
+
+## 2026-07-07 Big Cover Readback Crash / Save Feedback hotfix 0.1.43 完成
+
+- 已修正 4.3MB 大封面「套用到原始檔」後讀回 WASM 崩潰（寫回成功但播放器讀不回、「重新讀取音樂標籤」一直失敗），與保存提示被面板蓋住的問題；根因、修法、驗證與 checksums 詳見根目錄 `CONTINUE_WORK.md` 0.1.43 段落與 `release-delivery/QA_REPORT.md`。
+- 0.1.43 installer 已同步到 `release-delivery/installers/`：EXE 667,667,342 bytes（SHA-256 `2be0007e5f8869bc253818ab24cc57705ce90b13306d0161a77cb27e41cebd36`）、arm64 DMG 684,779,166 bytes（SHA-256 `c6da0dba496ee3f9d607e1e3727689ac8bb70e3a15bff2ec3b8de06ee8120cc0`）、DMG hdiutil verify VALID；未簽章、不 push GitHub。
+- 待補：使用者實機以 `Cover 01.jpg` 重試保存與重新讀取（現在成功/失敗右上角都會跳提示）；Windows 真機驗證。
 
 ## 2026-07-06 Playing File Lock Release hotfix 0.1.42 完成
 

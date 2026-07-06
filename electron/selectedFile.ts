@@ -25,7 +25,9 @@ export async function toSelectedFile(
   const { readMetadata = true } = options;
   const fileStat = await stat(filePath);
   const metadata = readMetadata
-    ? await readSongInfoFromOriginalFile(filePath)
+    ? // ponytail: bulk folder scans keep the partial fast path (1MB header per file) so 10k-song
+      // libraries stay fast; big-cover files fall back to one full read inside the reader.
+      await readSongInfoFromOriginalFile(filePath, { partialRead: true })
       .then((result) => (result.ok ? result.metadata : undefined))
       .catch(() => undefined)
     : undefined;

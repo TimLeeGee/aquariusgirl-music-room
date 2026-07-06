@@ -1,5 +1,26 @@
 # Aquariusgirl Music Room Continue Work
 
+## 2026-07-07 Big Cover Readback Crash / Save Feedback hotfix 0.1.43 完成
+
+- 已修正 macOS DMG 使用者回報：MP3（nonoc-Memento）用 320KB `cover 01.jpeg` 換封面成功，改用 4.3MB `Cover 01.jpg` 按「套用到原始檔」後卡住、關掉面板後「重新讀取音樂標籤」一直失敗；Finder 已顯示新封面、播放器仍舊圖。
+- 根因與 .jpg / .jpeg 副檔名無關，已在 Linux 沙盒以打包版 wasm 設定（`AQUARIUSGIRL_TAGLIB_WASM_DIR` + `forceWasmType: "emscripten"`）100% 重現：taglib-wasm 預設 partial read 只讀前 1MB + 尾 128KB，寫入 4.3MB 封面後 ID3v2 標籤區約 4.3MB 被截斷，packaged Emscripten TagLib 解析截斷 buffer 直接 WASM `RuntimeError: unreachable`（`isValid()` 仍回 true，崩潰發生在 properties / getPictures / dispose），不是 `InvalidFormatError`，0.1.41 的 full-load retry 條件接不到 → 寫回成功但 readback / reload 永遠失敗，播放器與 IndexedDB 停在舊資料。
+- 次因（使用者以為卡住）：`MessageToast` z-[60] 被歌曲資訊面板 overlay z-[80] 蓋住，保存失敗時面板不關、錯誤訊息完全看不到。
+- 修法（4 檔案約 40 行、零新套件、不清 IndexedDB、不改 DB schema、不動寫回與 readback hash 路徑）：
+- `electron/songInfoWriter.ts`：`readSongInfoFromOriginalFile(sourcePath, { partialRead })` 預設完整讀取（寫前預讀、保存後 readback、「重新讀取音樂標籤」等單檔 user-initiated 動作永不踩截斷崩潰）；partial 路徑遇任何錯誤（含 WASM RuntimeError）都 fallback 一次 `partial:false` 完整讀取；`readPicturesSafely` 遇 `WebAssembly.RuntimeError` rethrow 交給 fallback，不再吞掉變成「無封面」假結果；移除只認 `InvalidFormatError` 的 `shouldRetryFullTagRead`。
+- `electron/selectedFile.ts`：資料夾／多檔掃描明確走 `partialRead: true` 快速路徑，上萬首曲庫載入效能不變；大封面檔案自動 fallback 完整讀取一次自癒。
+- `src/components/MessageToast.tsx`：z-[60] → z-[90]，成功「已套用到原始檔」與所有失敗訊息永遠顯示在最上層（保存成功/失敗一定看得到提示）。
+- `src/components/SongInfoPanel.tsx`：保存中按鈕顯示「套用中…」。
+- 效能：M1 Air 8GB — full read 只發生在單檔使用者動作與 partial 失敗的 fallback；掃描維持 partial 快速路徑，上萬首無額外負擔。
+- 已通過（Linux 沙盒）：打包版 wasm 設定下重現舊版崩潰、修後 320KB 與 4.3MB 封面寫入＋讀回 hash 全數通過、掃描路徑（`partialRead: true` + `toSelectedFile`）大封面 fallback 正常；`check:song-info`（含 writer 真實 wasm roundtrip）、`check:metadata-save-loop`、`check:playback-restore`、`check:playlist-logic`、`check:playback-order`、`check:track-list-virtualization`、`check:prompts`、`check:track-display`、`check:track-identity`、`check:taglib-wasm-packaging`、`check:ai-assets`、`tsc --noEmit`、`npm run electron:compile`。
+- 版本已升 0.1.43（package.json / package-lock.json / exportSettings）。installer 由 Claude 透過桌面控制雙擊 `打包發行.command`（`npm run dist:release`）在 Mac 本機產出，build exit=0，全部 check 與 vite build 再次通過。0.1.43 installer：
+- `Aquariusgirl Music Room Setup 0.1.43.exe`：667,667,342 bytes，SHA-256 `2be0007e5f8869bc253818ab24cc57705ce90b13306d0161a77cb27e41cebd36`
+- `Aquariusgirl Music Room-0.1.43-arm64.dmg`：684,779,166 bytes，SHA-256 `c6da0dba496ee3f9d607e1e3727689ac8bb70e3a15bff2ec3b8de06ee8120cc0`
+- DMG `hdiutil verify` VALID；未簽章、依使用者要求不 push GitHub。詳見 `docs/releases/0.1.43-checksums.md`。
+
+### 接續提示詞
+
+請接續 Aquariusgirl Music Room 0.1.43 後續驗收。先執行 `git status -sb` 與 `git diff --name-only`，不要 reset、不要 push GitHub。0.1.43 已完成 code 修正（單檔讀取預設 full read + partial 崩潰 fallback + toast z-[90] + 套用中按鈕狀態）、全部 source check、installer 產出（`release-delivery/installers/`，SHA-256 見 `docs/releases/0.1.43-checksums.md`）。驗收重點：用 4-5MB 的大 JPG（如使用者的 `Cover 01.jpg`）對 MP3「套用到原始檔」，保存後右上角必須跳出「已套用到原始檔」提示、面板自動關閉、播放器立即顯示新封面；「重新讀取音樂標籤」對同一檔必須成功；失敗情境（唯讀檔等）必須在面板開啟時看得到紅色錯誤提示；資料夾掃描含大封面檔案時封面仍讀得到且速度無感差異。不可打開或修改使用者原始 Music 資料夾；使用暫存音樂複本與隔離 profile。
+
 ## 2026-07-06 Playing File Lock Release hotfix 0.1.42 完成
 
 - 已修正 Windows EXE 播放中「套用到原始檔」有時保存失敗：根因是 `<audio>` 以 `file:` URL 載入原始檔時 Windows 持有檔案 handle，`rename(tempPath, sourcePath)` 覆蓋被 `EPERM` / `EBUSY` 擋下；macOS rename 可覆蓋開啟中檔案，所以 DMG 驗收不會重現。

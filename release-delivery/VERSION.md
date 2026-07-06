@@ -1,9 +1,21 @@
 # 版本資訊
 
 產品：Aquariusgirl Music Room / 水瓶罐子的音樂小水池
-版本：0.1.42
-日期：2026-07-06
+版本：0.1.43
+日期：2026-07-07
 平台目標：Windows x64、macOS arm64
+
+## 2026-07-07 0.1.43 hotfix 狀態（Big Cover Readback Crash / Save Feedback / 大封面讀回崩潰與保存提示）
+
+0.1.43 修正 macOS DMG 實測回報：4.3MB `Cover 01.jpg` 更換封面「套用到原始檔」後卡住、「重新讀取音樂標籤」一直失敗、Finder 有新圖但播放器仍舊圖；320KB `cover 01.jpeg` 則正常。根因與副檔名無關：taglib-wasm 預設 partial read（前 1MB + 尾 128KB）在寫入大封面後把約 4.3MB 的 ID3v2 標籤截斷，packaged Emscripten TagLib 解析截斷 buffer 直接 WASM `RuntimeError: unreachable`，不是 `InvalidFormatError`，0.1.41 的 retry 接不到 → 寫回成功但讀回永遠失敗。次因：提示 toast z-[60] 被面板 overlay z-[80] 蓋住，失敗訊息看不到才像卡住。修法：單檔讀取（預讀 / readback / 重新讀取）預設完整讀取；partial 路徑任何錯誤都 fallback 一次完整讀取；掃描明確走 `partialRead: true` 維持上萬首效能；toast 升 z-[90] 保證成功/失敗提示可見；保存中顯示「套用中…」。零新套件、不改 DB schema、不動寫回與 readback hash 路徑；M1 Air 8GB 無額外負擔。
+
+已通過（Linux 沙盒）：打包版 wasm 設定重現舊崩潰與修後 320KB / 4.3MB 寫入＋讀回 hash 驗證、掃描 fallback 驗證、`check:song-info`、`check:metadata-save-loop`、`check:playback-restore`、`check:playlist-logic`、`check:playback-order`、`check:track-list-virtualization`、`check:prompts`、`check:track-display`、`check:track-identity`、`check:taglib-wasm-packaging`、`tsc --noEmit`、`npm run electron:compile`。
+
+0.1.43 installer 已於 2026-07-07 由 `打包發行.command`（`npm run dist:release`）在 Mac 本機產出（build exit=0）並同步到 `release-delivery/installers/`：
+
+- `Aquariusgirl Music Room Setup 0.1.43.exe`：667,667,342 bytes，SHA-256 `2be0007e5f8869bc253818ab24cc57705ce90b13306d0161a77cb27e41cebd36`
+- `Aquariusgirl Music Room-0.1.43-arm64.dmg`：684,779,166 bytes，SHA-256 `c6da0dba496ee3f9d607e1e3727689ac8bb70e3a15bff2ec3b8de06ee8120cc0`
+- DMG `hdiutil verify` VALID；未簽章、不 push GitHub。詳見 `docs/releases/0.1.43-checksums.md`。
 
 ## 2026-07-06 0.1.42 hotfix 狀態（Playing File Lock Release / 播放中檔案鎖釋放與寫回重試）
 
