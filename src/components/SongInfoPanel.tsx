@@ -1,6 +1,7 @@
 import { ImagePlus, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Track } from "../types/track";
+import { ConfirmDialog } from "./ConfirmDialog";
 import {
   createSongCoverHash,
   createSongInfoDraft,
@@ -105,6 +106,8 @@ export function SongInfoPanel({
   const [savedDraft, setSavedDraft] = useState<SongInfoDraft>(() => createSongInfoDraft(track));
   const [selectedCover, setSelectedCover] = useState<SelectedCoverDraft | null>(null);
   const [busy, setBusy] = useState(false);
+  // 0.1.44: renderer 確認窗取代 window.confirm，避免 Windows 原生 confirm 弄壞輸入焦點。
+  const [pendingConfirm, setPendingConfirm] = useState<"discard" | "apply" | null>(null);
   const savingRef = useRef(false);
   const activeTrackIdRef = useRef<string | null>(null);
   const coverInputRef = useRef<HTMLInputElement | null>(null);
@@ -171,6 +174,7 @@ export function SongInfoPanel({
       resetDraftState(createSongInfoDraft(null));
       savingRef.current = false;
       setBusy(false);
+      setPendingConfirm(null);
       activeTrackIdRef.current = null;
       return;
     }
@@ -208,7 +212,8 @@ export function SongInfoPanel({
       return;
     }
 
-    if (dirty && !window.confirm("表單尚未儲存，是否放棄修改？")) {
+    if (dirty) {
+      setPendingConfirm("discard");
       return;
     }
     onClose();
@@ -279,7 +284,7 @@ export function SongInfoPanel({
     }
   };
 
-  const handleApplyToOriginal = async () => {
+  const handleApplyToOriginal = () => {
     if (writeBackDisabledReason) {
       if (isDevRuntime) {
         console.debug("[SongInfoPanel] writeback disabled:", writeBackDisabledReason);
@@ -288,17 +293,16 @@ export function SongInfoPanel({
     }
 
     if (savingRef.current) return;
+    if (!getValidDraft()) return;
+
+    setPendingConfirm("apply");
+  };
+
+  const performApplyToOriginal = async () => {
+    if (savingRef.current) return;
 
     const validDraft = getValidDraft();
     if (!validDraft) return;
-
-    if (
-      !window.confirm(
-        "這會修改原始音樂檔的歌曲資訊。建議先確認內容正確。是否繼續？",
-      )
-    ) {
-      return;
-    }
 
     savingRef.current = true;
     setBusy(true);
@@ -410,7 +414,7 @@ export function SongInfoPanel({
             className="rounded-lg border border-aquarius-pink/[0.36] bg-aquarius-pink/[0.12] px-4 py-2 text-sm font-bold text-white transition hover:bg-aquarius-pink/[0.2] disabled:cursor-not-allowed disabled:opacity-40"
             disabled={!dirty || busy || Boolean(writeBackDisabledReason)}
             title={writeBackDisabledLabel || "套用到原始檔"}
-            onClick={() => void handleApplyToOriginal()}
+            onClick={handleApplyToOriginal}
           >
             {busy ? "套用中…" : "套用到原始檔"}
           </button>
@@ -421,6 +425,31 @@ export function SongInfoPanel({
           </p>
         )}
       </aside>
+      {pendingConfirm === "discard" && (
+        <ConfirmDialog
+          title="放棄修改"
+          message="表單尚未儲存，是否放棄修改？"
+          confirmLabel="放棄修改"
+          cancelLabel="繼續編輯"
+          onCancel={() => setPendingConfirm(null)}
+          onConfirm={() => {
+            setPendingConfirm(null);
+            onClose();
+          }}
+        />
+      )}
+      {pendingConfirm === "apply" && (
+        <ConfirmDialog
+          title="套用到原始檔"
+          message="這會修改原始音樂檔的歌曲資訊。建議先確認內容正確。是否繼續？"
+          confirmLabel="套用"
+          onCancel={() => setPendingConfirm(null)}
+          onConfirm={() => {
+            setPendingConfirm(null);
+            void performApplyToOriginal();
+          }}
+        />
+      )}
     </div>
   );
 }

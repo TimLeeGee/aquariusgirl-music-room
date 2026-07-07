@@ -12,6 +12,7 @@ import { DropZone } from "./components/DropZone";
 import { Header } from "./components/Header";
 import { ImportExportPanel } from "./components/ImportExportPanel";
 import { ImageSettingsDialog } from "./components/ImageSettingsDialog";
+import { ConfirmDialog } from "./components/ConfirmDialog";
 import { MessageToast } from "./components/MessageToast";
 import { MiniPlayer } from "./components/MiniPlayer";
 import { MiniPlayerAssistant } from "./components/MiniPlayerAssistant";
@@ -470,6 +471,12 @@ export default function App() {
   const [stopAfterCurrentTrack, setStopAfterCurrentTrack] = useState(false);
   const [sleepStopSignal, setSleepStopSignal] = useState(0);
   const [songInfoTrackId, setSongInfoTrackId] = useState<string | null>(null);
+  // 0.1.44: renderer 確認窗取代 window.confirm，避免 Windows 原生 confirm 弄壞輸入焦點。
+  const [confirmReloadOpen, setConfirmReloadOpen] = useState(false);
+  const [pendingImport, setPendingImport] = useState<{
+    settings: ReturnType<typeof parseImportedSettings>;
+    summary: ReturnType<typeof summarizeImportedSettings>;
+  } | null>(null);
 
   const showInfo = useCallback((message: string) => {
     setErrorMessage("");
@@ -1182,18 +1189,11 @@ export default function App() {
     [player.isPlaying, reloadTrackMetadata, replaceTrackSongInfo],
   );
 
-  const handleReloadCurrentTrackMetadata = useCallback(async () => {
+  const performReloadCurrentTrackMetadata = useCallback(async () => {
     const track = player.currentTrack;
 
     if (!track) {
       showError("目前沒有選取歌曲。");
-      return;
-    }
-
-    if (
-      track.metadataOverride &&
-      !window.confirm("重新讀取會以原始檔標籤覆蓋播放器內的歌曲資訊，是否繼續？")
-    ) {
       return;
     }
 
@@ -1211,6 +1211,22 @@ export default function App() {
       showError("重新讀取音樂標籤失敗，請確認原始檔仍可讀取。");
     }
   }, [libraryDb, player.currentTrack, reloadSongInfoFromOriginal, showError, showInfo]);
+
+  const handleReloadCurrentTrackMetadata = useCallback(async () => {
+    const track = player.currentTrack;
+
+    if (!track) {
+      showError("目前沒有選取歌曲。");
+      return;
+    }
+
+    if (track.metadataOverride) {
+      setConfirmReloadOpen(true);
+      return;
+    }
+
+    await performReloadCurrentTrackMetadata();
+  }, [performReloadCurrentTrackMetadata, player.currentTrack, showError]);
 
   const handleShowCurrentTrackFileLocation = useCallback(async () => {
     const track = player.currentTrack;
@@ -1453,20 +1469,9 @@ export default function App() {
     tracks,
   ]);
 
-  const handleImportSettings = useCallback(
-    async (file: File) => {
+  const applyImportedSettings = useCallback(
+    (settings: ReturnType<typeof parseImportedSettings>) => {
       try {
-        const settings = parseImportedSettings(await file.text());
-        const summary = summarizeImportedSettings(settings);
-        const shouldMerge = window.confirm(
-          `讀到備份：${summary.playlists} 個歌單、${summary.tracks} 首 metadata，版本 ${summary.version}。\n\n要合併到目前播放器嗎？不會匯入音樂檔本體，也不會覆蓋現有歌單。`,
-        );
-
-        if (!shouldMerge) {
-          showInfo("已取消匯入，沒有變更目前歌單。");
-          return;
-        }
-
         const trackIdMap = createImportedTrackIdMap(settings, tracks);
         const validTrackIds = new Set(tracks.map((track) => track.id));
         const importablePlaylists = createImportablePlaylists(
@@ -1539,6 +1544,19 @@ export default function App() {
       showInfo,
       tracks,
     ],
+  );
+
+  const handleImportSettings = useCallback(
+    async (file: File) => {
+      try {
+        const settings = parseImportedSettings(await file.text());
+        const summary = summarizeImportedSettings(settings);
+        setPendingImport({ settings, summary });
+      } catch {
+        showError("匯入失敗，請確認 JSON 格式、來源與版本正確。");
+      }
+    },
+    [showError],
   );
 
   useEffect(() => {
@@ -2025,6 +2043,34 @@ export default function App() {
         onApplyToOriginal={handleApplySongInfoToOriginal}
         onError={showError}
       />
+      {confirmReloadOpen && (
+        <ConfirmDialog
+          title="重新讀取音樂標籤"
+          message="重新讀取會以原始檔標籤覆蓋播放器內的歌曲資訊，是否繼續？"
+          confirmLabel="重新讀取"
+          onCancel={() => setConfirmReloadOpen(false)}
+          onConfirm={() => {
+            setConfirmReloadOpen(false);
+            void performReloadCurrentTrackMetadata();
+          }}
+        />
+      )}
+      {pendingImport && (
+        <ConfirmDialog
+          title="匯入備份"
+          message={`讀到備份：${pendingImport.summary.playlists} 個歌單、${pendingImport.summary.tracks} 首 metadata，版本 ${pendingImport.summary.version}。\n\n要合併到目前播放器嗎？不會匯入音樂檔本體，也不會覆蓋現有歌單。`}
+          confirmLabel="合併匯入"
+          onCancel={() => {
+            setPendingImport(null);
+            showInfo("已取消匯入，沒有變更目前歌單。");
+          }}
+          onConfirm={() => {
+            const settings = pendingImport.settings;
+            setPendingImport(null);
+            applyImportedSettings(settings);
+          }}
+        />
+      )}
     </BrandAssetsContext.Provider>
   );
 }

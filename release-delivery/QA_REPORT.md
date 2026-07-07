@@ -1,9 +1,25 @@
 # QA 驗收報告
 
 產品：Aquariusgirl Music Room / 水瓶罐子的音樂小水池
-版本：0.1.43
+版本：0.1.44
 日期：2026-07-07
 驗收角色：PM / QA / Electron 發行工程師
+
+## 2026-07-07 Confirm Focus Lock / Toast Position hotfix 0.1.44
+
+- 範圍：Windows EXE 使用者實測回報 — 更換歌曲封面成功後，playlist 排序按鈕點不開、playlist 搜尋歌手輸入框與 AI 助手輸入框點了沒反應（一般按鈕仍可按，以前疑似發生過）。另要求：右上角提示移到不被遮擋的位置（建議左上切齊主視窗上緣）、排序按鈕 hover 要像我的最愛按鈕有變色反饋、保存成功 / 失敗都必須跳提示。
+- 根因（依 Electron 已知問題與症狀比對判定；Windows 專屬、macOS / Linux 無法重現）：套用到原始檔前的 `window.confirm()` 原生同步確認窗。Electron 在 Windows 上 `window.confirm` / `window.alert` 關閉後 webContents 鍵盤焦點壞掉——原生 `<select>` 下拉打不開、文字輸入框無法取得焦點、一般 button click 正常。與回報症狀完全吻合：排序是原生 select（0.1.38 起）、搜尋歌手與 AI 助手是 text input、可以按套用按鈕走完保存流程。專案技能筆記亦有既往紀錄「Windows 確認流程要用 renderer modal，不用 window.confirm 後搶焦點」。
+- 修法（零新套件、不清 IndexedDB、不改 DB schema、不動寫回與 readback hash 路徑）：新增 `src/components/ConfirmDialog.tsx`（renderer 確認窗；取消鈕 autoFocus、Esc 關閉、backdrop 點擊取消、z-[85] 介於面板 z-[80] 與 toast z-[90] 之間），取代全專案 4 處 `window.confirm`：SongInfoPanel「套用到原始檔」與「放棄修改」、App「重新讀取音樂標籤」與「匯入備份合併」（匯入取消時維持原「已取消匯入」提示）。`electron/main.ts` 新增 `showOpenDialogWithFocusRestore()`：選音樂檔 / 選音樂資料夾 / 選自訂圖片 3 個原生 dialog 掛 parent window、關閉後補 `webContents.focus()`。`MessageToast` 移到左上 `left-4 top-12`（切齊桌面版標題列 h-9 下緣）加 `pointer-events-none`。`SortControls` 加 cursor-pointer 與 `hover:border-aquarius-blue/50 hover:bg-aquarius-blue/[0.15] hover:text-white`（對齊 IconButton glass hover）。
+- PASS（Linux 沙盒）：`tsc --noEmit`、`npm run electron:compile`、`check:prompts`、`check:track-display`、`check:track-identity`、`check:playlist-logic`、`check:playback-order`、`check:track-list-virtualization`、`check:metadata-save-loop`、`check:playback-restore`、`check:taglib-wasm-packaging`、`check:song-info`（含 writer 真實 wasm roundtrip）、`electron-selected-file-check`、`ai-track-search-check`。
+- PASS：rg 掃描 `src/` 與 `electron/` 無 `window.confirm(` / `window.alert(` 殘留（僅註解提及）；`ConfirmDialog` 4 個呼叫點與 `showOpenDialogWithFocusRestore` 3 個 dialog 全部接上。
+- PASS：保存提示逐路徑核對——成功「已套用到原始檔」；失敗分支（非桌面版、格式不支援、封面資料不完整、寫回失敗、readback 失敗、readback hash 不一致、IndexedDB 保存失敗、exception、panel catch）全部有紅色錯誤提示。
+- PASS：防回歸 guard——`scripts/song-info-check.mjs` 禁止 `src/App.tsx` / `src/components/SongInfoPanel.tsx` 出現 `window.confirm(` / `window.alert(`。
+- installer 已產出（`打包發行.command` / `npm run dist:release`）：
+- `Aquariusgirl Music Room Setup 0.1.44.exe`：667,667,973 bytes，SHA-256 `c0fb27123611c9b1d98902bd13daf9981ee41d65e3fa8b328ae8d2a220a20a27`
+- `Aquariusgirl Music Room-0.1.44-arm64.dmg`：684,759,938 bytes，SHA-256 `f086700f1c129883547cfb88fa2a211329c4262c4dbedadae9440d50c1601779`
+- PASS：DMG `hdiutil verify` VALID；唯讀掛載讀回 `CFBundleShortVersionString` / `CFBundleVersion` 均為 0.1.44、執行檔 Mach-O 64-bit arm64、`Contents/Resources/taglib-wasm/taglib-web.wasm` 存在（證據：`qa-temp/version-readback-0.1.44.txt`）；EXE static check 為 PE32 Nullsoft NSIS installer；打包時 `dist:release` 內全部 check 與 vite build 再次通過（build exit=0）。
+- NOT VERIFIED：Windows 真機（confirm 焦點行為只在 Windows 發生，修法屬 Electron 已知問題標準解法，需使用者實測回報）；packaged GUI 滑鼠驗收（本輪依使用者要求以後台驗證取代）；簽章 / notarization。
+- 殘餘風險（已記錄於 KNOWN_ISSUES）：若 Windows 真機在封面「選檔後、按套用前」就鎖死，剩餘嫌疑為 `<input type="file">` 的 Chromium 原生選檔窗，升級路徑是封面選檔改走 Electron IPC dialog（可直接沿用本版 focus restore）。
 
 ## 2026-07-07 Big Cover Readback Crash / Save Feedback hotfix 0.1.43
 

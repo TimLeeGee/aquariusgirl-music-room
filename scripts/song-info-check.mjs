@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import {
   MAX_SONG_COVER_BYTES,
   createSongCoverHash,
@@ -100,5 +101,12 @@ assert.equal(isSupportedOriginalWriteFormat("song.mp3"), true);
 assert.equal(isSupportedOriginalWriteFormat("song.flac"), true);
 assert.equal(isSupportedOriginalWriteFormat("song.m4a"), true);
 assert.equal(isSupportedOriginalWriteFormat("song.wav"), false);
+
+// 0.1.44 guard: window.confirm 在 Windows 會弄壞 webContents 輸入焦點（排序 select / 搜尋 / AI 輸入框失效），
+// 確認流程必須用 renderer ConfirmDialog；這裡防止未來把 window.confirm / window.alert 加回 renderer。
+for (const sourceFile of ["src/App.tsx", "src/components/SongInfoPanel.tsx"]) {
+  const source = readFileSync(new URL(`../${sourceFile}`, import.meta.url), "utf8");
+  assert.equal(/window\.(confirm|alert)\(/.test(source), false, `${sourceFile} must not call window.confirm/alert`);
+}
 
 console.log("song-info-check PASS");

@@ -2,6 +2,12 @@
 
 最後更新：2026-07-07 CST
 
+## 2026-07-07 Confirm Focus Lock / Toast Position hotfix 0.1.44 完成
+
+- 已修正 Windows EXE 更換封面成功後排序 select / 搜尋歌手 / AI 助手輸入框失去焦點的問題（根因：`window.confirm` 原生確認窗，Electron Windows 已知焦點地雷；renderer `ConfirmDialog` 取代全專案 4 處，原生檔案 dialog 掛 parent＋focus restore）；toast 移到左上切齊標題列下緣、`pointer-events-none` 永不擋點擊；排序控制加 hover 變色反饋；保存成功 / 失敗提示逐路徑核對齊全。根因、修法、驗證與 checksums 詳見根目錄 `CONTINUE_WORK.md` 0.1.44 段落與 `release-delivery/QA_REPORT.md`。
+- 0.1.44 installer 已同步到 `release-delivery/installers/`：EXE 667,667,973 bytes（SHA-256 `c0fb27123611c9b1d98902bd13daf9981ee41d65e3fa8b328ae8d2a220a20a27`）、arm64 DMG 684,759,938 bytes（SHA-256 `f086700f1c129883547cfb88fa2a211329c4262c4dbedadae9440d50c1601779`）、DMG hdiutil verify VALID；未簽章；程式與文件已推送 GitHub main（installer 不進 git）。
+- 待補：Windows 真機驗證（更換封面套用成功後馬上點排序下拉、搜尋歌手、AI 輸入框；套用前應出現新的 renderer 確認窗）。
+
 ## 2026-07-07 Big Cover Readback Crash / Save Feedback hotfix 0.1.43 完成
 
 - 已修正 4.3MB 大封面「套用到原始檔」後讀回 WASM 崩潰（寫回成功但播放器讀不回、「重新讀取音樂標籤」一直失敗），與保存提示被面板蓋住的問題；根因、修法、驗證與 checksums 詳見根目錄 `CONTINUE_WORK.md` 0.1.43 段落與 `release-delivery/QA_REPORT.md`。

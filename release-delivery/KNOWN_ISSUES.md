@@ -1,7 +1,14 @@
 # 已知問題
 
-版本：0.1.43
+版本：0.1.44
 文件更新：2026-07-07
+
+## 0.1.44 仍需完成
+
+- `window.confirm` 焦點鎖死是 Windows 專屬行為，macOS / Linux 無法重現；0.1.44 的修法（renderer ConfirmDialog + dialog parent/focus restore）需要使用者在 Windows 真機實測：更換封面「套用到原始檔」成功後，排序下拉要能打開、搜尋歌手與 AI 助手輸入框要能輸入。
+- 若 Windows 真機在「更換封面選檔」後（尚未按套用前）就出現輸入框無法點擊，剩餘嫌疑是歌曲資訊面板內 `<input type="file">` 的 Chromium 原生選檔窗；升級路徑是把封面選檔改走 Electron IPC dialog（同 0.1.44 的 focus restore 路徑）。本輪未觀察到此情境的回報。
+- 提示 toast 移到左上後會短暫（4.2 秒）覆蓋 app 標誌區；toast 已 `pointer-events-none` 不擋點擊，若使用者覺得位置干擾可再調整。
+- 尚未在 Windows 真機驗證 0.1.44；簽章 / notarization、WAV 不支援寫回等既有已知問題不變。
 
 ## 0.1.43 仍需完成
 

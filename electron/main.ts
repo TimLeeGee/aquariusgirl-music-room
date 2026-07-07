@@ -271,8 +271,26 @@ app.on("before-quit", () => {
   localAIService.shutdown();
 });
 
-ipcMain.handle("aquariusgirl:select-music-files", async () => {
-  const result = await dialog.showOpenDialog({
+// 0.1.44: 原生檔案對話框一律掛 parent window，關閉後補 webContents.focus()。
+// Windows 已知問題：無 parent 的 dialog 關閉後輸入框 / 原生 select 可能失去鍵盤焦點。
+function showOpenDialogWithFocusRestore(
+  sender: Electron.WebContents,
+  options: Electron.OpenDialogOptions,
+) {
+  const window = BrowserWindow.fromWebContents(sender) ?? mainWindow;
+  const request = window
+    ? dialog.showOpenDialog(window, options)
+    : dialog.showOpenDialog(options);
+
+  return request.finally(() => {
+    if (window && !window.isDestroyed()) {
+      window.webContents.focus();
+    }
+  });
+}
+
+ipcMain.handle("aquariusgirl:select-music-files", async (event) => {
+  const result = await showOpenDialogWithFocusRestore(event.sender, {
     title: "選擇音樂檔案",
     properties: ["openFile", "multiSelections"],
     filters: [
@@ -290,8 +308,8 @@ ipcMain.handle("aquariusgirl:select-music-files", async () => {
   return Promise.all(result.filePaths.map((filePath) => toSelectedFile(filePath)));
 });
 
-ipcMain.handle("aquariusgirl:select-music-folder", async () => {
-  const result = await dialog.showOpenDialog({
+ipcMain.handle("aquariusgirl:select-music-folder", async (event) => {
+  const result = await showOpenDialogWithFocusRestore(event.sender, {
     title: "選擇音樂資料夾",
     properties: ["openDirectory"],
   });
@@ -411,12 +429,12 @@ ipcMain.handle("aquariusgirl:load-custom-images", async () => {
   return loadCustomImages(getCustomImagesRoot());
 });
 
-ipcMain.handle("aquariusgirl:select-custom-image", async (_event, slot: unknown) => {
+ipcMain.handle("aquariusgirl:select-custom-image", async (event, slot: unknown) => {
   if (!isCustomImageSlot(slot)) {
     return { ok: false, error: "圖片欄位無效。" };
   }
 
-  const result = await dialog.showOpenDialog({
+  const result = await showOpenDialogWithFocusRestore(event.sender, {
     title: "選擇自訂圖片",
     properties: ["openFile"],
     filters: [{ name: "圖片", extensions: ["png", "jpg", "jpeg", "webp", "gif"] }],

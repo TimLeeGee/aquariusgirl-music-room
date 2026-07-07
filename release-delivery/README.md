@@ -1,13 +1,22 @@
 # Aquariusgirl Music Room 交付說明
 
-版本：0.1.43
+版本：0.1.44
 發行日期：2026-07-07
 文件更新：2026-07-07
 產品名稱：Aquariusgirl Music Room / 水瓶罐子的音樂小水池
 
-## 0.1.43 狀態
+## 0.1.44 狀態
 
-0.1.43（大封面讀回崩潰與保存提示修正）installer 已產出並同步到本資料夾 `installers/`（installers/ 只保留這一組最新版）：
+0.1.44（確認窗焦點鎖死與提示位置修正）installer 已產出並同步到本資料夾 `installers/`（installers/ 只保留這一組最新版）：
+
+- `Aquariusgirl Music Room Setup 0.1.44.exe`：667,667,973 bytes，SHA-256 `c0fb27123611c9b1d98902bd13daf9981ee41d65e3fa8b328ae8d2a220a20a27`
+- `Aquariusgirl Music Room-0.1.44-arm64.dmg`：684,759,938 bytes，SHA-256 `f086700f1c129883547cfb88fa2a211329c4262c4dbedadae9440d50c1601779`
+- DMG `hdiutil verify` VALID；打包時 `dist:release` 內全部 check 再次通過；未簽章；程式與文件已推送 GitHub main（installer 不進 git）。詳見 `docs/releases/0.1.44-checksums.md`。
+- 修正內容：Windows 更換封面成功後排序 select / 搜尋歌手 / AI 輸入框失去焦點（renderer `ConfirmDialog` 取代 4 處 `window.confirm`＋原生檔案 dialog parent/focus restore）、提示 toast 移到左上切齊標題列下緣並 `pointer-events-none` 永不擋點擊、排序控制 hover 變色反饋、保存成功/失敗提示逐路徑核對齊全。零新套件，上萬首效能不變。
+
+## 0.1.43 狀態（歷史）
+
+0.1.43（大封面讀回崩潰與保存提示修正）installer 曾產出並同步到本資料夾 `installers/`：
 
 - `Aquariusgirl Music Room Setup 0.1.43.exe`：667,667,342 bytes，SHA-256 `2be0007e5f8869bc253818ab24cc57705ce90b13306d0161a77cb27e41cebd36`
 - `Aquariusgirl Music Room-0.1.43-arm64.dmg`：684,779,166 bytes，SHA-256 `c6da0dba496ee3f9d607e1e3727689ac8bb70e3a15bff2ec3b8de06ee8120cc0`

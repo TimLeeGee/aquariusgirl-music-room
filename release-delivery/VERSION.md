@@ -1,9 +1,21 @@
 # 版本資訊
 
 產品：Aquariusgirl Music Room / 水瓶罐子的音樂小水池
-版本：0.1.43
+版本：0.1.44
 日期：2026-07-07
 平台目標：Windows x64、macOS arm64
+
+## 2026-07-07 0.1.44 hotfix 狀態（Confirm Focus Lock / Toast Position / 確認窗焦點鎖死與提示位置）
+
+0.1.44 修正 Windows EXE 實測回報：更換封面成功後 playlist 排序（原生 select）點不開、搜尋歌手與 AI 助手輸入框無法取得焦點（一般按鈕仍可按）。根因是套用流程中的 `window.confirm()`——Electron 已知 Windows 問題：原生同步確認窗關閉後 webContents 鍵盤焦點壞掉；macOS 不受影響所以 DMG 不重現。修法：新增 renderer `ConfirmDialog`（取消鈕 autoFocus、Esc 關閉）取代全專案 4 處 `window.confirm`（套用到原始檔、放棄修改、重新讀取音樂標籤、匯入備份合併）；3 個原生檔案選擇 dialog 掛 parent window＋關閉後 `webContents.focus()`。同版：toast 提示移到左上 `left-4 top-12`（切齊標題列下緣、不再蓋右上角按鈕）並加 `pointer-events-none` 永不擋點擊；排序控制加 hover 變色反饋（對齊我的最愛 glass hover）；保存成功 / 失敗提示逐路徑核對齊全；`check:song-info` 加 window.confirm 禁令 guard。零新套件、不動寫回 / readback hash / DB schema；上萬首曲庫與 M1 Air 8GB 無額外負擔。
+
+已通過（Linux 沙盒）：`tsc --noEmit`、`npm run electron:compile`、`check:prompts`、`check:track-display`、`check:track-identity`、`check:playlist-logic`、`check:playback-order`、`check:track-list-virtualization`、`check:metadata-save-loop`、`check:playback-restore`、`check:taglib-wasm-packaging`、`check:song-info`（含 writer 真實 wasm roundtrip 與新 guard）、`electron-selected-file-check`、`ai-track-search-check`。
+
+0.1.44 installer 已於 2026-07-07 由 `打包發行.command`（`npm run dist:release`）在 Mac 本機產出並同步到 `release-delivery/installers/`：
+
+- `Aquariusgirl Music Room Setup 0.1.44.exe`：667,667,973 bytes，SHA-256 `c0fb27123611c9b1d98902bd13daf9981ee41d65e3fa8b328ae8d2a220a20a27`
+- `Aquariusgirl Music Room-0.1.44-arm64.dmg`：684,759,938 bytes，SHA-256 `f086700f1c129883547cfb88fa2a211329c4262c4dbedadae9440d50c1601779`
+- DMG `hdiutil verify` VALID；未簽章；程式與文件已推送 GitHub main（installer 不進 git）。詳見 `docs/releases/0.1.44-checksums.md`。
 
 ## 2026-07-07 0.1.43 hotfix 狀態（Big Cover Readback Crash / Save Feedback / 大封面讀回崩潰與保存提示）
 

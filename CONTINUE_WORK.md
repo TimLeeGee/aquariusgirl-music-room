@@ -1,5 +1,28 @@
 # Aquariusgirl Music Room Continue Work
 
+## 2026-07-07 Confirm Focus Lock / Toast Position hotfix 0.1.44 完成
+
+- 已修正 Windows EXE 使用者回報：更換歌曲封面成功後，playlist 排序按鈕點不開、playlist 搜尋歌手輸入框與 AI 助手輸入框點了沒反應（一般按鈕仍可按）；以前也疑似發生過同類現象。
+- 根因：套用到原始檔前的 `window.confirm()` 原生同步確認窗。Electron 已知 Windows 問題：`window.confirm` / `window.alert` 關閉後 webContents 鍵盤焦點壞掉——原生 `<select>` 下拉打不開、文字輸入框無法取得焦點，但一般 button click 正常，與使用者症狀完全吻合（排序是原生 select、搜尋與 AI 是 input）。macOS 不受影響，所以 DMG 驗收不重現。
+- 修法（零新套件、不動寫回 / readback hash 路徑、不改 DB schema、不清 IndexedDB）：
+- 新增 `src/components/ConfirmDialog.tsx`（樣式與焦點行為照抄 PlaylistDeleteDialog：取消鈕 autoFocus、Esc 關閉、backdrop 點擊取消；z-[85] 高於歌曲資訊面板 z-[80]、低於 toast z-[90]），取代全專案 4 處 `window.confirm`：`SongInfoPanel` 套用到原始檔確認與放棄修改確認、`App.tsx` 重新讀取音樂標籤確認與匯入備份合併確認。確認流程行為不變，只換掉原生視窗。
+- `electron/main.ts` 新增 `showOpenDialogWithFocusRestore()`：3 個原生檔案選擇 dialog（選音樂檔、選音樂資料夾、選自訂圖片）一律掛 parent window，關閉後補 `webContents.focus()`，堵住同類「無 parent dialog 關閉後焦點壞掉」的 Windows 地雷。
+- `src/components/MessageToast.tsx`：提示位置從右上 `right-4 top-4` 移到左上 `left-4 top-12`，切齊桌面版標題列（h-9）下緣，不再蓋住右上角「選擇音樂檔」等按鈕、也不再被螢幕上緣裁切；同時加 `pointer-events-none`，提示顯示期間也永遠不會擋任何點擊（toast 內無互動元素）。
+- `src/components/SortControls.tsx`：排序控制加 hover 變色反饋（cursor-pointer + `hover:border-aquarius-blue/50 hover:bg-aquarius-blue/[0.15] hover:text-white`），樣式對齊我的最愛等 IconButton glass hover。
+- 保存提示：逐路徑核對 `handleApplySongInfoToOriginal` 與 `SongInfoPanel`——成功顯示「已套用到原始檔」，所有失敗分支（非桌面版、格式不支援、封面資料不完整、寫回失敗、readback 失敗、readback hash 不一致、IndexedDB 保存失敗、exception）都有紅色錯誤提示；0.1.43 已把 toast 升到 z-[90]，本版再把位置移開遮擋區並 pointer-events-none，成功 / 失敗提示一定看得到。
+- 防回歸：`scripts/song-info-check.mjs` 新增 guard——`src/App.tsx` 與 `src/components/SongInfoPanel.tsx` 禁止再出現 `window.confirm(` / `window.alert(`。
+- 效能：M1 Air 8GB——全部是 UI 層小改，無新增背景工作、無全庫掃描；ConfirmDialog 只在需要確認時 render，上萬首曲庫載入與播放路徑完全不受影響。
+- 已通過（Linux 沙盒）：`tsc --noEmit`、`npm run electron:compile`、`check:prompts`、`check:track-display`、`check:track-identity`、`check:playlist-logic`、`check:playback-order`、`check:track-list-virtualization`、`check:metadata-save-loop`、`check:playback-restore`、`check:taglib-wasm-packaging`、`check:song-info`（含 writer 真實 wasm roundtrip 與新 window.confirm guard）、`electron-selected-file-check`、`ai-track-search-check`；rg 掃描確認 src/ 與 electron/ 無 `window.confirm` / `window.alert` 殘留（僅註解提及）。
+- 版本已升 0.1.44（package.json / package-lock.json / exportSettings）。0.1.44 installer：
+- `Aquariusgirl Music Room Setup 0.1.44.exe`：667,667,973 bytes，SHA-256 `c0fb27123611c9b1d98902bd13daf9981ee41d65e3fa8b328ae8d2a220a20a27`
+- `Aquariusgirl Music Room-0.1.44-arm64.dmg`：684,759,938 bytes，SHA-256 `f086700f1c129883547cfb88fa2a211329c4262c4dbedadae9440d50c1601779`
+- DMG `hdiutil verify` VALID；唯讀掛載讀回版本 0.1.44 / Mach-O arm64 / taglib wasm 存在（`qa-temp/version-readback-0.1.44.txt`）；打包時 `dist:release` 內全部 check 與 vite build 再次通過（build exit=0）。
+- 本輪 GUI 驗收依使用者要求以後台驗證取代（Windows confirm 焦點行為無法在 macOS / Linux 重現，屬 Electron 已知問題修法，Windows 真機驗收仍待使用者實測回報）；程式與文件已依使用者後續指示推送 GitHub main（installer 不進 git）。詳見 `docs/releases/0.1.44-checksums.md`。
+
+### 接續提示詞
+
+請接續 Aquariusgirl Music Room 0.1.44 後續驗收。先執行 `git status -sb` 與 `git diff --name-only`，不要 reset、不要 push GitHub。0.1.44 已完成 code 修正（ConfirmDialog 取代 4 處 window.confirm + 原生檔案 dialog parent/focus restore + toast 左上 pointer-events-none + 排序 hover 反饋）、全部 source check、installer 產出（`release-delivery/installers/`，SHA-256 見 `docs/releases/0.1.44-checksums.md`）。驗收重點（Windows 真機優先）：更換封面並「套用到原始檔」成功後，馬上點 playlist 排序下拉（要能打開且 hover 有變色）、搜尋歌手輸入框、AI 助手輸入框（都要能輸入）；套用前會出現新的 renderer 確認窗（非原生視窗）；保存成功 / 失敗提示都出現在左上角、不擋按鈕；匯入備份與重新讀取音樂標籤的確認窗也改為 renderer 版。不可打開或修改使用者原始 Music 資料夾；使用暫存音樂複本與隔離 profile。
+
 ## 2026-07-07 Big Cover Readback Crash / Save Feedback hotfix 0.1.43 完成
 
 - 已修正 macOS DMG 使用者回報：MP3（nonoc-Memento）用 320KB `cover 01.jpeg` 換封面成功，改用 4.3MB `Cover 01.jpg` 按「套用到原始檔」後卡住、關掉面板後「重新讀取音樂標籤」一直失敗；Finder 已顯示新封面、播放器仍舊圖。

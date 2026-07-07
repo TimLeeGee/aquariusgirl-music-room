@@ -16,8 +16,9 @@ const options: Array<{ value: SortMode; label: string }> = [
 ];
 
 export function SortControls({ value, onChange }: SortControlsProps) {
+  // 0.1.44: hover 變色反饋（cursor-pointer + 藍色 tint），樣式對齊我的最愛等 IconButton glass hover。
   return (
-    <label className="inline-flex items-center gap-2 rounded-full border border-white/[0.12] bg-white/10 px-3 py-2 text-sm text-aquarius-mist">
+    <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-white/[0.12] bg-white/10 px-3 py-2 text-sm text-aquarius-mist transition duration-200 hover:border-aquarius-blue/50 hover:bg-aquarius-blue/[0.15] hover:text-white">
       <span className="whitespace-nowrap">排序</span>
       <select
         value={value}
