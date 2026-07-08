@@ -1,5 +1,57 @@
 # Installer 狀態
 
+## 2026-07-08 0.1.48 狀態（面板文字全量登錄表：分組＋可搜尋編輯器）
+
+0.1.48 把面板文字自訂由 6 slot 升級為開放登錄表（~20 條 UI 字串），設定「文字」分頁改分組＋可搜尋編輯器；新增主舞台/播放器/Header/歌單/拖曳/視覺化/睡前定時等字串；`trackDisplay`「正在等音樂」搬到 `PlayerCore` 使其可改。角色名稱（中/英）一改全站換維持。零新套件。升版面：`package.json`／`package-lock.json`(×2)／`exportSettings.ts appVersion` → 0.1.48。
+
+已通過（Linux 沙盒）：`tsc --noEmit`、`electron:compile`、全部可跑 `check:*`。已通過（Mac 本機）：`npm run dist:release` DIST_EXIT=0。
+
+0.1.48 installer 已於 2026-07-08 由 `qa-temp/build-0.1.48.command` 在 Mac 本機產出並同步到 `release-delivery/installers/`（舊 0.1.47 已被 sync 自動清除）：
+
+- `Aquariusgirl Music Room Setup 0.1.48.exe`：667,674,676 bytes，SHA-256 `fa3ba844134fe791c0dfcb6452d2d3212530f5573f135b6dea66bf588213e655`
+- `Aquariusgirl Music Room-0.1.48-arm64.dmg`：684,781,240 bytes，SHA-256 `e3aaf089e8fa4d38e3b3a52f617ed38253f6ca661df5e92fb9bd7051d7ec2670`
+- DMG `hdiutil verify` VALID；掛載讀回 0.1.48／arm64／taglib wasm 存在；EXE PE32 NSIS；未簽章。詳見 `docs/releases/0.1.48-checksums.md`。
+- 打包版 GUI 實測與 Windows 真機尚未驗；尚未推 GitHub。
+
+## 2026-07-08 0.1.47 狀態（搜尋泡泡修正 + 檢查歌曲資訊強化 + 角色名稱全域改名）
+
+0.1.47 依使用者需求做五項：P1 搜尋 chip 預填＋空查詢反問、P2 檢查歌曲資訊可選資料夾範圍、P3 可寫回無建議逐首手動編輯、P4 非可寫檢視＋顯示位置、P5 角色名稱全域改名（中/英，設定「文字」分頁加名稱欄位＋預覽）。零新套件。2 處 node check 直載的 util 預設名維持字面「水瓶罐子」。升版面：`package.json`／`package-lock.json`(×2)／`exportSettings.ts appVersion` → 0.1.47。
+
+已通過（Linux 沙盒）：`tsc --noEmit`、`electron:compile`、全部可跑 `check:*`（含 `ai-track-search`／`track-display`）。已通過（Mac 本機）：`npm run dist:release` DIST_EXIT=0。
+
+0.1.47 installer 已於 2026-07-08 由 `qa-temp/build-0.1.47.command` 在 Mac 本機產出並同步到 `release-delivery/installers/`（舊 0.1.46 已被 sync 自動清除）：
+
+- `Aquariusgirl Music Room Setup 0.1.47.exe`：667,673,975 bytes，SHA-256 `b93d2f9ed0721bba5984a52ff93c341dcf98d9a0bf6066107fe9dc2bcd635d97`
+- `Aquariusgirl Music Room-0.1.47-arm64.dmg`：684,774,034 bytes，SHA-256 `c1baf08bf05575aed0feb013fe9c36a7ee3717cc3fb7ba8018b36c2bc81d9541`
+- DMG `hdiutil verify` VALID；掛載讀回 0.1.47／arm64／taglib wasm 存在；EXE PE32 NSIS；未簽章。詳見 `docs/releases/0.1.47-checksums.md`。
+- 打包版 GUI 實測與 Windows 真機尚未驗；尚未推 GitHub。
+
+## 2026-07-07 0.1.46 狀態（AI 快捷指令氣泡 + 面板文字自訂設定）
+
+0.1.46 新增兩個客製化功能：AI 助手空狀態快捷指令氣泡（點擊送出真實支援指令）、面板文字自訂（設定「文字」分頁，6 處白名單文案可改、留空 fallback 預設、隨匯出備份帶走）。零新套件、不動寫回/readback/DB schema。升版面：`package.json`／`package-lock.json`(×2)／`exportSettings.ts appVersion` → 0.1.46。
+
+已通過（Linux 沙盒）：`tsc --noEmit`、`electron:compile`、全部可跑 `check:*`（含 `check:ai-assets` darwin-arm64,win32-x64）；rg 接點齊全。已通過（Mac 本機）：`npm run dist:release` DIST_EXIT=0。
+
+0.1.46 installer 已於 2026-07-07 由 `qa-temp/build-0.1.46.command`（`npm run dist:release`）在 Mac 本機產出並同步到 `release-delivery/installers/`（舊 0.1.45 已被 sync 自動清除）：
+
+- `Aquariusgirl Music Room Setup 0.1.46.exe`：667,672,752 bytes，SHA-256 `15ceb1585a34b46d86188762549d893e5aeeff293e23c8210b1e4281113bf13c`
+- `Aquariusgirl Music Room-0.1.46-arm64.dmg`：684,765,780 bytes，SHA-256 `a29f06083d0c039cc03a1de5faafe52c47027b758c94e70ee0261e484756bd8c`
+- DMG `hdiutil verify` VALID；唯讀掛載讀回版本 0.1.46／Mach-O arm64／taglib wasm 存在；EXE 為 PE32 NSIS installer；未簽章。詳見 `docs/releases/0.1.46-checksums.md`。
+- 打包版 GUI 實測（新氣泡與文字設定）與 Windows 真機尚未驗；尚未推 GitHub。
+
+## 2026-07-07 0.1.45 狀態（AI 助手改善 + 歌曲資訊補全首次進打包版）
+
+0.1.45 把本輪已完成的 AI 助手改善（A1–A3）與歌曲資訊自動補全（B1 健檢掃描、B2 推測引擎＋建議卡＋快照復原，只寫文字欄位不碰封面）升版並打包。升版面：`package.json`／`package-lock.json`(×2)／`exportSettings.ts appVersion` 全 0.1.45。
+
+已通過（Linux 沙盒）：全部可跑的 `check:*`（含 `check:ai-assets` darwin-arm64,win32-x64、`check:song-info`、`check:ai-track-search`）＋`electron:compile`；rg 接點齊全、`window.confirm(` 於 src 零命中。已通過（Mac 本機）：`npm run build`（exit 0）與 `npm run dist:release`（DIST_EXIT=0）。
+
+0.1.45 installer 已於 2026-07-07 由 `qa-temp/build-0.1.45.command`（`npm run dist:release`）在 Mac 本機產出並同步到 `release-delivery/installers/`（舊 0.1.44 已被 sync 自動清除，維持單一交付）：
+
+- `Aquariusgirl Music Room Setup 0.1.45.exe`：667,671,899 bytes，SHA-256 `78136ae0fa13c5f43784023e0393a5fcb1c3756971e64d4872e6f859b9e17a6e`
+- `Aquariusgirl Music Room-0.1.45-arm64.dmg`：684,777,947 bytes，SHA-256 `bd123116fed76fb8c018a2741f64687d773cf0110b85f2371cb03935781f8cd4`
+- DMG `hdiutil verify` VALID；唯讀掛載讀回版本 0.1.45／Mach-O arm64／taglib wasm 存在；EXE 為 PE32 NSIS installer；未簽章。詳見 `docs/releases/0.1.45-checksums.md`。
+- 打包版 GUI 實測（新 AI metadata 流程）與 Windows 真機尚未驗；尚未推 GitHub（等使用者指示）。
+
 ## 2026-07-07 0.1.44 hotfix 狀態（Confirm Focus Lock / Toast Position / 確認窗焦點鎖死與提示位置）
 
 0.1.44 修正 Windows EXE 更換封面成功後排序 select / 搜尋 / AI 輸入框失去焦點的問題（根因：`window.confirm` 原生確認窗，Electron Windows 已知焦點地雷），renderer `ConfirmDialog` 取代全專案 4 處 `window.confirm`，3 個原生檔案 dialog 掛 parent window＋關閉後 `webContents.focus()`；toast 移到左上切齊標題列下緣並 `pointer-events-none` 永不擋點擊；排序控制加 hover 變色反饋；保存成功 / 失敗提示逐路徑核對齊全。零新套件、不改 DB schema；上萬首曲庫與 M1 Air 8GB 無額外負擔。

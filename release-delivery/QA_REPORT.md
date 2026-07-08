@@ -1,9 +1,61 @@
 # QA 驗收報告
 
 產品：Aquariusgirl Music Room / 水瓶罐子的音樂小水池
-版本：0.1.44
-日期：2026-07-07
+版本：0.1.48
+日期：2026-07-08
 驗收角色：PM / QA / Electron 發行工程師
+
+## 2026-07-08 0.1.48 面板文字全量登錄表（分組＋可搜尋編輯器）
+
+- 範圍：面板文字自訂由 6 slot 升級為開放登錄表（~20 條 UI 字串，`UI_TEXT_GROUPS`），設定「文字」分頁改分組＋可搜尋；主舞台/播放器/Header/歌單/拖曳/視覺化/睡前定時等字串改讀 `useText`；`trackDisplay`「正在等音樂」搬到 `PlayerCore` 消費端使其可改。零新套件、不動寫回/readback/DB schema。
+- 邊界：Provider 外的 `ObsOverlay`/`MiniPlayerAssistant` 與散落名字提及維持 `applyName`（跟改名、非 slot）；OS 視窗/dock 名為打包時 productName。
+- PASS（Linux 沙盒）：`tsc --noEmit`、`electron:compile`、`check:prompts/track-display/track-identity/playlist-logic/playback-order/track-list-virtualization/playback-restore/metadata-save-loop/taglib-wasm-packaging/ai-track-search/song-info`、`check:ai-assets`(darwin-arm64,win32-x64)。
+- PASS（Mac 本機）：`npm run dist:release` DIST_EXIT=0。
+- installer（單一交付、舊 0.1.47 已被 sync 清除）：
+- `Aquariusgirl Music Room Setup 0.1.48.exe`：667,674,676 bytes，SHA-256 `fa3ba844134fe791c0dfcb6452d2d3212530f5573f135b6dea66bf588213e655`
+- `Aquariusgirl Music Room-0.1.48-arm64.dmg`：684,781,240 bytes，SHA-256 `e3aaf089e8fa4d38e3b3a52f617ed38253f6ca661df5e92fb9bd7051d7ec2670`
+- PASS：DMG `hdiutil verify` VALID（CRC32 $4928A32A）；掛載讀回 0.1.48／arm64／taglib wasm 存在；EXE PE32 NSIS（證據：`qa-temp/dist-0.1.48-result.txt`）。
+- NOT VERIFIED：打包版 GUI 實測（分組搜尋編輯器、各字串即時套用）；Windows 真機；簽章／notarization。
+- 尚未推 GitHub（等使用者指示）。
+
+## 2026-07-08 0.1.47 搜尋泡泡修正 + 檢查歌曲資訊強化 + 角色名稱全域改名
+
+- 範圍（依使用者需求五項）：P1 搜尋 chip 改預填＋空查詢反問；P2 檢查歌曲資訊可選資料夾範圍（sourcePath 前綴含子資料夾）；P3 可寫回無建議改「逐首手動編輯」開 `SongInfoPanel`；P4 非可寫格式可檢視＋「顯示位置」（`showTrackInFolder`）；P5 角色名稱全域改名（中/英模板代入，設定「文字」分頁加名稱欄位＋預覽）。零新套件、不動寫回/readback/DB schema。
+- 已知限制：`aiTrackSearch.ts`／`trackDisplay.ts`（node check 直載）2 處預設名維持字面「水瓶罐子」。
+- PASS（Linux 沙盒）：`tsc --noEmit`、`electron:compile`、`check:prompts/track-display/track-identity/playlist-logic/playback-order/track-list-virtualization/playback-restore/metadata-save-loop/taglib-wasm-packaging/ai-track-search/song-info`、`check:ai-assets`(darwin-arm64,win32-x64)。
+- PASS（Mac 本機）：`npm run dist:release` DIST_EXIT=0。
+- installer（單一交付、舊 0.1.46 已被 sync 清除）：
+- `Aquariusgirl Music Room Setup 0.1.47.exe`：667,673,975 bytes，SHA-256 `b93d2f9ed0721bba5984a52ff93c341dcf98d9a0bf6066107fe9dc2bcd635d97`
+- `Aquariusgirl Music Room-0.1.47-arm64.dmg`：684,774,034 bytes，SHA-256 `c1baf08bf05575aed0feb013fe9c36a7ee3717cc3fb7ba8018b36c2bc81d9541`
+- PASS：DMG `hdiutil verify` VALID（CRC32 $5E93F91C）；掛載讀回 0.1.47／arm64／taglib wasm 存在；EXE PE32 Nullsoft NSIS（證據：`qa-temp/dist-0.1.47-result.txt`）。
+- NOT VERIFIED：打包版 GUI 實測（五項新功能實跑）；Windows 真機；簽章／notarization。
+- 尚未推 GitHub（等使用者指示；走 `github-update-flow`）。
+
+## 2026-07-07 0.1.46 AI 快捷指令氣泡 + 面板文字自訂設定
+
+- 範圍：兩個客製化新功能（依使用者需求）。Feature A：AI 助手空狀態的可點選快捷指令氣泡（只列真實支援指令，點擊走既有 `handleSend`）。Feature B：設定「外觀設定」新增「文字」分頁，可自訂 6 處面板文字（主舞台標題/待機提示、AI 面板標題/問候/輸入提示、拖曳提示），照 ThemeColorSettings 模式（settings + export/import + normalize + 復原），元件用 `TextOverrideContext`/`useText` 消費、留空 fallback 預設。零新套件、不動寫回/readback/DB schema。
+- 升版：`package.json`／`package-lock.json`(×2)／`exportSettings.ts appVersion` → 0.1.46。
+- PASS（Linux 沙盒）：`tsc --noEmit`（renderer 型別零錯）、`electron:compile`、`check:prompts/track-display/track-identity/playlist-logic/playback-order/track-list-virtualization/playback-restore/metadata-save-loop/taglib-wasm-packaging`、`check:ai-assets`(darwin-arm64,win32-x64)；rg 6 個 `useText` 消費點與 Provider/resolve/export/import 接點齊全、舊硬字串已從元件移除。
+- PASS（Mac 本機）：`npm run dist:release` DIST_EXIT=0（vite build 於打包時通過）。
+- installer 已產出並同步 `release-delivery/installers/`（單一交付、舊 0.1.45 已被 sync 清除）：
+- `Aquariusgirl Music Room Setup 0.1.46.exe`：667,672,752 bytes，SHA-256 `15ceb1585a34b46d86188762549d893e5aeeff293e23c8210b1e4281113bf13c`
+- `Aquariusgirl Music Room-0.1.46-arm64.dmg`：684,765,780 bytes，SHA-256 `a29f06083d0c039cc03a1de5faafe52c47027b758c94e70ee0261e484756bd8c`
+- PASS：DMG `hdiutil verify` VALID（CRC32 $09314736）；唯讀掛載讀回 0.1.46／Mach-O arm64／taglib wasm 存在；EXE PE32 Nullsoft NSIS（證據：`qa-temp/dist-0.1.46-result.txt`）。
+- NOT VERIFIED：打包版 GUI 實測（新氣泡點擊、文字設定即時套用/復原、匯出匯入帶走文案）；Windows 真機；簽章／notarization。
+- 尚未推 GitHub（等使用者指示；走 `github-update-flow`）。
+
+## 2026-07-07 0.1.45 AI 助手改善（A1–A3）＋歌曲資訊補全 Phase 1＋2 首次打包
+
+- 範圍：把本輪已完成的程式（A1 智慧分流、A2 token 預算、A3 卡死偵測；B1 健檢掃描、B2 推測引擎＋建議卡＋快照復原——只寫文字欄位、不碰封面）升版 0.1.45 並打包 mac＋Windows。細節見 `docs/HANDOFF_AI_METADATA.md`。
+- 升版：`package.json`／`package-lock.json`（×2）／`src/utils/exportSettings.ts appVersion` 全部 0.1.45；程式註解中的「0.1.44」為歷史標註不動。
+- PASS（Linux 沙盒）：`check:prompts`、`check:track-display`、`check:track-identity`、`check:playlist-logic`、`check:playback-order`、`check:track-list-virtualization`、`check:playback-restore`、`check:metadata-save-loop`、`check:taglib-wasm-packaging`、`check:ai-assets`(darwin-arm64,win32-x64)、`check:song-info`、`check:ai-track-search`、`electron:compile`；rg 接點 `shouldSkipModelRouter`／`isMetadataFixIntent`／`scanMetadata`／`metadata-fix-snapshot`／`prefillDraft` 齊全、`window.confirm(` 於 src 零命中。
+- PASS（Mac 本機）：`npm run build`（vite 1652 模組、exit 0）與 `npm run dist:release`（DIST_EXIT=0，全部 check＋build＋electron:compile 於打包時再次通過）。
+- installer 已產出並同步 `release-delivery/installers/`（單一交付、舊 0.1.44 已被 sync 清除）：
+- `Aquariusgirl Music Room Setup 0.1.45.exe`：667,671,899 bytes，SHA-256 `78136ae0fa13c5f43784023e0393a5fcb1c3756971e64d4872e6f859b9e17a6e`
+- `Aquariusgirl Music Room-0.1.45-arm64.dmg`：684,777,947 bytes，SHA-256 `bd123116fed76fb8c018a2741f64687d773cf0110b85f2371cb03935781f8cd4`
+- PASS：DMG `hdiutil verify` VALID（CRC32 $8F5FEB27）；唯讀掛載讀回 `CFBundleShortVersionString`／`CFBundleVersion` 均為 0.1.45、Mach-O arm64、taglib wasm 存在；EXE static check 為 PE32 Nullsoft NSIS installer（證據：`qa-temp/dist-0.1.45-result.txt`）。
+- NOT VERIFIED：打包版 GUI 實測（新 AI metadata 功能：報告卡→建議卡→套用→readback→復原這條龍，本輪依使用者選擇只打包、未做 GUI 實跑）；Windows 真機；簽章／notarization。
+- 尚未推 GitHub（等使用者指示；走 `github-update-flow` 技能）。
 
 ## 2026-07-07 Confirm Focus Lock / Toast Position hotfix 0.1.44
 

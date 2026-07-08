@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Track } from "../types/track";
+import { applyName } from "../config/characterName";
 import {
   createFileSignature,
   createSafeTrackId,
@@ -475,7 +476,7 @@ export function useLocalTracks({
 
       if (audioFiles.length === 0) {
         if (rejectedFiles.length > 0) {
-          onError?.("這些檔案不是支援的音樂格式，水瓶罐子先幫你略過。");
+          onError?.(applyName("這些檔案不是支援的音樂格式，{name}先幫你略過。"));
         } else {
           onError?.("沒有讀到可加入的音樂檔。");
         }

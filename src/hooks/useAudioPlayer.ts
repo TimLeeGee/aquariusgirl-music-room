@@ -8,6 +8,7 @@ import {
 } from "react";
 import type { RepeatMode, Track } from "../types/track";
 import { STORAGE_KEYS, useLocalStorage } from "./useLocalStorage";
+import { applyName } from "../config/characterName";
 
 type UseAudioPlayerOptions = {
   tracks: Track[];
@@ -99,7 +100,7 @@ export function useAudioPlayer({
     const audio = audioRef.current;
 
     if (!audio || !currentTrackSource) {
-      onError?.("先放幾首音樂進水池，水瓶罐子才有歌可以播。");
+      onError?.(applyName("先放幾首音樂進水池，{name}才有歌可以播。"));
       setIsPlaying(false);
       return false;
     }
@@ -426,7 +427,7 @@ export function useAudioPlayer({
 
   const handleAudioError = useCallback(() => {
     setIsPlaying(false);
-    onError?.("這首音樂檔無法播放，水瓶罐子先暫停一下。");
+    onError?.(applyName("這首音樂檔無法播放，{name}先暫停一下。"));
   }, [onError]);
 
   useEffect(() => {

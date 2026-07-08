@@ -1,5 +1,7 @@
 import type { Playlist } from "../types/playlist";
 import type { Track } from "../types/track";
+// 註：本檔由 node --experimental-strip-types 的 check 直接載入，不能加 runtime 相對 import
+// （node ESM 無法解析無副檔名 value import），故此處預設名維持字面「水瓶罐子」，不套用角色改名。
 
 export type MusicToolIntent =
   | "chat"
@@ -112,6 +114,21 @@ const requestStopWords = [
   "用",
   "的",
   "那",
+  // 0.1.47 P1：搜尋指令詞剝除後若為空，面板會反問「要找什麼」，不再把整句當關鍵字。
+  "搜尋",
+  "搜",
+  "查詢",
+  "查",
+  "我的",
+  "我",
+  "音樂庫",
+  "曲庫",
+  "歌庫",
+  "音樂",
+  "歌曲",
+  "library",
+  "music",
+  "song",
 ];
 const aliasGroups = [
   ["櫻花46", "樱花46", "櫻坂46", "樱坂46", "sakurazaka46", "sakurazaka 46", "櫻坂", "樱坂", "46"],
@@ -287,6 +304,18 @@ function inferTargetPlaylistName(text: string) {
   const normalized = displayText(text);
   const match = normalized.match(/(?:加入|加到|放進|放到|新增到)\s*(.+?)(?:播放清單|歌單|playlist)/i);
   return match?.[1]?.trim() ?? "";
+}
+
+export function shouldSkipModelRouter(intent: MusicSearchIntent) {
+  // ponytail: rules already answer clear commands; ask the 0.8B router only when they can't. Revisit if fuzzy requests regress.
+  if (intent.intent === "random_playlist") return true;
+  if (intent.intent === "add_to_playlist" || intent.intent === "remove_from_playlist") {
+    return intent.keywords.length > 0 || Boolean(intent.targetPlaylistName);
+  }
+  if (intent.intent === "create_playlist" || intent.intent === "search_music") {
+    return intent.keywords.length > 0 || Boolean(intent.mood);
+  }
+  return false;
 }
 
 export function isDirectPlaylistRequest(text: string) {

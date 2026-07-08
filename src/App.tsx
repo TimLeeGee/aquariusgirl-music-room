@@ -51,6 +51,7 @@ import type { RepeatMode } from "./types/track";
 import type {
   AudioVisualizerSettings,
   MiniPlayerSettings,
+  TextOverrideSettings,
   ThemeColorSettings,
   WindowBounds,
   WindowBoundsState,
@@ -58,8 +59,10 @@ import type {
 import {
   defaultAudioVisualizerSettings,
   defaultMiniPlayerSettings,
+  defaultTextOverrideSettings,
   defaultThemeColorSettings,
 } from "./types/settings";
+import { TextOverrideContext, applyName, resolveTextOverrideSettings, setActiveCharacterNames } from "./config/textOverrides";
 import { createExportPayload, downloadJsonFile, getExportFileName } from "./utils/exportSettings";
 import { isSupportedAudioPath } from "./utils/audioFiles";
 import {
@@ -76,6 +79,7 @@ import {
 } from "./utils/platform";
 import { parseTrackName } from "./utils/parseTrackName";
 import {
+  createSongInfoDraft,
   isSupportedOriginalWriteFormat,
   normalizeSongInfoDraft,
   type SongInfoDraft,
@@ -109,6 +113,17 @@ function sortTracks(tracks: Track[], sortMode: SortMode) {
   }
 
   return nextTracks.sort((a, b) => a.addedAt - b.addedAt);
+}
+
+// 0.1.45 B2: AI 資訊補全只寫文字欄位；剝除 cover 欄位讓 writer 不碰 picture block。
+function stripCoverFromSongInfoDraft(draft: SongInfoDraft): SongInfoDraft {
+  return {
+    ...draft,
+    coverDataUrl: undefined,
+    coverMimeType: undefined,
+    coverHash: undefined,
+    coverBytes: undefined,
+  };
 }
 
 function createTrackWithSongInfo(track: Track, draft: SongInfoDraft): Track {
@@ -256,7 +271,7 @@ function playlistNameExists(
 }
 
 function createUniquePlaylistName(playlists: Playlist[], name: string) {
-  const baseName = name.trim() || "水瓶罐子 AI 歌單";
+  const baseName = name.trim() || applyName("{name} AI 歌單");
   if (!playlistNameExists(playlists, baseName)) {
     return baseName;
   }
@@ -419,6 +434,11 @@ export default function App() {
       STORAGE_KEYS.themeColorSettings,
       defaultThemeColorSettings,
     );
+  const [rawTextOverrideSettings, setTextOverrideSettings] =
+    useLocalStorage<TextOverrideSettings>(
+      STORAGE_KEYS.textOverrideSettings,
+      defaultTextOverrideSettings,
+    );
   const [rawVisualizerSettings, setVisualizerSettings] =
     useLocalStorage<AudioVisualizerSettings>(
       STORAGE_KEYS.audioVisualizerSettings,
@@ -455,6 +475,12 @@ export default function App() {
     () => resolveThemeColorSettings(rawThemeColorSettings),
     [rawThemeColorSettings],
   );
+  const resolvedTextOverrideSettings = useMemo(() => {
+    const resolved = resolveTextOverrideSettings(rawTextOverrideSettings);
+    // 同步非 React 讀取單例（在 render 期、子元件 render 之前更新，trackDisplay 等即時拿到新名字）。
+    setActiveCharacterNames(resolved.characterName, resolved.characterNameEn);
+    return resolved;
+  }, [rawTextOverrideSettings]);
   const [smartDialogOpen, setSmartDialogOpen] = useState(false);
   const [playlistDuplicateRequest, setPlaylistDuplicateRequest] = useState<{
     playlistId: string;
@@ -471,6 +497,15 @@ export default function App() {
   const [stopAfterCurrentTrack, setStopAfterCurrentTrack] = useState(false);
   const [sleepStopSignal, setSleepStopSignal] = useState(0);
   const [songInfoTrackId, setSongInfoTrackId] = useState<string | null>(null);
+  // 0.1.45 B2: AI 補全「我來改」帶入建議值；同 session 快照供一鍵復原。
+  const [songInfoPrefill, setSongInfoPrefill] = useState<{
+    trackId: string;
+    patch: Partial<SongInfoDraft>;
+  } | null>(null);
+  const metadataFixSessionRef = useRef<
+    Array<{ trackId: string; sourcePath: string; before: SongInfoDraft }>
+  >([]);
+  const metadataFixSessionIdRef = useRef("");
   // 0.1.44: renderer 確認窗取代 window.confirm，避免 Windows 原生 confirm 弄壞輸入焦點。
   const [confirmReloadOpen, setConfirmReloadOpen] = useState(false);
   const [pendingImport, setPendingImport] = useState<{
@@ -1412,6 +1447,58 @@ export default function App() {
     [libraryDb, player.suspendAudioForFileWrite, replaceTrackSongInfo, showError, showInfo, tracks],
   );
 
+  // 0.1.45 B2: AI 資訊補全套用——重用 handleApplySongInfoToOriginal 整條管線（suspend／寫入／readback／DB）。
+  const handleApplyMetadataFix = useCallback(
+    async (trackId: string, patch: Partial<SongInfoDraft>) => {
+      const track = tracks.find((item) => item.id === trackId);
+      if (!track?.sourcePath) return false;
+
+      const before = stripCoverFromSongInfoDraft(createSongInfoDraft(track));
+      const draft = stripCoverFromSongInfoDraft(normalizeSongInfoDraft({ ...before, ...patch }));
+      const ok = await handleApplySongInfoToOriginal(trackId, draft);
+
+      if (ok) {
+        if (!metadataFixSessionIdRef.current) {
+          metadataFixSessionIdRef.current = new Date().toISOString().replace(/[:.]/g, "-");
+        }
+        metadataFixSessionRef.current.push({ trackId, sourcePath: track.sourcePath, before });
+        // 快照落盤只是災難回復備援；失敗不影響主流程。
+        void window.aquariusgirlAPI?.saveMetadataFixSnapshot?.({
+          sessionId: metadataFixSessionIdRef.current,
+          entries: metadataFixSessionRef.current,
+        });
+      }
+
+      return ok;
+    },
+    [handleApplySongInfoToOriginal, tracks],
+  );
+
+  const handleEditSongInfoFromAI = useCallback(
+    (trackId: string, patch: Partial<SongInfoDraft>) => {
+      setSongInfoPrefill(Object.keys(patch).length > 0 ? { trackId, patch } : null);
+      setSongInfoTrackId(trackId);
+    },
+    [],
+  );
+
+  const handleRestoreMetadataFix = useCallback(async () => {
+    const entries = [...metadataFixSessionRef.current].reverse();
+    if (entries.length === 0) return { restored: 0, failed: 0 };
+
+    let restored = 0;
+    let failed = 0;
+    for (const entry of entries) {
+      const ok = await handleApplySongInfoToOriginal(entry.trackId, entry.before);
+      if (ok) restored += 1;
+      else failed += 1;
+    }
+
+    metadataFixSessionRef.current = [];
+    metadataFixSessionIdRef.current = "";
+    return { restored, failed };
+  }, [handleApplySongInfoToOriginal]);
+
   const handleDeletePlaylist = useCallback(
     (playlistId: string) => {
       const playlist = playlistsState.userPlaylists.find((item) => item.id === playlistId);
@@ -1453,6 +1540,7 @@ export default function App() {
       audioVisualizerSettings: resolvedVisualizerSettings,
       miniPlayerSettings: resolvedMiniSettings,
       themeColorSettings: resolvedThemeColorSettings,
+      textOverrideSettings: resolvedTextOverrideSettings,
     });
     downloadJsonFile(getExportFileName(), payload);
     showInfo("已匯出歌單設定，不包含音樂檔本體。");
@@ -1462,6 +1550,7 @@ export default function App() {
     player.volume,
     playlistsState.playlists,
     resolvedMiniSettings,
+    resolvedTextOverrideSettings,
     resolvedThemeColorSettings,
     resolvedVisualizerSettings,
     showInfo,
@@ -1521,6 +1610,11 @@ export default function App() {
         if (isRecord(preferences.themeColorSettings)) {
           setThemeColorSettings(
             resolveThemeColorSettings(preferences.themeColorSettings),
+          );
+        }
+        if (isRecord(preferences.textOverrideSettings)) {
+          setTextOverrideSettings(
+            resolveTextOverrideSettings(preferences.textOverrideSettings),
           );
         }
 
@@ -1735,6 +1829,7 @@ export default function App() {
 
   return (
     <BrandAssetsContext.Provider value={resolvedBrandAssets}>
+      <TextOverrideContext.Provider value={resolvedTextOverrideSettings}>
       {audioElement}
       <BackgroundAura isPlaying={player.isPlaying} />
       {isDesktopApp && (
@@ -1744,7 +1839,7 @@ export default function App() {
               AQ
             </span>
             <span className="truncate text-sm font-black tracking-normal">
-              Aquariusgirl Music Room
+              {applyName("{nameEn} Music Room")}
             </span>
           </div>
         </div>
@@ -1864,6 +1959,9 @@ export default function App() {
                   playlists={normalPlaylists}
                   onCreatePlaylist={handleCreateAIPlaylist}
                   onAddTracksToPlaylist={handleAddAITracksToPlaylist}
+                  onApplyMetadataFix={handleApplyMetadataFix}
+                  onEditSongInfo={handleEditSongInfoFromAI}
+                  onRestoreMetadataFix={handleRestoreMetadataFix}
                 />
               }
             />
@@ -2034,12 +2132,28 @@ export default function App() {
           handleMiniOpacityChange(defaultMiniPlayerSettings.opacity);
           showInfo("色彩與透明度已全部復原。");
         }}
+        textOverrides={resolvedTextOverrideSettings}
+        onTextOverridePatch={(key, value) =>
+          setTextOverrideSettings((current) => ({ ...current, [key]: value }))
+        }
+        onResetText={() => {
+          setTextOverrideSettings(defaultTextOverrideSettings);
+          showInfo("面板文字已全部復原預設。");
+        }}
       />
       <SongInfoPanel
         open={Boolean(songInfoTrack)}
         track={songInfoTrack}
         isDesktopApp={isDesktopApp}
-        onClose={() => setSongInfoTrackId(null)}
+        prefillDraft={
+          songInfoPrefill && songInfoPrefill.trackId === songInfoTrack?.id
+            ? songInfoPrefill.patch
+            : null
+        }
+        onClose={() => {
+          setSongInfoTrackId(null);
+          setSongInfoPrefill(null);
+        }}
         onApplyToOriginal={handleApplySongInfoToOriginal}
         onError={showError}
       />
@@ -2071,6 +2185,7 @@ export default function App() {
           }}
         />
       )}
+      </TextOverrideContext.Provider>
     </BrandAssetsContext.Provider>
   );
 }

@@ -1,11 +1,51 @@
 # Aquariusgirl Music Room 交付說明
 
-版本：0.1.44
-發行日期：2026-07-07
-文件更新：2026-07-07
+版本：0.1.48
+發行日期：2026-07-08
+文件更新：2026-07-08
 產品名稱：Aquariusgirl Music Room / 水瓶罐子的音樂小水池
 
-## 0.1.44 狀態
+## 0.1.48 狀態
+
+0.1.48（面板文字全量登錄表：分組＋可搜尋編輯器）installer 已產出並同步到本資料夾 `installers/`（installers/ 只保留這一組最新版）：
+
+- `Aquariusgirl Music Room Setup 0.1.48.exe`：667,674,676 bytes，SHA-256 `fa3ba844134fe791c0dfcb6452d2d3212530f5573f135b6dea66bf588213e655`
+- `Aquariusgirl Music Room-0.1.48-arm64.dmg`：684,781,240 bytes，SHA-256 `e3aaf089e8fa4d38e3b3a52f617ed38253f6ca661df5e92fb9bd7051d7ec2670`
+- DMG `hdiutil verify` VALID；掛載讀回 0.1.48／arm64／taglib wasm 存在；EXE PE32 NSIS；打包時 `dist:release` 全部 check 再次通過（DIST_EXIT=0）；未簽章。詳見 `docs/releases/0.1.48-checksums.md`。
+- 新增內容：設定「外觀設定→文字」升級——除了角色名稱（中/英，一改全站換），現在可**逐句覆寫 ~20 處面板文字**（主舞台、播放器、Header、歌單搜尋無結果、拖曳說明、視覺化/睡前定時標題等），並依分組列出、可搜尋。
+- 待補：打包版 GUI 實測、Windows 真機；尚未推 GitHub。
+
+## 0.1.47 狀態（歷史）
+
+0.1.47（搜尋泡泡修正 + 檢查歌曲資訊強化 + 角色名稱全域改名）installer 已產出並同步到本資料夾 `installers/`（installers/ 只保留這一組最新版）：
+
+- `Aquariusgirl Music Room Setup 0.1.47.exe`：667,673,975 bytes，SHA-256 `b93d2f9ed0721bba5984a52ff93c341dcf98d9a0bf6066107fe9dc2bcd635d97`
+- `Aquariusgirl Music Room-0.1.47-arm64.dmg`：684,774,034 bytes，SHA-256 `c1baf08bf05575aed0feb013fe9c36a7ee3717cc3fb7ba8018b36c2bc81d9541`
+- DMG `hdiutil verify` VALID；掛載讀回 0.1.47／arm64／taglib wasm 存在；EXE PE32 NSIS；打包時 `dist:release` 全部 check 再次通過（DIST_EXIT=0）；未簽章。詳見 `docs/releases/0.1.47-checksums.md`。
+- 新增內容：AI 助手「搜尋」泡泡改成預填輸入框、含糊搜尋會先反問；「檢查歌曲資訊」可選資料夾範圍、推測不出的可逐首手動編輯、非 mp3/flac/m4a 可檢視並「顯示位置」；設定「外觀設定→文字」新增角色名稱（中/英）欄位，一改全站文字跟著換。
+- 待補：打包版 GUI 實測（五項新功能）、Windows 真機；尚未推 GitHub。
+
+## 0.1.46 狀態（歷史）
+
+0.1.46（AI 快捷指令氣泡 + 面板文字自訂設定）installer 已產出並同步到本資料夾 `installers/`（installers/ 只保留這一組最新版）：
+
+- `Aquariusgirl Music Room Setup 0.1.46.exe`：667,672,752 bytes，SHA-256 `15ceb1585a34b46d86188762549d893e5aeeff293e23c8210b1e4281113bf13c`
+- `Aquariusgirl Music Room-0.1.46-arm64.dmg`：684,765,780 bytes，SHA-256 `a29f06083d0c039cc03a1de5faafe52c47027b758c94e70ee0261e484756bd8c`
+- DMG `hdiutil verify` VALID；唯讀掛載讀回 0.1.46／arm64／taglib wasm 存在；EXE PE32 NSIS；打包時 `dist:release` 全部 check 再次通過（DIST_EXIT=0）；未簽章。詳見 `docs/releases/0.1.46-checksums.md`。
+- 新增內容：AI 助手空狀態多了可點選的快捷指令氣泡（一鍵送出檢查歌曲資訊／隨機清單／搜尋／聊天）；設定「外觀設定」新增「文字」分頁，可自訂主舞台、AI 面板、拖曳提示等 6 處面板文字，留空用預設、可一鍵復原、隨備份匯出。
+- 待補：打包版 GUI 實測（新氣泡與文字設定）、Windows 真機；尚未推 GitHub。
+
+## 0.1.45 狀態（歷史）
+
+0.1.45（AI 助手改善 A1–A3 + 歌曲資訊自動補全 Phase 1+2 首次進打包版）installer 已產出並同步到本資料夾 `installers/`（installers/ 只保留這一組最新版）：
+
+- `Aquariusgirl Music Room Setup 0.1.45.exe`：667,671,899 bytes，SHA-256 `78136ae0fa13c5f43784023e0393a5fcb1c3756971e64d4872e6f859b9e17a6e`
+- `Aquariusgirl Music Room-0.1.45-arm64.dmg`：684,777,947 bytes，SHA-256 `bd123116fed76fb8c018a2741f64687d773cf0110b85f2371cb03935781f8cd4`
+- DMG `hdiutil verify` VALID；唯讀掛載讀回 0.1.45／arm64／taglib wasm 存在；EXE PE32 NSIS；打包時 `dist:release` 全部 check 再次通過（DIST_EXIT=0）；未簽章。詳見 `docs/releases/0.1.45-checksums.md`。
+- 新增內容：AI 助手效率／穩定改善（智慧分流、token 預算、卡死自動重啟）＋在 AI 聊天面板做歌曲資訊健檢與逐首建議補全（只寫文字欄位、不碰封面、可一鍵復原）。
+- 待補：打包版 GUI 實測（新 AI metadata 流程）、Windows 真機；尚未推 GitHub。
+
+## 0.1.44 狀態（歷史）
 
 0.1.44（確認窗焦點鎖死與提示位置修正）installer 已產出並同步到本資料夾 `installers/`（installers/ 只保留這一組最新版）：
 

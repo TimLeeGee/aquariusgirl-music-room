@@ -51,10 +51,45 @@ function safeText(value: unknown, maxLength = 4000) {
   return typeof value === "string" ? value.slice(0, maxLength) : "";
 }
 
+// 0.1.45 A2: CJK 每字約 1 token、其餘約 4 字元 1 token 的保守估算，防止歷史撐爆 4096 ctx。
+const cjkCharPattern = /[⺀-鿿가-힯豈-﫿＀-￯]/;
+
+function estimateTokens(text: string) {
+  let cjkCount = 0;
+  for (const char of text) {
+    if (cjkCharPattern.test(char)) {
+      cjkCount += 1;
+    }
+  }
+  return cjkCount + Math.ceil((text.length - cjkCount) / 4);
+}
+
+function trimMessagesToBudget(messages: AIChatMessage[], budget: number) {
+  const kept: AIChatMessage[] = [];
+  let used = 0;
+
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    const cost = estimateTokens(message.content) + 8;
+
+    if (kept.length === 0 && cost > budget) {
+      // 最新一則單獨超標：硬切內容保留開頭，至少送得出去。
+      kept.unshift({ ...message, content: message.content.slice(0, budget) });
+      break;
+    }
+
+    if (used + cost > budget) break;
+    kept.unshift(message);
+    used += cost;
+  }
+
+  return kept;
+}
+
 function sanitizeMessages(messages: unknown): AIChatMessage[] {
   if (!Array.isArray(messages)) return [];
 
-  return messages
+  const cleaned = messages
     .map((message): AIChatMessage | null => {
       if (!message || typeof message !== "object") return null;
       const role = (message as { role?: unknown }).role;
@@ -64,6 +99,8 @@ function sanitizeMessages(messages: unknown): AIChatMessage[] {
     })
     .filter((message): message is AIChatMessage => Boolean(message))
     .slice(-20);
+
+  return trimMessagesToBudget(cleaned, aiModelConfig.historyTokenBudget);
 }
 
 async function getFreePort() {
@@ -102,6 +139,7 @@ export class LocalAIService {
   private generatingController: AbortController | null = null;
   private prompts: AIPromptSet | null = null;
   private lastError = "";
+  private consecutiveFailures = 0;
 
   getStatus(): AIStatus {
     return {
@@ -329,12 +367,43 @@ export class LocalAIService {
       repeatPenalty?: number;
       onToken?: (token: string) => void;
     },
-  ): Promise<{ ok: true; text: string } | { ok: false; error: string; canceled?: boolean }> {
+  ): Promise<{ ok: true; text: string } | { ok: false; error: string; canceled?: boolean; busy?: boolean }> {
+    const result = await this.completeChatOnce(messages, systemPrompt, options);
+
+    // 0.1.45 A3: 連續兩次真失敗（非使用者取消、非 busy 早退）多半是 sidecar 卡死；重啟比對僵屍除錯便宜。
+    if (result.ok) {
+      this.consecutiveFailures = 0;
+    } else if (!result.canceled && !result.busy) {
+      this.consecutiveFailures += 1;
+      if (this.consecutiveFailures >= 2) {
+        this.consecutiveFailures = 0;
+        this.shutdown();
+      }
+    }
+
+    return result;
+  }
+
+  private async completeChatOnce(
+    messages: AIChatMessage[],
+    systemPrompt: string,
+    options: {
+      maxTokens: number;
+      stream: boolean;
+      json?: boolean;
+      timeoutMs?: number;
+      temperature?: number;
+      topP?: number;
+      repeatPenalty?: number;
+      onToken?: (token: string) => void;
+    },
+  ): Promise<{ ok: true; text: string } | { ok: false; error: string; canceled?: boolean; busy?: boolean }> {
     if (!this.serverPort) {
-      return { ok: false, error: "AI 尚未啟動。" };
+      // busy: 早退 guard，不是真正送出後失敗，不列入連續失敗計數。
+      return { ok: false, error: "AI 尚未啟動。", busy: true };
     }
     if (this.generatingController) {
-      return { ok: false, error: "水瓶罐子正在回覆中，請先取消或等她說完。" };
+      return { ok: false, error: "水瓶罐子正在回覆中，請先取消或等她說完。", busy: true };
     }
 
     const controller = new AbortController();
@@ -344,6 +413,23 @@ export class LocalAIService {
       timedOut = true;
       controller.abort();
     }, options.timeoutMs ?? 60_000);
+    // 0.1.45 A3: streaming 首 token 逾時——卡死的 sidecar 不用陪等滿 60 秒。
+    let firstTokenSeen = false;
+    const firstTokenTimeout = options.stream
+      ? setTimeout(() => {
+          if (!firstTokenSeen) {
+            timedOut = true;
+            controller.abort();
+          }
+        }, aiModelConfig.firstTokenTimeoutMs)
+      : null;
+    const handleToken = (token: string) => {
+      if (!firstTokenSeen) {
+        firstTokenSeen = true;
+        if (firstTokenTimeout) clearTimeout(firstTokenTimeout);
+      }
+      options.onToken?.(token);
+    };
     const body = {
       messages: [{ role: "system", content: systemPrompt }, ...messages],
       stream: options.stream,
@@ -374,7 +460,7 @@ export class LocalAIService {
         return { ok: true, text: json.choices?.[0]?.message?.content ?? "" };
       }
 
-      return await this.readStreamingResponse(response, options.onToken);
+      return await this.readStreamingResponse(response, handleToken);
     } catch (error) {
       if (controller.signal.aborted) {
         return timedOut
@@ -384,6 +470,7 @@ export class LocalAIService {
       return { ok: false, error: "AI 回覆失敗，播放器仍可正常播放音樂。" };
     } finally {
       clearTimeout(timeout);
+      if (firstTokenTimeout) clearTimeout(firstTokenTimeout);
       if (this.generatingController === controller) {
         this.generatingController = null;
       }

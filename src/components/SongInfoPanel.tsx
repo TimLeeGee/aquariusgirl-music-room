@@ -19,6 +19,8 @@ type SongInfoPanelProps = {
   open: boolean;
   track: Track | null;
   isDesktopApp: boolean;
+  // 0.1.45 B2: AI 補全「我來改」帶入的建議值（僅文字欄位）；savedDraft 仍為原值，dirty 會自動亮起。
+  prefillDraft?: Partial<SongInfoDraft> | null;
   onClose: () => void;
   onApplyToOriginal: (trackId: string, draft: SongInfoDraft) => Promise<boolean>;
   onError: (message: string) => void;
@@ -98,6 +100,7 @@ export function SongInfoPanel({
   open,
   track,
   isDesktopApp,
+  prefillDraft = null,
   onClose,
   onApplyToOriginal,
   onError,
@@ -182,9 +185,12 @@ export function SongInfoPanel({
     const nextTrackId = track?.id ?? null;
     if (activeTrackIdRef.current !== nextTrackId) {
       resetDraftState(trackDraftSnapshot);
+      if (prefillDraft && nextTrackId) {
+        setDraft(normalizeSongInfoDraft({ ...trackDraftSnapshot, ...prefillDraft }));
+      }
       activeTrackIdRef.current = nextTrackId;
     }
-  }, [open, resetDraftState, track?.id, trackDraftSnapshot]);
+  }, [open, prefillDraft, resetDraftState, track?.id, trackDraftSnapshot]);
 
   useEffect(() => {
     if (open && writeBackDisabledReason && isDevRuntime) {

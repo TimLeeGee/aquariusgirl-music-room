@@ -1,5 +1,80 @@
 # Aquariusgirl Music Room Continue Work
 
+## 2026-07-08 0.1.48 打包完成：面板文字全量登錄表（分組＋可搜尋編輯器）（mac＋Windows）
+
+- 依使用者需求把「面板文字自訂」從 6 個 slot 升級為**開放字串登錄表**（~20 條 UI 顯示字串，`UI_TEXT_GROUPS` 分組）：
+  - 資料層：`settings.ts` 的 `defaultTextOverrideSettings` 改 `as const` 開放 map（key→模板含 `{name}`/`{nameEn}`），`TextOverrideKey = keyof typeof`；新增 `UI_TEXT_GROUPS`（分組／標籤／multiline）。`resolveTextOverrideSettings` 自動涵蓋新 key（`resolved` 加型別註記）。
+  - 消費端改讀 `useText(key)`：主舞台（`stageNoTrack`/`stageSelectHint`）、播放器（`playerWaiting`/`playerSelectHint`/`playerDropHint`）、Header（`headerTitle`/`headerSubtitle`）、歌單（`trackListEmpty`）、拖曳（`dropZoneHint`）、Mini（`miniIdle`）、視覺化（`visualizerTitle`）、睡前定時（`sleepTimerTitle`）。把 `trackDisplay`「正在等音樂」搬到 `PlayerCore`（`playerWaiting`），解掉 node-check 限制那一處、使其可改可改名。
+  - 設定 UI：「文字」分頁最上維持角色名稱（中／英）＋預覽，下面依 `UI_TEXT_GROUPS` 分組列出、加搜尋框、單項／全部復原。
+- Provider 邊界：`ObsOverlay`／`MiniPlayerAssistant` 在 `TextOverrideContext.Provider` 之外，維持 `applyName`（跟著改名、非 slot）。少數散落名字（App 歌單命名、toast 標籤、onboarding、播放錯誤訊息）同樣走 `applyName`。OS 視窗／dock 名稱仍為打包時 productName。
+- 升版面：`package.json`／`package-lock.json`(×2)／`exportSettings.ts appVersion` → 0.1.48。
+- 驗證：沙盒 `tsc --noEmit`、`electron:compile`、全部可跑 `check:*`（含 `ai-track-search`/`track-display`）、`check:ai-assets`(mac+win) PASS；Mac 本機 `npm run dist:release` DIST_EXIT=0。
+- installer（SHA-256 見 `docs/releases/0.1.48-checksums.md`）：
+  - `Aquariusgirl Music Room Setup 0.1.48.exe`：667,674,676 bytes，SHA-256 `fa3ba844134fe791c0dfcb6452d2d3212530f5573f135b6dea66bf588213e655`
+  - `Aquariusgirl Music Room-0.1.48-arm64.dmg`：684,781,240 bytes，SHA-256 `e3aaf089e8fa4d38e3b3a52f617ed38253f6ca661df5e92fb9bd7051d7ec2670`
+- DMG `hdiutil verify` VALID＋掛載讀回 0.1.48／arm64／taglib wasm 存在；EXE PE32 NSIS（證據 `qa-temp/dist-0.1.48-result.txt`）。
+- 未驗證（老實講）：打包版 GUI 實測（分組搜尋編輯器、各字串即時套用、改名全站換）；Windows 真機；簽章／notarization。尚未推 GitHub（等使用者指示，走 `github-update-flow`）。
+
+## 2026-07-08 0.1.47 打包完成：搜尋泡泡修正 + 檢查歌曲資訊強化 + 角色名稱全域改名（mac＋Windows）
+
+- 依使用者需求一次做五項（純加法、零新套件、不動寫回/readback/DB schema）：
+  - P1 搜尋泡泡：「搜尋」chip 改預填輸入框（`幫我找 `）不直接送出；搜尋流程加指令停用詞（搜尋/我的/音樂庫…），剝完為空 → 反問「要找什麼」，不再把整句當關鍵字。
+  - P2 資料夾範圍：`scanMetadata` 前用 `filterTracksByFolder`（sourcePath 前綴、含子資料夾）；健檢報告卡加資料夾 `select`（`listTrackFolders`），切換即重掃、不洗對話。
+  - P3 逐首手動編輯：`scanMetadata` 新增 `manualCandidates`（可寫回＋缺欄位＋無自動建議）；報告卡「逐首手動編輯」逐筆開 `SongInfoPanel`（`onEditSongInfo`）讓使用者自己輸入保存。
+  - P4 非可寫檢視：`scanMetadata` 新增 `nonWritableList`（含 sourcePath）；報告卡可展開清單，每列「顯示位置」走既有 `showTrackInFolder`。
+  - P5 角色名稱全域改名：`TextOverrideSettings` 加 `characterName`／`characterNameEn`，預設文字改 `{name}`／`{nameEn}` 模板由 `resolveTextOverrideSettings` 代入；散落 19/21 處中文＋4 處英文改用 `applyName`（React-free 單例 `config/characterName.ts`，App 於 resolve 期同步）；設定「文字」分頁最上加中/英名稱欄位＋即時預覽。
+- 已知限制：`aiTrackSearch.ts`／`trackDisplay.ts` 由 node `--experimental-strip-types` check 直接載入，無法加無副檔名 value import，2 處預設名維持字面「水瓶罐子」不隨改名。
+- 升版面：`package.json`／`package-lock.json`(×2)／`exportSettings.ts appVersion` → 0.1.47。
+- 驗證：沙盒 `tsc --noEmit`、`electron:compile`、全部可跑 `check:*`（含 `check:ai-track-search`／`check:track-display`）、`check:ai-assets`(mac+win) PASS；Mac 本機 `npm run dist:release` DIST_EXIT=0。
+- installer（SHA-256 見 `docs/releases/0.1.47-checksums.md`）：
+  - `Aquariusgirl Music Room Setup 0.1.47.exe`：667,673,975 bytes，SHA-256 `b93d2f9ed0721bba5984a52ff93c341dcf98d9a0bf6066107fe9dc2bcd635d97`
+  - `Aquariusgirl Music Room-0.1.47-arm64.dmg`：684,774,034 bytes，SHA-256 `c1baf08bf05575aed0feb013fe9c36a7ee3717cc3fb7ba8018b36c2bc81d9541`
+- DMG `hdiutil verify` VALID＋掛載讀回 0.1.47／arm64／taglib wasm 存在；EXE PE32 NSIS（證據 `qa-temp/dist-0.1.47-result.txt`）。
+- 未驗證（老實講）：打包版 GUI 實測（五項新功能實跑）；Windows 真機；簽章／notarization。尚未推 GitHub（等使用者指示，走 `github-update-flow`）。
+
+## 2026-07-07 0.1.46 打包完成：AI 快捷指令氣泡 + 面板文字自訂設定（mac＋Windows）
+
+- 兩個客製化新功能（純加法、零新套件、不動寫回／readback／DB schema）：
+  - Feature A 快捷指令氣泡：AI 助手對話空狀態、輸入框上方顯示可點選 chips（檢查歌曲資訊／隨機清單／搜尋音樂庫／聊天），點擊帶預設字串走既有 `handleSend`（新增可選 `overrideText` 參數）；只列真實支援指令，聊天氣泡僅在模型就緒時出現，開始對話即收起。
+  - Feature B 面板文字自訂：新 `TextOverrideSettings`（6 白名單 key：`stageTitle`／`stageIdleHint`／`aiPanelTitle`／`aiGreeting`／`aiInputPlaceholder`／`dropZoneTitle`），照 ThemeColorSettings 五件套（型別＋預設／STORAGE_KEYS／`resolveTextOverrideSettings` normalize／export＋import 合併／設定面板）。「外觀設定」新增第 4 分頁「文字」，逐項輸入＋單項/全部復原；元件以 `TextOverrideContext` + `useText(key)` 消費，留空 fallback 預設。
+- 升版面：`package.json`／`package-lock.json`(×2)／`src/utils/exportSettings.ts appVersion` → 0.1.46。
+- 驗證：沙盒 `tsc --noEmit`（renderer 型別零錯）、`electron:compile`、全部可跑 `check:*`、`check:ai-assets`(mac+win) PASS；rg 確認 6 個 `useText` 消費點、Provider/resolve/export/import 接點齊全、舊硬字串已從元件移除。Mac 本機 `npm run dist:release` DIST_EXIT=0（vite build 於打包時通過）。
+- installer（`release-delivery/installers/`，SHA-256 見 `docs/releases/0.1.46-checksums.md`）：
+  - `Aquariusgirl Music Room Setup 0.1.46.exe`：667,672,752 bytes，SHA-256 `15ceb1585a34b46d86188762549d893e5aeeff293e23c8210b1e4281113bf13c`
+  - `Aquariusgirl Music Room-0.1.46-arm64.dmg`：684,765,780 bytes，SHA-256 `a29f06083d0c039cc03a1de5faafe52c47027b758c94e70ee0261e484756bd8c`
+- DMG `hdiutil verify` VALID＋唯讀掛載讀回 0.1.46／arm64／taglib wasm 存在；EXE PE32 NSIS（證據 `qa-temp/dist-0.1.46-result.txt`）。
+- 未驗證（老實講）：打包版 GUI 實測（新氣泡點擊、文字設定即時套用與復原、匯出/匯入帶走文案）；Windows 真機；簽章／notarization。尚未推 GitHub（等使用者指示，走 `github-update-flow`）。
+
+## 2026-07-07 0.1.45 打包完成：AI 助手改善＋歌曲資訊補全首次進 mac＋Windows installer
+
+- 承下：本輪 A1–A3＋B1/B2 程式（見 `docs/HANDOFF_AI_METADATA.md`）已升版 0.1.45 並打包 mac＋Windows。升版面：`package.json`／`package-lock.json`(×2)／`src/utils/exportSettings.ts appVersion`；程式註解內「0.1.44」為歷史標註不動。
+- 打包：`qa-temp/build-0.1.45.command`（Finder 雙擊、Mac 本機跑 `npm run dist:release`）→ DIST_EXIT=0；`sync-installers` 自動清掉舊 0.1.44、維持單一交付資料夾。
+- installer（`release-delivery/installers/`，SHA-256 見 `docs/releases/0.1.45-checksums.md`）：
+  - `Aquariusgirl Music Room Setup 0.1.45.exe`：667,671,899 bytes，SHA-256 `78136ae0fa13c5f43784023e0393a5fcb1c3756971e64d4872e6f859b9e17a6e`
+  - `Aquariusgirl Music Room-0.1.45-arm64.dmg`：684,777,947 bytes，SHA-256 `bd123116fed76fb8c018a2741f64687d773cf0110b85f2371cb03935781f8cd4`
+- 驗證：沙盒全部可跑 `check:*`＋`electron:compile` PASS；Mac 本機 `npm run build` exit 0；DMG `hdiutil verify` VALID＋唯讀掛載讀回 0.1.45／arm64／taglib wasm 存在；EXE PE32 NSIS（證據 `qa-temp/dist-0.1.45-result.txt`）。
+- 未驗證（老實講）：打包版 GUI 實測（新 AI metadata 報告卡→建議卡→套用→readback→復原，本輪依使用者選擇只打包、未做 GUI 實跑）；Windows 真機；簽章／notarization。尚未推 GitHub（等使用者指示，走 `github-update-flow`）。
+
+## 2026-07-07 V 驗證補齊：mac 本機 `npm run build` PASS（版本仍 0.1.44，未打包）
+
+- 承下段「AI 助手改善（A1–A3）＋歌曲資訊補全 Phase 1＋2」：唯一沙盒跑不了的 `vite build` 缺口已於 mac 本機補驗，`docs/HANDOFF_AI_METADATA.md` V 項改 ✅（打包版 GUI 除外）。
+- 由 `qa-temp/run-build.command`（Finder 雙擊、mac 本機執行）跑 `npm run build`：`tsc --noEmit` 無型別錯誤、`vite build` 1652 模組全轉換、4.26s 完成，`BUILD_EXIT_CODE=0`／`BUILD_RESULT=PASS`（node v24.16.0、npm 11.13.0）。完整輸出見 `qa-temp/build-result.txt`。
+- 併同沙盒重跑綠燈：`check:song-info`（含 taglib-wasm packaging＋writer roundtrip＋electron-selected-file）、`check:metadata-save-loop`、`check:ai-track-search`、`check:track-identity`、`check:track-display`、`electron:compile` 全 PASS；rg 接點 `shouldSkipModelRouter`／`isMetadataFixIntent`／`scanMetadata`／`metadata-fix-snapshot`／`prefillDraft` 皆接在對的檔案，`window.confirm(` 於 src 零命中。
+- 仍未驗證（老實說明）：packaged GUI 實測（報告卡→建議卡→套用→readback→復原）——新 AI metadata 功能尚未進打包版，本輪依約不打包，須待下次打包後才能實機走一輪；Windows 真機。未升版、未打包 installer、未 push GitHub。
+
+## 2026-07-07 AI 助手改善（A1–A3）＋歌曲資訊補全 Phase 1＋2 程式完成（版本仍 0.1.44，未打包）
+
+- 規格、進度與交接細節見 `docs/HANDOFF_AI_METADATA.md`（本輪工作單一真相來源；接手前先讀）。
+- A1 智慧分流：`aiTrackSearch.ts` 新增 `shouldSkipModelRouter()`，`AIAssistantPanel.resolveMusicIntent` 規則信心高（明確 add/remove/random/create/search 且有關鍵字或 mood）直接用規則結果，不呼叫 0.8B LLM router——更快且避免小模型輸出偏移。
+- A2 token 預算：`electron/ai/aiService.ts` 新增 `estimateTokens`（CJK 1 字 1 token、其餘 4 字元 1 token）與 `trimMessagesToBudget`；`sanitizeMessages` 尾端以 `aiModelConfig.historyTokenBudget = 2400` 由新到舊裁切，最新一則單獨超標時硬切內容。防禦 4096 ctx 溢出（目前 chat 只送單句，屬防禦性下限）。
+- A3 卡死偵測：`completeChat` 拆成 wrapper＋`completeChatOnce`；streaming 加 `firstTokenTimeoutMs = 15_000` 首 token 逾時；連續 2 次真失敗（非使用者取消、非 busy 早退——busy 早退回傳新增 `busy: true` 標記）自動 `shutdown()`，下次呼叫重新拉起 sidecar。
+- B1 健檢掃描：新檔 `src/utils/metadataFix.ts`（純函式）：`isMetadataFixIntent()`（含「整理歌單」「資料夾」撞字防護，須在歌單邏輯前判斷）、`scanMetadata()` 統計缺歌手/專輯/年份/曲風/封面與可寫回數（mp3/flac/m4a）。AI 面板聊天輸入「檢查歌曲資訊」等即出報告卡（純讀取、不經 LLM、程式組字回覆）。
+- B2 推測引擎＋建議卡：規則推測附信心（high/medium）＋證據——artist 檔名「歌手 - 歌名」或同資料夾多數決（≥3 首、≥0.8）；album 同資料夾多數決；year/genre 同專輯全同（≥2）high、同歌手多數 medium；曲號取檔名開頭數字。逐首建議卡（欄位 checkbox 預設全勾）三按鈕：套用並下一首／我來改（開 SongInfoPanel 帶入 `prefillDraft` 建議值，savedDraft 保持原值讓 dirty 亮起）／跳過；「取消整理」跳完成卡；整理中聊天區 max-h-64 → max-h-96。
+- B2 寫入安全：套用走既有 `handleApplySongInfoToOriginal` 全管線（suspend audio／temp+rename 寫入／readback／IndexedDB），只寫文字欄位——`stripCoverFromSongInfoDraft` 剝除 cover 欄位，writer 收不到 cover 就不碰 picture block（0.1.37–0.1.43 封面戰場不受影響）。寫前快照存 renderer session（`metadataFixSessionRef`）供「全部復原」，並經新 IPC `aquariusgirl:save-metadata-fix-snapshot` 落盤 `userData/metadata-fix-snapshots/<sessionId>.json` 當災難備援。
+- v1 已知簡化（故意，勿當 bug 修）：寫回失敗（含播放中鎖檔）計入「失敗」繼續下一首，完成卡提示暫停後重跑；復原僅文字欄位、僅本次 session；不做批次「一鍵全套用」；不推測 albumArtist 與封面；網路查詢（MusicBrainz）與聲紋（AcoustID/fpcalc）為 Phase 3/4 未做。
+- 已通過（Linux 沙盒）：`tsc --noEmit`、`npm run electron:compile`、`check:metadata-save-loop`、`check:song-info`（含 writer wasm roundtrip）、`check:ai-track-search`、`electron-selected-file-check`；推測引擎以 tsc 編譯至 /tmp 煙霧測試通過（同資料夾補齊 artist/album/year/genre/曲號、檔名解析 artist、意圖撞字案例全對）；rg 接點掃描齊全、`window.confirm(` 零命中、src 無編譯殘渣。
+- 尚未驗證：`vite build`（沙盒缺 `@rollup/rollup-linux-arm64-gnu`，mac 本機跑 `npm run build` 即可補驗）；packaged GUI 實測（報告卡→建議卡→套用→復原）；Windows 真機。未升版、未打包 installer、未 push GitHub。
+
 ## 2026-07-07 Confirm Focus Lock / Toast Position hotfix 0.1.44 完成
 
 - 已修正 Windows EXE 使用者回報：更換歌曲封面成功後，playlist 排序按鈕點不開、playlist 搜尋歌手輸入框與 AI 助手輸入框點了沒反應（一般按鈕仍可按）；以前也疑似發生過同類現象。

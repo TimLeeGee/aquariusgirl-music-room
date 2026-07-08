@@ -1,3 +1,5 @@
+import { applyName } from "../config/characterName";
+
 type MessageToastProps = {
   message?: string;
   type?: "info" | "error";
@@ -19,7 +21,7 @@ export function MessageToast({ message, type = "info" }: MessageToastProps) {
           type === "error" ? "text-red-200" : "text-aquarius-blue",
         ].join(" ")}
       >
-        {type === "error" ? "提醒" : "水瓶罐子"}
+        {type === "error" ? "提醒" : applyName("{name}")}
       </span>
       {message}
     </div>

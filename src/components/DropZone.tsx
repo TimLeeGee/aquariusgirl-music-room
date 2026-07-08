@@ -1,8 +1,12 @@
+import { useText } from "../config/textOverrides";
+
 type DropZoneProps = {
   active: boolean;
 };
 
 export function DropZone({ active }: DropZoneProps) {
+  const dropZoneTitle = useText("dropZoneTitle");
+  const dropZoneHint = useText("dropZoneHint");
   if (!active) {
     return null;
   }
@@ -14,10 +18,10 @@ export function DropZone({ active }: DropZoneProps) {
           Drop to Add
         </p>
         <p className="mt-3 text-3xl font-black text-white">
-          放開小魚乾，加入水瓶罐子的歌單
+          {dropZoneTitle}
         </p>
         <p className="mt-3 text-sm leading-6 text-aquarius-mist">
-          非音樂檔會被自動略過，支援 mp3、wav、ogg、m4a、flac。
+          {dropZoneHint}
         </p>
       </div>
     </div>

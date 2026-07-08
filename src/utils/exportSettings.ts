@@ -2,6 +2,7 @@ import type { Playlist } from "../types/playlist";
 import type {
   AudioVisualizerSettings,
   MiniPlayerSettings,
+  TextOverrideSettings,
   ThemeColorSettings,
 } from "../types/settings";
 import type { RepeatMode, SortMode, Track } from "../types/track";
@@ -17,12 +18,13 @@ export type ExportSettingsInput = {
   audioVisualizerSettings: AudioVisualizerSettings;
   miniPlayerSettings: MiniPlayerSettings;
   themeColorSettings: ThemeColorSettings;
+  textOverrideSettings: TextOverrideSettings;
 };
 
 export function createExportPayload(input: ExportSettingsInput) {
   return {
     app: "Aquariusgirl Music Room",
-    appVersion: "0.1.44",
+    appVersion: "0.1.48",
     exportedAt: new Date().toISOString(),
     playlists: input.playlists,
     trackMetadata: input.tracks.map(toStoredTrackMetadata),
@@ -37,6 +39,7 @@ export function createExportPayload(input: ExportSettingsInput) {
         enabled: false,
       },
       themeColorSettings: input.themeColorSettings,
+      textOverrideSettings: input.textOverrideSettings,
     },
     theme: {
       brand: "Aquariusgirl",

@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import type { NormalPlaylist } from "../types/playlist";
+import { useText } from "../config/textOverrides";
 import type { Track } from "../types/track";
 import { TrackItem } from "./TrackItem";
 
@@ -43,6 +44,7 @@ export function TrackList({
   const [scrollTop, setScrollTop] = useState(0);
   const [viewportHeight, setViewportHeight] = useState(TRACK_LIST_VIEWPORT_HEIGHT);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const trackListEmpty = useText("trackListEmpty");
 
   useLayoutEffect(() => {
     const element = scrollRef.current;
@@ -65,7 +67,7 @@ export function TrackList({
   if (tracks.length === 0) {
     return (
       <div className="rounded-lg border border-white/10 bg-white/[0.08] px-4 py-10 text-center text-sm leading-6 text-aquarius-mist">
-        找不到符合條件的歌曲。換個關鍵字，水瓶罐子再幫你撈一次。
+        {trackListEmpty}
       </div>
     );
   }

@@ -1,5 +1,6 @@
 import { Fullscreen, Maximize2, Minus, Minimize2, Settings, Trash2, X } from "lucide-react";
 import { useBrandAssets } from "../config/brandAssets";
+import { useText } from "../config/textOverrides";
 import { FilePickerButton } from "./FilePickerButton";
 import { FolderPickerButton } from "./FolderPickerButton";
 import { IconButton } from "./IconButton";
@@ -39,6 +40,8 @@ export function Header({
   onCloseWindow,
 }: HeaderProps) {
   const brandAssets = useBrandAssets();
+  const headerTitle = useText("headerTitle");
+  const headerSubtitle = useText("headerSubtitle");
 
   return (
     <header
@@ -93,10 +96,10 @@ export function Header({
         </div>
         <div className="min-w-0">
           <p className="truncate text-lg font-black tracking-normal text-white sm:text-xl">
-            Aquariusgirl Music Room
+            {headerTitle}
           </p>
           <p className="truncate text-sm font-medium text-aquarius-mist">
-            水瓶罐子的音樂小水池
+            {headerSubtitle}
           </p>
         </div>
       </div>

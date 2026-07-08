@@ -1,7 +1,8 @@
 import { useEffect, useState, type CSSProperties } from "react";
-import { Image as ImageIcon, ImagePlus, Palette, RotateCcw, SlidersHorizontal, X } from "lucide-react";
+import { Image as ImageIcon, ImagePlus, Palette, RotateCcw, SlidersHorizontal, Type, X } from "lucide-react";
 import { brandAssets } from "../config/brandAssets";
-import type { ThemeColorSettings } from "../types/settings";
+import type { TextOverrideKey, TextOverrideSettings, ThemeColorSettings } from "../types/settings";
+import { UI_TEXT_GROUPS, defaultTextOverrideSettings } from "../types/settings";
 import type { CustomImages, CustomImageSlot } from "../utils/platform";
 import { IconButton } from "./IconButton";
 import { SafeImage } from "./SafeImage";
@@ -18,6 +19,9 @@ type ImageSettingsDialogProps = {
   onColorSettingsChange: (settings: ThemeColorSettings) => void;
   onMiniOpacityChange: (opacity: number) => void;
   onResetColors: () => void;
+  textOverrides: TextOverrideSettings;
+  onTextOverridePatch: (key: TextOverrideKey, value: string) => void;
+  onResetText: () => void;
 };
 
 const imageOptions: Array<{
@@ -65,6 +69,20 @@ const opacityOptions: Array<{
   { key: "decorationOpacity", title: "左右裝飾", description: "畫面兩側的裝飾圖片" },
 ];
 
+const textOptions: Array<{
+  key: TextOverrideKey;
+  title: string;
+  description: string;
+  multiline?: boolean;
+}> = [
+  { key: "stageTitle", title: "主舞台標題", description: "角色舞台上方的大標題" },
+  { key: "stageIdleHint", title: "主舞台待機提示", description: "沒有播放時角色下方的陪伴文字", multiline: true },
+  { key: "aiPanelTitle", title: "AI 面板標題", description: "AI 助手面板頂端名稱" },
+  { key: "aiGreeting", title: "AI 開場問候", description: "AI 對話還沒開始時的第一句" },
+  { key: "aiInputPlaceholder", title: "AI 輸入框提示", description: "AI 輸入框就緒時的 placeholder" },
+  { key: "dropZoneTitle", title: "拖曳提示標題", description: "拖曳音樂到視窗時的大字" },
+];
+
 export function ImageSettingsDialog({
   open,
   images,
@@ -77,8 +95,12 @@ export function ImageSettingsDialog({
   onColorSettingsChange,
   onMiniOpacityChange,
   onResetColors,
+  textOverrides,
+  onTextOverridePatch,
+  onResetText,
 }: ImageSettingsDialogProps) {
-  const [activePanel, setActivePanel] = useState<"images" | "colors" | "opacity">("images");
+  const [activePanel, setActivePanel] = useState<"images" | "colors" | "opacity" | "text">("images");
+  const [textSearch, setTextSearch] = useState("");
 
   useEffect(() => {
     if (open) setActivePanel("images");
@@ -95,6 +117,7 @@ export function ImageSettingsDialog({
 
   const isImages = activePanel === "images";
   const isColors = activePanel === "colors";
+  const isOpacity = activePanel === "opacity";
 
   return (
     <div
@@ -114,15 +137,15 @@ export function ImageSettingsDialog({
               Appearance
             </p>
             <h2 id="appearance-settings-title" className="mt-1 text-2xl font-black text-white">
-              {isImages ? "圖片設定" : isColors ? "色彩設定" : "透明度設定"}
+              {isImages ? "圖片設定" : isColors ? "色彩設定" : isOpacity ? "透明度設定" : "文字設定"}
             </h2>
             <p className="mt-1 truncate text-sm text-aquarius-mist">
-              {isImages ? "九張圖片，維持原本裁切比例與位置。" : isColors ? "七組色彩即時預覽並自動保存。" : "五組透明度即時預覽並自動保存。"}
+              {isImages ? "九張圖片，維持原本裁切比例與位置。" : isColors ? "七組色彩即時預覽並自動保存。" : isOpacity ? "五組透明度即時預覽並自動保存。" : "改角色名稱或逐句覆寫，可搜尋，留空用預設。"}
             </p>
           </div>
 
           <div
-            className="app-no-drag inline-grid grid-cols-3 rounded-lg border border-white/[0.12] bg-white/[0.07] p-1"
+            className="app-no-drag inline-grid grid-cols-4 rounded-lg border border-white/[0.12] bg-white/[0.07] p-1"
             role="tablist"
             aria-label="外觀設定分類"
           >
@@ -158,6 +181,17 @@ export function ImageSettingsDialog({
             >
               <SlidersHorizontal className="h-4 w-4" />
               透明度
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activePanel === "text"}
+              aria-controls="appearance-settings-content"
+              className={`inline-flex h-9 min-w-24 items-center justify-center gap-2 rounded-md px-3 text-sm font-black transition ${activePanel === "text" ? "bg-aquarius-blue/[0.2] text-white shadow-glow" : "text-aquarius-mist hover:bg-white/[0.08] hover:text-white"}`}
+              onClick={() => setActivePanel("text")}
+            >
+              <Type className="h-4 w-4" />
+              文字
             </button>
           </div>
 
@@ -271,7 +305,7 @@ export function ImageSettingsDialog({
               </button>
             </div>
           </>
-        ) : (
+        ) : isOpacity ? (
           <>
             <div id="appearance-settings-content" className="flex-1 overflow-y-auto p-5 sm:p-6">
               <div className="mx-auto grid w-full max-w-3xl gap-3">
@@ -334,6 +368,119 @@ export function ImageSettingsDialog({
                 type="button"
                 className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-white/[0.14] bg-white/[0.07] px-3 py-2 text-xs font-black text-white transition hover:border-aquarius-blue/[0.5] hover:bg-aquarius-blue/[0.14]"
                 onClick={onResetColors}
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                全部復原
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div id="appearance-settings-content" className="flex-1 overflow-y-auto p-5 sm:p-6">
+              <div className="mx-auto grid w-full max-w-3xl gap-3">
+                <div className="rounded-lg border border-aquarius-blue/[0.3] bg-aquarius-blue/[0.08] p-4">
+                  <span className="block font-black text-white">角色名稱</span>
+                  <span className="mt-1 block text-xs leading-5 text-aquarius-mist">
+                    改這裡，全站出現名字的地方一起換（預設文字、提示、歌單命名⋯）。留空用預設。
+                  </span>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                    <label className="block">
+                      <span className="mb-1 block text-xs font-bold text-aquarius-mist">中文名稱</span>
+                      <input
+                        value={textOverrides.characterName}
+                        aria-label="角色中文名稱"
+                        className="w-full rounded-lg border border-white/10 bg-white/[0.08] px-3 py-2 text-sm text-white outline-none transition focus:border-aquarius-blue/70"
+                        onChange={(event) => onTextOverridePatch("characterName", event.currentTarget.value)}
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="mb-1 block text-xs font-bold text-aquarius-mist">英文名稱</span>
+                      <input
+                        value={textOverrides.characterNameEn}
+                        aria-label="角色英文名稱"
+                        className="w-full rounded-lg border border-white/10 bg-white/[0.08] px-3 py-2 text-sm text-white outline-none transition focus:border-aquarius-blue/70"
+                        onChange={(event) => onTextOverridePatch("characterNameEn", event.currentTarget.value)}
+                      />
+                    </label>
+                  </div>
+                  <p className="mt-2 truncate text-xs text-aquarius-mist">
+                    預覽：{textOverrides.aiGreeting}｜{textOverrides.stageTitle}
+                  </p>
+                </div>
+                <label className="block">
+                  <span className="mb-1 block text-xs font-bold text-aquarius-mist">搜尋要改的文字</span>
+                  <input
+                    value={textSearch}
+                    onChange={(event) => setTextSearch(event.currentTarget.value)}
+                    placeholder="輸入標題或內容關鍵字…"
+                    aria-label="搜尋要改的文字"
+                    className="w-full rounded-lg border border-white/10 bg-white/[0.08] px-3 py-2 text-sm text-white outline-none transition focus:border-aquarius-blue/70"
+                  />
+                </label>
+                {UI_TEXT_GROUPS.map((group) => {
+                  const query = textSearch.trim().toLowerCase();
+                  const fields = group.fields.filter(
+                    (field) =>
+                      !query ||
+                      field.label.toLowerCase().includes(query) ||
+                      textOverrides[field.key].toLowerCase().includes(query),
+                  );
+                  if (fields.length === 0) return null;
+                  return (
+                    <div key={group.group} className="rounded-lg border border-white/[0.12] bg-white/[0.05] p-3">
+                      <p className="mb-2 text-xs font-black uppercase tracking-[0.14em] text-aquarius-blue">{group.group}</p>
+                      <div className="grid gap-2">
+                        {fields.map((field) => {
+                          const value = textOverrides[field.key];
+                          const isDefault = value === defaultTextOverrideSettings[field.key];
+                          return (
+                            <div
+                              key={field.key}
+                              className="grid gap-2 rounded-lg border border-white/[0.1] bg-white/[0.05] p-3 sm:grid-cols-[160px_minmax(0,1fr)] sm:items-start"
+                            >
+                              <div className="min-w-0">
+                                <span className="block text-sm font-bold text-white">{field.label}</span>
+                                <button
+                                  type="button"
+                                  disabled={isDefault}
+                                  onClick={() => onTextOverridePatch(field.key, defaultTextOverrideSettings[field.key])}
+                                  className="mt-1 inline-flex items-center gap-1 rounded border border-white/[0.12] bg-white/[0.06] px-2 py-0.5 text-[11px] font-bold text-aquarius-mist transition hover:border-aquarius-blue/[0.5] hover:bg-aquarius-blue/[0.14] hover:text-white disabled:cursor-not-allowed disabled:opacity-35"
+                                >
+                                  <RotateCcw className="h-3 w-3" />
+                                  復原
+                                </button>
+                              </div>
+                              {field.multiline ? (
+                                <textarea
+                                  value={value}
+                                  rows={2}
+                                  aria-label={field.label}
+                                  className="min-h-10 w-full resize-none rounded-lg border border-white/10 bg-white/[0.08] px-3 py-2 text-sm text-white outline-none transition focus:border-aquarius-blue/70"
+                                  onChange={(event) => onTextOverridePatch(field.key, event.currentTarget.value)}
+                                />
+                              ) : (
+                                <input
+                                  value={value}
+                                  aria-label={field.label}
+                                  className="w-full rounded-lg border border-white/10 bg-white/[0.08] px-3 py-2 text-sm text-white outline-none transition focus:border-aquarius-blue/70"
+                                  onChange={(event) => onTextOverridePatch(field.key, event.currentTarget.value)}
+                                />
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="flex items-center justify-between gap-4 border-t border-white/[0.1] px-5 py-3 sm:px-6">
+              <p className="text-xs leading-5 text-aquarius-mist">留空會自動使用預設文字；設定即時保存並套用。</p>
+              <button
+                type="button"
+                className="inline-flex shrink-0 items-center gap-2 rounded-lg border border-white/[0.14] bg-white/[0.07] px-3 py-2 text-xs font-black text-white transition hover:border-aquarius-blue/[0.5] hover:bg-aquarius-blue/[0.14]"
+                onClick={onResetText}
               >
                 <RotateCcw className="h-3.5 w-3.5" />
                 全部復原

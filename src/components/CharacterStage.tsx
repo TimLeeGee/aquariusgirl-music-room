@@ -1,6 +1,7 @@
 import { Music2, Sparkles, Waves } from "lucide-react";
 import type { Track } from "../types/track";
 import { useBrandAssets } from "../config/brandAssets";
+import { applyName, useText } from "../config/textOverrides";
 import { SafeImage } from "./SafeImage";
 import { TrackArtwork } from "./TrackArtwork";
 
@@ -29,6 +30,10 @@ export function CharacterStage({
   showWebLimitNotice = false,
 }: CharacterStageProps) {
   const brandAssets = useBrandAssets();
+  const stageTitle = useText("stageTitle");
+  const stageIdleHint = useText("stageIdleHint");
+  const stageNoTrack = useText("stageNoTrack");
+  const stageSelectHint = useText("stageSelectHint");
   const characterSource = getCharacterSource(isPlaying, brandAssets);
   const animationClass = isPlaying ? "animate-wave-flow" : "animate-slow-wave-flow";
 
@@ -50,7 +55,7 @@ export function CharacterStage({
               Local Music Only
             </p>
             <h1 className="mt-4 max-w-2xl text-3xl font-black leading-tight text-white sm:text-5xl">
-              水瓶罐子的夜光音樂房間
+              {stageTitle}
             </h1>
           </div>
           <div className="hidden rounded-lg border border-white/[0.12] bg-white/10 px-4 py-3 text-right text-sm text-aquarius-mist sm:block">
@@ -75,7 +80,7 @@ export function CharacterStage({
                   <div className="flex h-56 w-56 items-center justify-center rounded-full border border-aquarius-blue/30 bg-[conic-gradient(from_180deg,rgba(99,215,255,0.22),rgba(255,143,216,0.2),rgba(255,216,107,0.18),rgba(99,215,255,0.22))]">
                     <div className="flex h-40 w-40 flex-col items-center justify-center rounded-full border border-white/[0.18] bg-aquarius-navy/[0.78] text-center shadow-glow">
                       <Waves className="mb-3 h-10 w-10 text-aquarius-blue" />
-                      <span className="text-lg font-black text-white">Aquariusgirl</span>
+                      <span className="text-lg font-black text-white">{applyName("{nameEn}")}</span>
                       <span className="text-sm text-aquarius-mist">待機中</span>
                     </div>
                   </div>
@@ -95,17 +100,17 @@ export function CharacterStage({
               <TrackArtwork track={currentTrack} size="lg" className="mb-4" />
             )}
             <p className="animate-track-in text-2xl font-black leading-snug text-white">
-              {currentTrack?.title ?? "還沒有音樂"}
+              {currentTrack?.title ?? stageNoTrack}
             </p>
             <p className="mt-2 text-sm leading-6 text-aquarius-mist">
               {currentTrack
                 ? currentTrack.artist ?? "未知歌手"
-                : "把音樂小魚乾拖進來，水瓶罐子就在這裡陪你聽。"}
+                : stageIdleHint}
             </p>
             <div className="mt-4 rounded-lg border border-white/10 bg-white/[0.08] px-3 py-2 text-xs leading-5 text-aquarius-mist">
               {showWebLimitNotice
                 ? "Web preview 重新整理後，請重新選擇本地音樂檔或資料夾。"
-                : "選擇本地音樂，讓音樂小水池亮起來。"}
+                : stageSelectHint}
             </div>
           </div>
         </div>

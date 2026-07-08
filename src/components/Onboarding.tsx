@@ -1,4 +1,5 @@
 import { useBrandAssets } from "../config/brandAssets";
+import { applyName } from "../config/characterName";
 import { SafeImage } from "./SafeImage";
 
 type OnboardingProps = {
@@ -7,7 +8,7 @@ type OnboardingProps = {
 };
 
 const steps = [
-  "歡迎來到 Aquariusgirl Music Room，這是水瓶罐子的音樂小水池。",
+  applyName("歡迎來到 {nameEn} Music Room，這是{name}的音樂小水池。"),
   "請選擇你的本地音樂資料夾，音樂只會在你的電腦中播放，不會上傳。",
   "你可以收藏歌曲、建立歌單、開啟睡前定時。",
   "如果是桌面版，以後可以直接從桌面捷徑、開始選單或 Applications 開啟。",

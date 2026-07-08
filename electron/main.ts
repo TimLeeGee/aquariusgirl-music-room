@@ -1,5 +1,5 @@
 import { app, BrowserWindow, dialog, ipcMain, screen, shell, type Rectangle } from "electron";
-import { appendFile, mkdir, readFile, readdir, stat } from "node:fs/promises";
+import { appendFile, mkdir, readFile, readdir, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { LocalAIService } from "./ai/aiService.js";
@@ -490,6 +490,37 @@ ipcMain.handle("aquariusgirl:append-ai-playlist-action-log", async (_event, entr
   await mkdir(path.dirname(logPath), { recursive: true });
   await appendFile(logPath, `${text}\n`, "utf8");
   return { ok: true, path: logPath };
+});
+
+// 0.1.45 B2: AI 資訊補全的寫前快照落盤（災難回復備援；session 內復原走 renderer 記憶體）。
+ipcMain.handle("aquariusgirl:save-metadata-fix-snapshot", async (_event, payload: unknown) => {
+  const record =
+    payload && typeof payload === "object"
+      ? (payload as { sessionId?: unknown; entries?: unknown })
+      : {};
+  const sessionId =
+    typeof record.sessionId === "string"
+      ? record.sessionId.replace(/[^0-9A-Za-z_-]/g, "").slice(0, 64)
+      : "";
+
+  if (!sessionId || !Array.isArray(record.entries)) {
+    return { ok: false, error: "invalid snapshot payload" };
+  }
+
+  const json = JSON.stringify(record.entries, null, 2);
+  // ponytail: 文字標籤快照遠小於 2MB；超過代表 payload 異常，直接拒絕。
+  if (json.length > 2 * 1024 * 1024) {
+    return { ok: false, error: "snapshot too large" };
+  }
+
+  const snapshotPath = path.join(
+    app.getPath("userData"),
+    "metadata-fix-snapshots",
+    `${sessionId}.json`,
+  );
+  await mkdir(path.dirname(snapshotPath), { recursive: true });
+  await writeFile(snapshotPath, json, "utf8");
+  return { ok: true, path: snapshotPath };
 });
 
 ipcMain.handle(

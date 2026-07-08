@@ -11,6 +11,7 @@ import {
   Volume2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { applyName } from "../config/characterName";
 import type { AudioVisualizerSettings, MiniPlayerSettings } from "../types/settings";
 import type { Track } from "../types/track";
 import { IconButton } from "./IconButton";
@@ -91,7 +92,7 @@ export function MiniPlayerAssistant({
           <TrackArtwork track={currentTrack} size="sm" className="h-12 w-12 rounded-[12px]" />
           <div className="min-w-0">
             <p className="truncate text-sm font-black leading-tight text-white">
-              {currentTrack?.title ?? "水瓶罐子待機中"}
+              {currentTrack?.title ?? applyName("{name}待機中")}
             </p>
             <p className="truncate text-xs leading-tight text-aquarius-mist">
               {currentTrack?.artist ?? "把音樂放進小水池"}

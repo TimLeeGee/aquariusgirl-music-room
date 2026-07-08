@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useBrandAssets } from "../config/brandAssets";
+import { applyName } from "../config/characterName";
 import type { BroadcastPlayerState } from "../utils/playerBroadcast";
 import {
   createPlayerBroadcastChannel,
@@ -50,7 +51,7 @@ export function ObsOverlay({ visualizerLevels }: ObsOverlayProps) {
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-2xl font-black text-white drop-shadow">
-            {state?.track?.title ?? "水瓶罐子的音樂小水池待機中"}
+            {state?.track?.title ?? applyName("{name}的音樂小水池待機中")}
           </p>
           <p className="truncate text-base font-bold text-aquarius-blue drop-shadow">
             {state?.track?.artist ?? "等待播放器同步"}

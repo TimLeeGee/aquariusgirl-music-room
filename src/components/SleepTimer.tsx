@@ -2,6 +2,7 @@ import { Moon, X } from "lucide-react";
 import { useState } from "react";
 import type { SleepTimerMode } from "../hooks/useSleepTimer";
 import { IconButton } from "./IconButton";
+import { useText } from "../config/textOverrides";
 
 type SleepTimerProps = {
   mode: SleepTimerMode;
@@ -21,6 +22,7 @@ export function SleepTimer({
   onCancel,
 }: SleepTimerProps) {
   const [customMinutes, setCustomMinutes] = useState(45);
+  const sleepTimerTitle = useText("sleepTimerTitle");
 
   return (
     <section className="glass-panel p-5">
@@ -30,7 +32,7 @@ export function SleepTimer({
             <Moon className="h-4 w-4" />
             Sleep Timer
           </p>
-          <h2 className="mt-1 text-xl font-black text-white">睡前定時停止</h2>
+          <h2 className="mt-1 text-xl font-black text-white">{sleepTimerTitle}</h2>
         </div>
         {active && (
           <IconButton

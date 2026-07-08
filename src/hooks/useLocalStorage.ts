@@ -14,6 +14,7 @@ export const STORAGE_KEYS = {
   windowBoundsState: "aquariusgirl.musicRoom.windowBoundsState",
   audioVisualizerSettings: "aquariusgirl.musicRoom.audioVisualizerSettings",
   themeColorSettings: "aquariusgirl.musicRoom.themeColorSettings",
+  textOverrideSettings: "aquariusgirl.musicRoom.textOverrideSettings",
 } as const;
 
 export function useLocalStorage<T>(key: string, initialValue: T) {

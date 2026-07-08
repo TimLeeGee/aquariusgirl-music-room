@@ -82,6 +82,14 @@ export type AquariusgirlElectronAPI = {
     path?: string;
     error?: string;
   }>;
+  saveMetadataFixSnapshot?: (payload: {
+    sessionId: string;
+    entries: Array<{ trackId: string; sourcePath: string; before: SongInfoDraft }>;
+  }) => Promise<{
+    ok: boolean;
+    path?: string;
+    error?: string;
+  }>;
   setMiniPlayerMode: (settings: {
     enabled: boolean;
     alwaysOnTop: boolean;

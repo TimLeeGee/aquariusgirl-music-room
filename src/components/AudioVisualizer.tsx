@@ -2,6 +2,7 @@ import { Settings2 } from "lucide-react";
 import { useState } from "react";
 import type { AudioVisualizerSettings } from "../types/settings";
 import { AudioVisualizerSettingsPanel } from "./AudioVisualizerSettingsPanel";
+import { useText } from "../config/textOverrides";
 
 type AudioVisualizerProps = {
   levels: number[];
@@ -27,6 +28,7 @@ export function AudioVisualizer({
   maxBarHeight = compact ? 48 : 112,
 }: AudioVisualizerProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const visualizerTitle = useText("visualizerTitle");
 
   return (
     <section className={compact ? "" : "glass-panel p-5"}>
@@ -36,7 +38,7 @@ export function AudioVisualizer({
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-aquarius-blue">
               Visualizer
             </p>
-            <h2 className="mt-1 text-xl font-black text-white">音樂頻譜</h2>
+            <h2 className="mt-1 text-xl font-black text-white">{visualizerTitle}</h2>
           </div>
           <div className="flex items-center gap-2">
             <button

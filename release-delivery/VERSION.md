@@ -1,9 +1,57 @@
 # 版本資訊
 
 產品：Aquariusgirl Music Room / 水瓶罐子的音樂小水池
-版本：0.1.44
-日期：2026-07-07
+版本：0.1.48
+日期：2026-07-08
 平台目標：Windows x64、macOS arm64
+
+## 2026-07-08 0.1.48 狀態（面板文字全量登錄表：分組＋可搜尋編輯器）
+
+0.1.48 把面板文字自訂由 6 slot 升級為開放字串登錄表（~20 條 UI 顯示字串，`UI_TEXT_GROUPS` 分組），設定「文字」分頁改分組＋可搜尋編輯器；`trackDisplay`「正在等音樂」搬到 `PlayerCore` 消費端使其可改可改名。角色名稱（中/英）一改全站換維持。零新套件。Provider 外元件與散落名字提及維持 `applyName`；OS 視窗/dock 名為打包時 productName。
+
+已通過（Linux 沙盒）：`tsc --noEmit`、`electron:compile`、全部可跑 `check:*`；（Mac 本機）：`npm run dist:release` DIST_EXIT=0。
+
+0.1.48 installer 已於 2026-07-08 由 `qa-temp/build-0.1.48.command` 在 Mac 本機產出並同步到 `release-delivery/installers/`：
+
+- `Aquariusgirl Music Room Setup 0.1.48.exe`：667,674,676 bytes，SHA-256 `fa3ba844134fe791c0dfcb6452d2d3212530f5573f135b6dea66bf588213e655`
+- `Aquariusgirl Music Room-0.1.48-arm64.dmg`：684,781,240 bytes，SHA-256 `e3aaf089e8fa4d38e3b3a52f617ed38253f6ca661df5e92fb9bd7051d7ec2670`
+- DMG `hdiutil verify` VALID；掛載讀回 0.1.48／arm64／taglib wasm 存在；EXE PE32 NSIS；未簽章。詳見 `docs/releases/0.1.48-checksums.md`。打包版 GUI 實測與 Windows 真機待補；尚未推 GitHub。
+
+## 2026-07-08 0.1.47 狀態（搜尋泡泡修正 + 檢查歌曲資訊強化 + 角色名稱全域改名）
+
+0.1.47 五項：P1 搜尋 chip 預填＋空查詢反問；P2 檢查歌曲資訊可選資料夾範圍（前綴含子資料夾）；P3 可寫回無建議逐首手動編輯（開 SongInfoPanel）；P4 非可寫檢視＋「顯示位置」（`showTrackInFolder`）；P5 角色名稱全域改名（`TextOverrideSettings` 加 `characterName`/`characterNameEn`，`{name}`/`{nameEn}` 模板代入，設定「文字」分頁加名稱欄位＋預覽）。零新套件。2 處 node check 直載的 util 預設名維持字面「水瓶罐子」。
+
+已通過（Linux 沙盒）：`tsc --noEmit`、`electron:compile`、全部可跑 `check:*`；（Mac 本機）：`npm run dist:release` DIST_EXIT=0。
+
+0.1.47 installer 已於 2026-07-08 由 `qa-temp/build-0.1.47.command` 在 Mac 本機產出並同步到 `release-delivery/installers/`：
+
+- `Aquariusgirl Music Room Setup 0.1.47.exe`：667,673,975 bytes，SHA-256 `b93d2f9ed0721bba5984a52ff93c341dcf98d9a0bf6066107fe9dc2bcd635d97`
+- `Aquariusgirl Music Room-0.1.47-arm64.dmg`：684,774,034 bytes，SHA-256 `c1baf08bf05575aed0feb013fe9c36a7ee3717cc3fb7ba8018b36c2bc81d9541`
+- DMG `hdiutil verify` VALID；掛載讀回 0.1.47／arm64／taglib wasm 存在；EXE PE32 NSIS；未簽章。詳見 `docs/releases/0.1.47-checksums.md`。打包版 GUI 實測與 Windows 真機待補；尚未推 GitHub。
+
+## 2026-07-07 0.1.46 狀態（AI 快捷指令氣泡 + 面板文字自訂設定）
+
+0.1.46 新增兩個客製化功能：Feature A AI 助手空狀態快捷指令氣泡；Feature B 面板文字自訂（新 `TextOverrideSettings` 6 白名單 key，設定「外觀設定」新增「文字」分頁，元件用 `TextOverrideContext`/`useText` 消費、留空 fallback 預設、隨匯出/匯入帶走）。照 ThemeColorSettings 模式，零新套件。升版面：`package.json`／`package-lock.json`(×2)／`exportSettings.ts appVersion`。
+
+已通過（Linux 沙盒）：`tsc --noEmit`、`electron:compile`、全部可跑 `check:*`；（Mac 本機）：`npm run dist:release` DIST_EXIT=0。
+
+0.1.46 installer 已於 2026-07-07 由 `qa-temp/build-0.1.46.command` 在 Mac 本機產出並同步到 `release-delivery/installers/`：
+
+- `Aquariusgirl Music Room Setup 0.1.46.exe`：667,672,752 bytes，SHA-256 `15ceb1585a34b46d86188762549d893e5aeeff293e23c8210b1e4281113bf13c`
+- `Aquariusgirl Music Room-0.1.46-arm64.dmg`：684,765,780 bytes，SHA-256 `a29f06083d0c039cc03a1de5faafe52c47027b758c94e70ee0261e484756bd8c`
+- DMG `hdiutil verify` VALID；唯讀掛載讀回 0.1.46／arm64／taglib wasm 存在；EXE PE32 NSIS；未簽章。詳見 `docs/releases/0.1.46-checksums.md`。打包版 GUI 實測與 Windows 真機待補；尚未推 GitHub。
+
+## 2026-07-07 0.1.45 狀態（AI 助手改善 A1–A3 + 歌曲資訊補全 Phase 1+2 首次打包）
+
+0.1.45 把本輪程式升版並打包 mac＋Windows：A1 智慧分流（規則信心高跳過 LLM router）、A2 對話 token 預算裁切、A3 首 token 逾時＋連續失敗重啟 sidecar；B1 歌曲資訊健檢掃描報告卡（純讀取）、B2 本地推測引擎＋逐首建議卡＋快照復原（只寫文字欄位、不碰封面）。細節見 `docs/HANDOFF_AI_METADATA.md`。升版面：`package.json`／`package-lock.json`(×2)／`exportSettings.ts appVersion`。
+
+已通過（Linux 沙盒）：全部可跑 `check:*`＋`electron:compile`；（Mac 本機）：`npm run build` exit 0、`npm run dist:release` DIST_EXIT=0。
+
+0.1.45 installer 已於 2026-07-07 由 `qa-temp/build-0.1.45.command`（`npm run dist:release`）在 Mac 本機產出並同步到 `release-delivery/installers/`：
+
+- `Aquariusgirl Music Room Setup 0.1.45.exe`：667,671,899 bytes，SHA-256 `78136ae0fa13c5f43784023e0393a5fcb1c3756971e64d4872e6f859b9e17a6e`
+- `Aquariusgirl Music Room-0.1.45-arm64.dmg`：684,777,947 bytes，SHA-256 `bd123116fed76fb8c018a2741f64687d773cf0110b85f2371cb03935781f8cd4`
+- DMG `hdiutil verify` VALID；唯讀掛載讀回 0.1.45／arm64／taglib wasm 存在；EXE PE32 NSIS；未簽章。詳見 `docs/releases/0.1.45-checksums.md`。打包版 GUI 實測與 Windows 真機待補；尚未推 GitHub。
 
 ## 2026-07-07 0.1.44 hotfix 狀態（Confirm Focus Lock / Toast Position / 確認窗焦點鎖死與提示位置）
 

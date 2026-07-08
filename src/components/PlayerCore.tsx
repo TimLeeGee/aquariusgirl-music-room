@@ -17,6 +17,7 @@ import { IconButton } from "./IconButton";
 import { ProgressBar } from "./ProgressBar";
 import { TrackArtwork } from "./TrackArtwork";
 import { VolumeControl } from "./VolumeControl";
+import { useText } from "../config/textOverrides";
 
 type PlayerCoreProps = {
   currentTrack: Track | null;
@@ -98,6 +99,9 @@ export function PlayerCore({
   const currentTrackPlaylistIdSet = new Set(currentTrackPlaylistIds);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const closeMoreMenu = () => setMoreMenuOpen(false);
+  const playerWaiting = useText("playerWaiting");
+  const playerSelectHint = useText("playerSelectHint");
+  const playerDropHint = useText("playerDropHint");
 
   return (
     <section className="glass-panel p-5 sm:p-6">
@@ -110,10 +114,10 @@ export function PlayerCore({
                 {isPlaying ? "Playing" : hasTracks ? "Ready" : "Waiting"}
               </p>
               <h2 className="mt-2 animate-track-in truncate text-2xl font-black text-white sm:text-3xl">
-                {getTrackPrimaryText(currentTrack)}
+                {currentTrack ? getTrackPrimaryText(currentTrack) : playerWaiting}
               </h2>
               <p className="mt-1 truncate text-sm text-aquarius-mist">
-                {currentTrack ? getTrackSecondaryText(currentTrack) : "選擇本地音樂檔後開始播放"}
+                {currentTrack ? getTrackSecondaryText(currentTrack) : playerSelectHint}
               </p>
               {currentTrack?.album && (
                 <p className="mt-1 truncate text-xs text-aquarius-mist">
@@ -278,7 +282,7 @@ export function PlayerCore({
           <p className="rounded-full border border-white/10 bg-white/[0.08] px-3 py-2 text-xs leading-5 text-aquarius-mist">
             {showWebLimitNotice
               ? "Web preview 重新整理後，請重新選擇本地音樂檔或資料夾。"
-              : "把音樂放進小水池，現在就能開始播放。"}
+              : playerDropHint}
           </p>
         </div>
       </div>

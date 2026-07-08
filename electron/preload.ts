@@ -25,6 +25,8 @@ contextBridge.exposeInMainWorld("aquariusgirlAPI", {
   checkForUpdates: () => ipcRenderer.invoke("aquariusgirl:check-for-updates"),
   appendAIPlaylistActionLog: (entry: string) =>
     ipcRenderer.invoke("aquariusgirl:append-ai-playlist-action-log", entry),
+  saveMetadataFixSnapshot: (payload: { sessionId: string; entries: unknown[] }) =>
+    ipcRenderer.invoke("aquariusgirl:save-metadata-fix-snapshot", payload),
   setMiniPlayerMode: (settings: unknown) =>
     ipcRenderer.invoke("aquariusgirl:set-mini-player-mode", settings),
   setMiniAlwaysOnTop: (enabled: boolean) =>
