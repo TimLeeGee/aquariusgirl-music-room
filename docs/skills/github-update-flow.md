@@ -49,10 +49,12 @@
 
 - `package.json`
 - `package-lock.json`
-- `README.md`
+- 根目錄 `README.md`
+- 根目錄 `AGENTS.md`（「目前版本」與「快速接手」的版本標記與最新版本段落）
+- 根目錄 `CONTINUE_WORK.md`（最新段落加最上方、舊段落轉歷史語氣不刪）
 - `CHANGELOG.md`，若存在
 - `docs/releases/*`
-- `release-delivery/*.md`
+- `release-delivery/*.md` **全部**：`README.md`／`VERSION.md`／`QA_REPORT.md`／`INSTALLER_STATUS.md`／`CONTINUE_WORK.md`／`INSTALL_UNINSTALL.md`／`KNOWN_ISSUES.md` 都要同步版本標記與最新段落，別只更新其中幾份。
 - Electron build 設定與 packaged `app.asar`
 - app 內顯示版本號或設定匯出常數，例如 `src/utils/exportSettings.ts`
 - Git tag，若本輪要打 tag

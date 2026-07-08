@@ -1,6 +1,12 @@
 # 接續工作狀態
 
-最後更新：2026-07-07 CST
+最後更新：2026-07-08 CST
+
+（此為交付區副本；最新完整接續紀錄以根目錄 `CONTINUE_WORK.md` 為準。）
+
+## 2026-07-08 0.1.45–0.1.48 一批完成（AI 助手＋面板文字自訂）
+
+0.1.45 AI 助手改善（A1–A3）＋歌曲資訊補全 Phase 1＋2；0.1.46 AI 快捷指令氣泡＋面板文字自訂；0.1.47 搜尋泡泡修正＋檢查歌曲資訊資料夾範圍/逐首手動編輯/非可寫檢視＋角色名稱全域改名；0.1.48 面板文字全量登錄表（分組＋可搜尋編輯器）。零新套件；沙盒 `tsc`/`electron:compile`/全部 `check:*` PASS；Mac 本機 `npm run dist:release` 打包 mac+win 並驗證（DMG `hdiutil verify` VALID＋掛載讀回、EXE NSIS）；已推 GitHub main（commit `f48f6b5`）。各版 SHA-256 見 `docs/releases/0.1.4x-checksums.md`；詳見根 `CONTINUE_WORK.md` 與 `release-delivery/QA_REPORT.md`。打包版 GUI 實測與 Windows 真機待補。
 
 ## 2026-07-07 Confirm Focus Lock / Toast Position hotfix 0.1.44 完成
 
