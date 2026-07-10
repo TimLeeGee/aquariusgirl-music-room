@@ -4,7 +4,7 @@
 
 ## 目前狀態
 
-0.1.49 的 source、release 文件與 checksum 已於 2026-07-10 推送 GitHub `main`（`f972261`），並以 `origin/main` 讀回確認版本、根目錄文件、`release-delivery` Markdown、checksum 與核心 source。2026-07-10 文件制度改革（未推送）：版本歷史統一進根目錄 `CHANGELOG.md`，release-delivery 剩 6 份 Markdown（CONTINUE_WORK 副本已刪）且只寫現況。DMG/EXE 仍只在本機交付資料夾，未 commit；它未簽章、未 notarize，且打包 GUI 與 Windows 真機驗證仍待補。
+0.1.49 的 source、release 文件與 checksum 已於 2026-07-10 推送 GitHub `main`（`f972261`），並以 `origin/main` 讀回確認版本、根目錄文件、`release-delivery` Markdown、checksum 與核心 source。2026-07-10 文件制度改革已推送 `main`（`1af9e47`，遠端讀回 CHANGELOG.md／docs/skills 404／VERSION.md 現況版確認）：版本歷史統一進根目錄 `CHANGELOG.md`，release-delivery 剩 6 份 Markdown（CONTINUE_WORK 副本已刪）且只寫現況。DMG/EXE 仍只在本機交付資料夾，未 commit；它未簽章、未 notarize，且打包 GUI 與 Windows 真機驗證仍待補。
 
 ## 發布流程
 
