@@ -3,6 +3,8 @@
 版本：0.1.49
 文件更新：2026-07-10
 
+2026-07-10 文件-only 變更：移除 `docs/skills/`（兩份技能快照停在 0.1.32，內容過期且與 `CLAUDE.md`／`AGENTS.md`、`llm-wiki/` 重複）。開發規範以 `CLAUDE.md`／`AGENTS.md`＋`llm-wiki/` 為準，GitHub 發布流程以全域 `github-update-flow` 技能＋`llm-wiki/08-GitHub發布守門員.md` 為準；文件內歷史敘述保留、歷史可從 git 取回。程式與 installer 不受影響。
+
 ## 0.1.49 仍需完成
 
 - 打包版 GUI 實測待補：切 Mini 續播、泡泡列收合與 hover 下拉、訊息底部錨定、播放清單捲動回歸，尚未在打包好的 app 內以真實滑鼠實跑。

@@ -1,5 +1,9 @@
 # Installer 狀態
 
+## 2026-07-10 文件-only：docs/skills 移除
+
+2026-07-10 文件-only 變更：移除 `docs/skills/`（兩份技能快照停在 0.1.32，內容過期且與 `CLAUDE.md`／`AGENTS.md`、`llm-wiki/` 重複）。開發規範以 `CLAUDE.md`／`AGENTS.md`＋`llm-wiki/` 為準，GitHub 發布流程以全域 `github-update-flow` 技能＋`llm-wiki/08-GitHub發布守門員.md` 為準；文件內歷史敘述保留、歷史可從 git 取回。程式與 installer 不受影響。
+
 ## 2026-07-10 0.1.49 狀態（Mini 切換播放中斷修正＋播放自癒保險＋AI 聊天視窗 UX）
 
 0.1.49 修正 0.1.48 回歸（`<audio>` 首子節點位置被 `TextOverrideContext.Provider` 改變、切 Mini/OBS 播放中斷）＋播放自癒保險（自動重掛遺失音源＋恢復位置、錯誤訊息分流）＋ AI 聊天視窗 UX（泡泡列置頂收合 hover 下拉、訊息底部錨定、聊天區 500px）。零新套件。升版面：`package.json`／`package-lock.json`(×2)／`exportSettings.ts appVersion` → 0.1.49。

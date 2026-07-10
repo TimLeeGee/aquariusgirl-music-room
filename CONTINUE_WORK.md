@@ -1,5 +1,10 @@
 # Aquariusgirl Music Room Continue Work
 
+## 2026-07-10 文件-only：移除 docs/skills/（0.1.49 之後）
+
+- 2026-07-10 文件-only 變更：移除 `docs/skills/`（兩份技能快照停在 0.1.32，內容過期且與 `CLAUDE.md`／`AGENTS.md`、`llm-wiki/` 重複）。開發規範以 `CLAUDE.md`／`AGENTS.md`＋`llm-wiki/` 為準，GitHub 發布流程以全域 `github-update-flow` 技能＋`llm-wiki/08-GitHub發布守門員.md` 為準；文件內歷史敘述保留、歷史可從 git 取回。程式與 installer 不受影響。
+- llm-wiki 8 頁來源引用已改指承接文件，`99-更新日誌.md` 有完整紀錄。
+
 ## 2026-07-10 0.1.49 打包完成：Mini 播放中斷 hotfix＋播放自癒保險＋AI 聊天視窗 UX（mac＋Windows）
 
 - 升版面：`package.json`／`package-lock.json`(×2)／`exportSettings.ts appVersion` → 0.1.49。內容＝下段全部（`<audio>` 首子節點 hotfix＋自癒保險＋聊天 UX）。

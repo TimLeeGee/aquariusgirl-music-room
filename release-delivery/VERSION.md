@@ -5,6 +5,10 @@
 日期：2026-07-10
 平台目標：Windows x64、macOS arm64
 
+## 2026-07-10 文件-only：docs/skills 移除
+
+2026-07-10 文件-only 變更：移除 `docs/skills/`（兩份技能快照停在 0.1.32，內容過期且與 `CLAUDE.md`／`AGENTS.md`、`llm-wiki/` 重複）。開發規範以 `CLAUDE.md`／`AGENTS.md`＋`llm-wiki/` 為準，GitHub 發布流程以全域 `github-update-flow` 技能＋`llm-wiki/08-GitHub發布守門員.md` 為準；文件內歷史敘述保留、歷史可從 git 取回。程式與 installer 不受影響。
+
 ## 2026-07-10 0.1.49 狀態（Mini 切換播放中斷修正＋播放自癒保險＋AI 聊天視窗 UX）
 
 0.1.49 修正 0.1.48 回歸：`<audio>` 被 `TextOverrideContext.Provider` 多包一層，切 Mini/OBS 時 React 依位置重建節點造成播放中斷、誤報「瀏覽器阻擋播放」；移回 `BrandAssetsContext.Provider` 首子節點無縫續播。並加播放自癒保險（偵測「有歌但節點沒音源」自動重掛＋恢復位置；壞狀態第一下改重新播放；寫檔暫停期間停用；錯誤訊息分流——只有 `NotAllowedError` 才報「阻擋」）。AI 聊天視窗 UX：泡泡列 sticky 置頂、首次互動後收合 hover 下拉、訊息底部錨定由下往上、聊天區 256px→500px（圓角間距不變）。零新套件。

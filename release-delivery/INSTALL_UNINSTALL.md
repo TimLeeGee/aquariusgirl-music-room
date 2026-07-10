@@ -3,6 +3,8 @@
 版本：0.1.49
 文件更新：2026-07-10
 
+2026-07-10 文件-only 變更：移除 `docs/skills/`（兩份技能快照停在 0.1.32，內容過期且與 `CLAUDE.md`／`AGENTS.md`、`llm-wiki/` 重複）。開發規範以 `CLAUDE.md`／`AGENTS.md`＋`llm-wiki/` 為準，GitHub 發布流程以全域 `github-update-flow` 技能＋`llm-wiki/08-GitHub發布守門員.md` 為準；文件內歷史敘述保留、歷史可從 git 取回。程式與 installer 不受影響。
+
 ## 0.1.49 安裝狀態
 
 0.1.49（Mini 切換播放中斷修正＋播放自癒保險＋AI 聊天視窗 UX）installer 已產出並同步到 `release-delivery/installers/`；安裝／解除安裝步驟與先前版本相同，檔名改為 0.1.49。SHA-256 請看 `docs/releases/0.1.49-checksums.md`。

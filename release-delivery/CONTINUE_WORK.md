@@ -4,6 +4,10 @@
 
 （此為交付區副本；最新完整接續紀錄以根目錄 `CONTINUE_WORK.md` 為準。）
 
+## 2026-07-10 文件-only：docs/skills 移除
+
+- 2026-07-10 文件-only 變更：移除 `docs/skills/`（兩份技能快照停在 0.1.32，內容過期且與 `CLAUDE.md`／`AGENTS.md`、`llm-wiki/` 重複）。開發規範以 `CLAUDE.md`／`AGENTS.md`＋`llm-wiki/` 為準，GitHub 發布流程以全域 `github-update-flow` 技能＋`llm-wiki/08-GitHub發布守門員.md` 為準；文件內歷史敘述保留、歷史可從 git 取回。程式與 installer 不受影響。
+
 ## 2026-07-10 0.1.49 打包完成（Mini 切換播放中斷修正＋播放自癒保險＋AI 聊天視窗 UX）
 
 修正 0.1.48 回歸：`<audio>` 被 `TextOverrideContext.Provider` 多包一層、切 Mini/OBS 時 React 重建節點造成播放中斷；移回首子節點＋`useAudioPlayer` 自癒保險（音源遺失自動重掛＋恢復位置、壞狀態第一下改重新播放、寫檔暫停期間停用、錯誤訊息分流）。AI 聊天視窗：泡泡列 sticky 置頂＋首次互動收合 hover 下拉、訊息底部錨定由下往上、聊天區 500px。零新套件；沙盒 `tsc`/`electron:compile`/全部 `check:*` PASS；Mac 本機 `npm run dist:release` DIST_EXIT=0（DMG `hdiutil verify` VALID＋掛載讀回 0.1.49/arm64/taglib wasm、EXE NSIS）。SHA-256 見 `docs/releases/0.1.49-checksums.md`。打包版 GUI 實測與 Windows 真機待補；本次已推送 GitHub `main`。dev 模式 http origin 載不了 `file://` 音源為已知環境限制，dev 驗證播放用拖曳 blob。

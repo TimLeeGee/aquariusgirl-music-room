@@ -32,7 +32,7 @@
 
 ## 來源
 
-- `docs/skills/github-update-flow.md`
+- 全域 `github-update-flow` 技能（專案內 `docs/skills/` 副本已於 2026-07-10 移除，規則由本頁與 CLAUDE.md／AGENTS.md 承接）
 - `release-delivery/README.md`
 - `release-delivery/VERSION.md`
 - `release-delivery/INSTALLER_STATUS.md`
