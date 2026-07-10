@@ -31,6 +31,15 @@
 | 驗收、測試、check 或 build 解讀 | test-checker |
 | 版本、release note、installer、hash、發布 | release-guardian |
 
+## 多 Agent 推送協調
+
+Codex 與 Claude 可能在同一天各自準備推送（2026-07-10 曾發生 0.1.49 撞車）。`git push` 被拒（fetch first）時：
+
+1. 不硬 rebase、不 force push、不盲目 pull merge。
+2. 先 `git fetch origin`，比對 `HEAD` 與 `origin/main` 的 commit 與逐檔差異，確認 source 是否相同、哪邊文件較新。
+3. 若遠端已涵蓋本地 commit 內容，以 `origin/main` 為基底重放本地獨有的檔案（例如經 gitignore 目錄暫存 payload），再 commit 補推。
+4. push 後一律讀回 `origin/main` 驗證。
+
 ## 文件與 Wiki 例外
 
 純 Wiki 建立或文件盤點不得改產品程式、設定或資料。它仍需保留來源與 git diff 證據，但不適用程式碼修改的 可以修改 閘門。
