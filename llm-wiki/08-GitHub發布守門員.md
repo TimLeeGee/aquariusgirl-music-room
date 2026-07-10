@@ -4,14 +4,14 @@
 
 ## 目前狀態
 
-0.1.49 的 source、release 文件與 checksum 已於 2026-07-10 推送 GitHub `main`（`f972261`），並以 `origin/main` 讀回確認版本、根目錄三份文件、七份 `release-delivery` Markdown、checksum 與核心 source。DMG/EXE 仍只在本機交付資料夾，未 commit；它未簽章、未 notarize，且打包 GUI 與 Windows 真機驗證仍待補。
+0.1.49 的 source、release 文件與 checksum 已於 2026-07-10 推送 GitHub `main`（`f972261`），並以 `origin/main` 讀回確認版本、根目錄文件、`release-delivery` Markdown、checksum 與核心 source。2026-07-10 文件制度改革（未推送）：版本歷史統一進根目錄 `CHANGELOG.md`，release-delivery 剩 6 份 Markdown（CONTINUE_WORK 副本已刪）且只寫現況。DMG/EXE 仍只在本機交付資料夾，未 commit；它未簽章、未 notarize，且打包 GUI 與 Windows 真機驗證仍待補。
 
 ## 發布流程
 
 | 階段 | 必要動作 | 證據 |
 | --- | --- | --- |
 | 範圍 | git status、branch、近期 log、diff；列清本次檔案 | 工作樹與 stage 清單 |
-| 版本同步 | package.json、package-lock、README、AGENTS、CLAUDE、CONTINUE_WORK、7 份 release-delivery Markdown、release checksum | 搜尋舊版本字串與 diff |
+| 版本同步 | package.json、package-lock、`CHANGELOG.md`（逐版紀錄唯一去處）、README 最新版摘要、AGENTS、CLAUDE、CONTINUE_WORK（僅根目錄一份）、release-delivery 狀態檔改寫現況、QA_REPORT append 證據、release checksum | 搜尋舊版本字串與 diff |
 | 程式驗證 | 跑本次改動所需 build、compile、check | 指令結果 |
 | 打包 | 只在 app code、資源、版本或設定變動時跑 npm run dist:release | DMG/EXE 與同步結果 |
 | 安裝檔 | SHA-256 重新讀回；DMG hdiutil verify 與掛載讀回 | docs/releases/version-checksums.md |
@@ -21,7 +21,7 @@
 ## 不可省略
 
 - [ ] 發布前確認使用者明確授權 commit/push/tag/release。
-- [ ] 版本更新時，根目錄與所有 7 份 release-delivery Markdown 全部同步，保留舊歷史。
+- [ ] 版本更新時依 2026-07-10 文件制度改革：逐版紀錄只寫 `CHANGELOG.md`（最新在上）；README 只更新最新版摘要；release-delivery 狀態檔（README／VERSION／INSTALLER_STATUS／INSTALL_UNINSTALL／KNOWN_ISSUES）改寫成現況、不累積逐版段落；`QA_REPORT.md` append-only；同一段內容不重複貼進多個檔案。
 - [ ] `AGENTS.md` 與 `CLAUDE.md` 為雙生檔：規則與「快速接手」狀態必須一致，任一份更新另一份同步改，兩份一起 commit / push；漏任一份即不得宣稱發布完成。
 - [ ] 不以 macOS static 檢查宣稱 Windows 真機已驗證。
 - [ ] 公開 clone 缺少 GGUF 或 installer 時，指明放回位置與驗證指令。

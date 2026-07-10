@@ -1,5 +1,11 @@
 # Aquariusgirl Music Room Continue Work
 
+## 2026-07-10 文件制度改革（文件-only，接續 docs/skills 移除）
+
+- 「一件事一個家」：版本歷史統一進根目錄 `CHANGELOG.md`（README 各版段落原文搬入）；`README.md` 瘦身為產品門面（中英「目前最新版本」只留 0.1.49 摘要）；本檔為唯一 CONTINUE_WORK（release-delivery 副本已刪）；`release-delivery/` 5 個狀態檔改寫為只描述 0.1.49 現況＋歷史指標；`QA_REPORT.md` 全文保留（append-only 驗收證據）；docs/ 舊 audit 7 份歸檔 `docs/history/`。
+- `CLAUDE.md`／`AGENTS.md` 發布守則同步改為新制度；llm-wiki 受影響頁面與 `99-更新日誌.md` 已同步。
+- 程式與 installer 不受影響；push 待使用者 Mac 端執行。
+
 ## 2026-07-10 文件-only：移除 docs/skills/（0.1.49 之後）
 
 - 2026-07-10 文件-only 變更：移除 `docs/skills/`（兩份技能快照停在 0.1.32，內容過期且與 `CLAUDE.md`／`AGENTS.md`、`llm-wiki/` 重複）。開發規範以 `CLAUDE.md`／`AGENTS.md`＋`llm-wiki/` 為準，GitHub 發布流程以全域 `github-update-flow` 技能＋`llm-wiki/08-GitHub發布守門員.md` 為準；文件內歷史敘述保留、歷史可從 git 取回。程式與 installer 不受影響。
@@ -813,13 +819,13 @@
 - 智慧型播放清單的垃圾桶已改為持久排除，不刪歌曲庫；排除資料支援保存與備份匯入。
 - MINI 透明度下限已改為 20%。
 - 邏輯檢查、build、Electron compile、`dist:all`、DMG verify 與 EXE static check 均通過。
-- 最新安裝檔與人工驗收缺口詳見 `release-delivery/CONTINUE_WORK.md`。
+- 最新安裝檔與人工驗收缺口詳見 `release-delivery/QA_REPORT.md`（release-delivery/CONTINUE_WORK.md 副本已於 2026-07-10 文件制度改革移除）。
 
 ## 2026-06-18 21:52 MINI 透明度發行狀態
 
 - MINI 已新增 60–100% 數字輸入與左右 ±5 控制，並統一 8px 間距與圓角階層。
 - `mini-opacity-check`、build、Electron compile、`dist:all`、DMG verify、EXE static check 均通過。
-- 最新 DMG／EXE 位於 `release-delivery/installers/`；SHA-256 與人工驗收缺口詳見 `release-delivery/CONTINUE_WORK.md`。
+- 最新 DMG／EXE 位於 `release-delivery/installers/`；SHA-256 與人工驗收缺口詳見 `release-delivery/QA_REPORT.md`（release-delivery/CONTINUE_WORK.md 副本已於 2026-07-10 文件制度改革移除）。
 - 尚需 macOS 桌面版人工點擊原生透明度與 Windows 真機驗收；installer 未簽章。
 
 ## 1. 專案目前狀態
