@@ -23,6 +23,7 @@
 - [ ] 發布前確認使用者明確授權 commit/push/tag/release。
 - [ ] 版本更新時依 2026-07-10 文件制度改革：逐版紀錄只寫 `CHANGELOG.md`（最新在上）；README 只更新最新版摘要；release-delivery 狀態檔（README／VERSION／INSTALLER_STATUS／INSTALL_UNINSTALL／KNOWN_ISSUES）改寫成現況、不累積逐版段落；`QA_REPORT.md` append-only；同一段內容不重複貼進多個檔案。
 - [ ] `AGENTS.md` 與 `CLAUDE.md` 為雙生檔：規則與「快速接手」狀態必須一致，任一份更新另一份同步改，兩份一起 commit / push；漏任一份即不得宣稱發布完成。
+- [ ] 語言涵蓋：中文 canonical；README 英文區同步最新版摘要、CHANGELOG 英文只留歸檔說明、release-delivery 狀態檔留英文指標；本次更新的門面文件不可留舊版英文冒充最新。
 - [ ] 不以 macOS static 檢查宣稱 Windows 真機已驗證。
 - [ ] 公開 clone 缺少 GGUF 或 installer 時，指明放回位置與驗證指令。
 

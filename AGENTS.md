@@ -49,4 +49,4 @@
 - 打包 installer 使用同一條 `npm run dist:release`；若一般 sandbox 卡在 `hdiutil create`，取得允許後升權重跑，不要改打包方式。
 - macOS 可驗 DMG；在 macOS 上只能做 Windows EXE static check，不可宣稱 Windows 真機已驗證。
 - 封面 / 歌曲資訊寫回驗收必須使用暫存音樂複本與隔離 profile，不可打開或修改使用者原始 Music 資料夾；若 macOS 原生檔案對話框無法自動操作，需明確記錄哪些步驟使用受限 harness、哪些步驟由 packaged UI 滑鼠完成。
-- 發佈到 GitHub main 前（2026-07-10 文件制度改革，「一件事一個家」）：版本歷史只寫進根目錄 `CHANGELOG.md`（唯一來源、最新在上）；`README.md` 只更新「目前最新版本」摘要；`CONTINUE_WORK.md`（只有根目錄一份）更新接續狀態；`release-delivery/` 狀態檔（README／VERSION／INSTALLER_STATUS／INSTALL_UNINSTALL／KNOWN_ISSUES）改寫成目前現況、不累積逐版段落；`QA_REPORT.md` append-only 補驗收證據。同一段內容不重複貼進多個檔案；舊紀錄由 CHANGELOG 與 git 歷史承接。完成後 push 並讀回 `origin/main` 確認。
+- 發佈到 GitHub main 前（2026-07-10 文件制度改革，「一件事一個家」）：版本歷史只寫進根目錄 `CHANGELOG.md`（唯一來源、最新在上）；`README.md` 只更新「目前最新版本」摘要；`CONTINUE_WORK.md`（只有根目錄一份）更新接續狀態；`release-delivery/` 狀態檔（README／VERSION／INSTALLER_STATUS／INSTALL_UNINSTALL／KNOWN_ISSUES）改寫成目前現況、不累積逐版段落；`QA_REPORT.md` append-only 補驗收證據。同一段內容不重複貼進多個檔案；舊紀錄由 CHANGELOG 與 git 歷史承接。完成後 push 並讀回 `origin/main` 確認。語言政策（2026-07-10）：中文為 canonical。`README.md` 英文區維持完整門面並同步最新版摘要；`CHANGELOG.md` 英文只留歸檔說明（0.1.42 起以中文為準）；`release-delivery/` 狀態檔結尾附一句英文指標即可；不可留舊版英文內容冒充最新。
