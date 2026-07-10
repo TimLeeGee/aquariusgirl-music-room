@@ -1,5 +1,7 @@
 # AGENTS.md
 
+本檔給 Codex 讀；`CLAUDE.md` 是給 Claude（Claude Code / Cowork）讀的對應版本。兩份規則必須一致，任一份更新時另一份要同步改，且都要一起 commit / push 上 GitHub。
+
 ## 快速接手
 
 - Aquariusgirl Music Room 是 React + TypeScript + Vite + Electron 的本地音樂播放器，目前版本是 `0.1.49`。
