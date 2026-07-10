@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-本檔給 Claude（Claude Code / Cowork）讀；`AGENTS.md` 是給 Codex 讀的對應版本。兩份規則必須一致，任一份更新時另一份要同步改，且都要一起 commit / push 上 GitHub。動工前若專案有 `llm-wiki/`，先讀 `llm-wiki/00-入口索引.md` 再開工。
+本檔給 Claude（Claude Code / Cowork）讀；`AGENTS.md` 是給 Codex 讀的對應版本。兩份規則與「快速接手」狀態必須一致，任一份更新時另一份要同步改，且都要一起 commit / push 上 GitHub。動工前若專案有 `llm-wiki/`，先讀 `llm-wiki/00-入口索引.md` 再開工。
 
 ## 快速接手
 

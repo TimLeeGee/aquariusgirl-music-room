@@ -31,6 +31,14 @@
 | 驗收、測試、check 或 build 解讀 | test-checker |
 | 版本、release note、installer、hash、發布 | release-guardian |
 
+## 雙檔互相照顧（Cowork ↔ Codex 接手）
+
+`CLAUDE.md`（Claude / Cowork 讀）與 `AGENTS.md`（Codex 讀）是雙生檔，目標是任一方修改專案後，另一方開檔即可接手：
+
+1. 任何版本、狀態或守則變更，兩份的「快速接手」與守則段落都要改到——不只規則一致，內容狀態（版本號、已推送／待補事項）也要一致。
+2. 兩份一起 commit / push；只改一份視同未完成。
+3. 交接面三件套：雙檔「快速接手」＋ `CONTINUE_WORK.md` ＋ [[99-更新日誌]]；接手方從 [[00-入口索引]] 開工。
+
 ## 多 Agent 推送協調
 
 Codex 與 Claude 可能在同一天各自準備推送（2026-07-10 曾發生 0.1.49 撞車）。`git push` 被拒（fetch first）時：

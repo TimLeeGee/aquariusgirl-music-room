@@ -11,7 +11,7 @@
 | 階段 | 必要動作 | 證據 |
 | --- | --- | --- |
 | 範圍 | git status、branch、近期 log、diff；列清本次檔案 | 工作樹與 stage 清單 |
-| 版本同步 | package.json、package-lock、README、AGENTS、CONTINUE_WORK、7 份 release-delivery Markdown、release checksum | 搜尋舊版本字串與 diff |
+| 版本同步 | package.json、package-lock、README、AGENTS、CLAUDE、CONTINUE_WORK、7 份 release-delivery Markdown、release checksum | 搜尋舊版本字串與 diff |
 | 程式驗證 | 跑本次改動所需 build、compile、check | 指令結果 |
 | 打包 | 只在 app code、資源、版本或設定變動時跑 npm run dist:release | DMG/EXE 與同步結果 |
 | 安裝檔 | SHA-256 重新讀回；DMG hdiutil verify 與掛載讀回 | docs/releases/version-checksums.md |
@@ -22,6 +22,7 @@
 
 - [ ] 發布前確認使用者明確授權 commit/push/tag/release。
 - [ ] 版本更新時，根目錄與所有 7 份 release-delivery Markdown 全部同步，保留舊歷史。
+- [ ] `AGENTS.md` 與 `CLAUDE.md` 為雙生檔：規則與「快速接手」狀態必須一致，任一份更新另一份同步改，兩份一起 commit / push；漏任一份即不得宣稱發布完成。
 - [ ] 不以 macOS static 檢查宣稱 Windows 真機已驗證。
 - [ ] 公開 clone 缺少 GGUF 或 installer 時，指明放回位置與驗證指令。
 
