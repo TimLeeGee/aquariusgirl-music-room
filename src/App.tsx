@@ -1829,8 +1829,9 @@ export default function App() {
 
   return (
     <BrandAssetsContext.Provider value={resolvedBrandAssets}>
-      <TextOverrideContext.Provider value={resolvedTextOverrideSettings}>
+      {/* ponytail: audioElement must be the first child of BrandAssetsContext.Provider in every mode (normal/mini/obs) so React keeps the same <audio> DOM node across mode switches. Nesting it inside TextOverrideContext.Provider (added 0.1.48) shifted its tree position and remounted it on switch, stopping playback and dropping the loaded src. */}
       {audioElement}
+      <TextOverrideContext.Provider value={resolvedTextOverrideSettings}>
       <BackgroundAura isPlaying={player.isPlaying} />
       {isDesktopApp && (
         <div className="app-drag-region fixed left-0 right-0 top-0 z-50 flex h-9 items-center border-b border-white/[0.08] bg-aquarius-navy/95 pl-40 pr-6 text-white/85 shadow-[0_8px_24px_rgba(0,0,0,0.28)]">

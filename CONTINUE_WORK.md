@@ -1,5 +1,24 @@
 # Aquariusgirl Music Room Continue Work
 
+## 2026-07-10 0.1.49 打包完成：Mini 播放中斷 hotfix＋播放自癒保險＋AI 聊天視窗 UX（mac＋Windows）
+
+- 升版面：`package.json`／`package-lock.json`(×2)／`exportSettings.ts appVersion` → 0.1.49。內容＝下段全部（`<audio>` 首子節點 hotfix＋自癒保險＋聊天 UX）。
+- 打包：`qa-temp/build-0.1.49.command`（Finder 雙擊、Mac 本機跑 `npm run dist:release`）→ DIST_EXIT=0；`sync-installers` 清掉舊 0.1.48、維持單一交付資料夾。
+- installer（SHA-256 見 `docs/releases/0.1.49-checksums.md`）：
+  - `Aquariusgirl Music Room Setup 0.1.49.exe`：667,675,017 bytes，SHA-256 `7c3708ddba7abb9e81aa934575bf95af7e290b2293e77b8f89589741993cabf6`
+  - `Aquariusgirl Music Room-0.1.49-arm64.dmg`：684,771,178 bytes，SHA-256 `ee8ef2aeaa88a474fd5dad9986051223c4abfae66a3c6d90c7cb4cdf49f3e27a`
+- DMG `hdiutil verify` VALID＋掛載讀回 0.1.49／arm64／taglib wasm 存在；EXE PE32 NSIS（證據 `qa-temp/dist-0.1.49-result.txt`）。
+- 未驗證（老實講）：打包版 GUI 實測（切 Mini 續播、泡泡收合 hover、訊息貼底、清單捲動）；Windows 真機；簽章／notarization。本次已推送 GitHub `main`。
+
+## 2026-07-10 播放自癒保險＋AI 聊天視窗 UX 改版（已併入 0.1.49 打包）
+
+- 前情：使用者以打包版 0.1.48 重現「切 Mini 播放中斷」——0.1.48 安裝檔不含前一輪 `<audio>` 首子節點 hotfix（該修正仍在 working tree），屬修正未送達。
+- A `useAudioPlayer.ts` 自癒保險：`playAudioElement` 偵測「有歌但節點沒 src」自動重掛音源＋恢復播放位置；`togglePlay` 同指紋第一下改重新播放；`suspendAudioForFileWrite` 期間自癒停用（避免寫回中重新鎖檔）；`describePlayError` 分流錯誤訊息（只有 NotAllowedError 才報「阻擋」）。
+- B `AIAssistantPanel.tsx` 聊天 UX：泡泡列 sticky 置頂＋首次互動後收合、hover 下拉（純 CSS，不掛 scroll 監聽）；訊息區 `mt-auto` 底部錨定由下往上長；聊天視窗固定加高 500px；圓角間距不變、清單分頁不動。
+- 驗證：沙盒 `tsc --noEmit`／`electron:compile`／全部可跑 `check:*` PASS；rg 接點與殘渣掃描乾淨。未驗證：`vite build`（沙盒環境限制）、dev/packaged GUI 實跑、Windows 真機。
+- 下一步：Mac 本機 `npm run electron:dev` 實測（切 Mini 續播、泡泡收合、訊息貼底、清單捲動）→ 使用者確認後升版＋重打 DMG/EXE。細節見 `release-delivery/QA_REPORT.md` 最上段。
+- dev 模式已知限制（非 bug、勿當回歸追）：dev 渲染來自 `http://127.0.0.1:5173`，Chromium 禁止 http 頁面載入 `file://` 音源 → 自動恢復曲庫／原生選檔的歌在 dev 播不了（duration 全 0:00、跳「音源載入失敗」，此為 describePlayError 正確分流）。dev 驗證播放請用「拖曳」加入（blob 音源可播）；打包版為 file:// 同源，不受影響。
+
 ## 2026-07-08 0.1.48 打包完成：面板文字全量登錄表（分組＋可搜尋編輯器）（mac＋Windows）
 
 - 依使用者需求把「面板文字自訂」從 6 個 slot 升級為**開放字串登錄表**（~20 條 UI 顯示字串，`UI_TEXT_GROUPS` 分組）：

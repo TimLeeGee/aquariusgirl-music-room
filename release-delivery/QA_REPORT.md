@@ -1,9 +1,46 @@
 # QA 驗收報告
 
 產品：Aquariusgirl Music Room / 水瓶罐子的音樂小水池
-版本：0.1.48
-日期：2026-07-08
+版本：0.1.49
+日期：2026-07-10
 驗收角色：PM / QA / Electron 發行工程師
+
+## 2026-07-10 0.1.49 打包完成：Mini 播放中斷 hotfix＋播放自癒保險＋AI 聊天視窗 UX（mac＋Windows）
+
+- 升版面：`package.json`／`package-lock.json`(×2)／`exportSettings.ts appVersion` → 0.1.49。內容＝下方兩段 2026-07-10 工作（`<audio>` 首子節點 hotfix、自癒保險、聊天 UX）。
+- PASS（Mac 本機，`qa-temp/build-0.1.49.command`）：`npm run dist:release` DIST_EXIT=0（含全部 check＋vite build）。
+- installer（單一交付 `release-delivery/installers/`，舊 0.1.48 已被 sync 清除；SHA-256 見 `docs/releases/0.1.49-checksums.md`）：
+- `Aquariusgirl Music Room Setup 0.1.49.exe`：667,675,017 bytes，SHA-256 `7c3708ddba7abb9e81aa934575bf95af7e290b2293e77b8f89589741993cabf6`
+- `Aquariusgirl Music Room-0.1.49-arm64.dmg`：684,771,178 bytes，SHA-256 `ee8ef2aeaa88a474fd5dad9986051223c4abfae66a3c6d90c7cb4cdf49f3e27a`
+- PASS：DMG `hdiutil verify` VALID（CRC32 $21504B8A）；掛載讀回 0.1.49／arm64／taglib wasm 存在；EXE PE32 NSIS（證據：`qa-temp/dist-0.1.49-result.txt`）。
+- dev 模式已知限制（非 bug、勿當回歸追）：dev 渲染來自 `http://127.0.0.1:5173`，Chromium 禁止 http 頁面載入 `file://` 音源→自動恢復曲庫在 dev 播不了（duration 0:00、「音源載入失敗」為 describePlayError 正確分流）；dev 驗證播放用拖曳（blob），打包版 file:// 同源不受影響。
+- NOT VERIFIED（老實講）：打包版 GUI 實測（切 Mini 續播、泡泡收合 hover、訊息貼底、清單捲動）；Windows 真機；簽章／notarization。本次已推送 GitHub `main`。
+
+## 2026-07-10 播放自癒保險 + AI 聊天視窗 UX（泡泡置頂收合／訊息貼底／加高 500px）
+
+- 背景：使用者以打包版 0.1.48 重現 Mini 切換播放中斷——該安裝檔不含下方 hotfix（修正尚未升版打包），屬「修正未送達」而非「修正無效」。本輪加第二道防線＋聊天 UX 需求。
+- A 播放自癒保險（`src/hooks/useAudioPlayer.ts`，零新套件）：
+  - `playAudioElement` 播放前偵測「有歌但 `<audio>` 節點沒 src」（節點曾被重建的指紋）→ 自動重掛音源＋以 `lastPlaybackTimeRef` 恢復位置（`loadedmetadata` once listener）。未來任何 JSX 樹位置回歸都不再卡死。
+  - `togglePlay` 同指紋下第一下改為「重新播放」，不再把壞狀態切成暫停（修「按播放沒反應」）。
+  - 寫檔防護：`suspendAudioForFileWrite` 設 `suspendedForWriteRef`，暫停期間自癒不啟動，避免 Windows 寫回中重新鎖檔（0.1.44 戰場不受影響）。
+  - 錯誤訊息分流 `describePlayError`：只有 `NotAllowedError` 才說「系統暫時阻擋播放」；其他（如無音源）改說「音源載入失敗，請再點一次播放」——原「瀏覽器阻擋」為誤導訊息。
+- B AI 聊天視窗 UX（`src/components/AIAssistantPanel.tsx`，只動排版層，指令/健檢/建歌單邏輯零更動）：
+  - 快捷泡泡列 sticky 置頂於聊天視窗內頂端（`bg-aquarius-navy/95` + backdrop-blur，訊息從下方捲過）；對話中也可用，健檢整理／建清單進行中 disabled。
+  - 第一次點泡泡或送出訊息後泡泡列收合成細把手，hover 下拉展開（純 CSS group-hover，不掛 scroll 監聽——捲動不會誤觸發）。
+  - 訊息區以 `mt-auto` spacer 底部錨定：訊息少時貼底、新訊息由下往上長，像真實聊天；沿用既有 scroll-to-bottom。刻意不用 `justify-content:flex-end`（已知瀏覽器捲動 bug）。
+  - 聊天視窗高度 256px（整理中 384px）→ 固定 500px（`h-[31.25rem]`）；圓角、邊框、卡片間距全部不變。播放清單分頁與下方卡片不動（右欄為頁面層級捲動，僅整體變長）。
+- PASS（Linux 沙盒）：`tsc --noEmit` EXIT=0；`electron:compile` EXIT=0；`check:prompts/playback-order/playback-restore/track-list-virtualization/playlist-logic/metadata-save-loop/track-identity/track-display/ai-track-search/song-info`（含 taglib packaging＋writer roundtrip）；`node scripts/mini-opacity-check.mjs` PASS；rg 確認三分支 `{audioElement}` 首子節點不變、自癒接點齊全、`max-h-64/max-h-96/min-h-32` 舊殘渣 0、誤導「瀏覽器暫時阻擋」字串 0。
+- NOT VERIFIED（老實講）：`vite build`（沙盒缺 `@rollup/rollup-linux-arm64-gnu`，環境限制）；dev/packaged GUI 實跑（切 Mini 續播、泡泡收合 hover、訊息貼底、清單捲動回歸）；Windows 真機；尚未升版、未重打 installer。
+- 後續：Mac 本機 `npm run electron:dev` 實測上述四項 → 確認後升版＋重打 DMG/EXE（需使用者指示）。
+
+## 2026-07-10 Mini/OBS 模式切換 &lt;audio&gt; 重建、播放中斷 hotfix（0.1.48 回歸）
+
+- 症狀（使用者回報）：主畫面播放中切到 Mini 播放器 → 播放停住；再按播放無反應；切回主程式跳「瀏覽器阻擋播放」。之前版本正常。
+- 根因：`App.tsx` 三個 return 分支（一般／Mini／OBS）共用同一個 `{audioElement}`，但一般分支在 0.1.48 被新增的 `<TextOverrideContext.Provider>`（commit f48f6b5，開 1832／關 2188）多包一層，使 `<audio>` 不再是 `BrandAssetsContext.Provider` 的第一個子節點；Mini/OBS 分支仍是第一個子節點。React 依位置 reconcile，切模式時判定位置不同 → 卸載重建 `<audio>` DOM 節點 → 播放中斷、已載入 src 一併失效；隨後 `play()` 對空 audio 觸發 `NotAllowedError`，即「瀏覽器阻擋播放」。單一 audio／單一狀態架構本身正確，純屬 JSX 樹位置回歸。
+- 修法（最小位移）：把 `{audioElement}` 移出 `TextOverrideContext.Provider`，改為 `BrandAssetsContext.Provider` 的第一個子節點，使三分支中 `<audio>` 位置一致；React 於切模式時沿用同一 DOM 節點，播放無縫接續。留 `ponytail:` 註解記錄此不變式（`src/App.tsx` ~1832）。零新套件、不動 audio 播放邏輯／DB／寫回。
+- PASS（Linux 沙盒）：`tsc --noEmit` EXIT=0；`rg` 確認 OBS(1794)／Mini(1803)／一般(1833) 三分支 `{audioElement}` 皆為 `BrandAssetsContext.Provider` 首子節點。
+- NOT VERIFIED：`vite build` 打包段（沙盒缺 `@rollup/rollup-linux-arm64-gnu`，環境限制、非改動造成）；dev/packaged GUI 實跑「播放中切 Mini→續播、切回主程式無阻擋」；Windows 真機；尚未升版、未重打 installer。
+- 後續（需使用者授權）：Mac 本機 `npm run electron:dev` 手動驗證切模式續播；確認後再決定升版＋重打 DMG/EXE。
 
 ## 2026-07-08 0.1.48 面板文字全量登錄表（分組＋可搜尋編輯器）
 

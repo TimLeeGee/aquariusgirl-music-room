@@ -1,5 +1,18 @@
 # Installer 狀態
 
+## 2026-07-10 0.1.49 狀態（Mini 切換播放中斷修正＋播放自癒保險＋AI 聊天視窗 UX）
+
+0.1.49 修正 0.1.48 回歸（`<audio>` 首子節點位置被 `TextOverrideContext.Provider` 改變、切 Mini/OBS 播放中斷）＋播放自癒保險（自動重掛遺失音源＋恢復位置、錯誤訊息分流）＋ AI 聊天視窗 UX（泡泡列置頂收合 hover 下拉、訊息底部錨定、聊天區 500px）。零新套件。升版面：`package.json`／`package-lock.json`(×2)／`exportSettings.ts appVersion` → 0.1.49。
+
+已通過（Linux 沙盒）：`tsc --noEmit`、`electron:compile`、全部可跑 `check:*`。已通過（Mac 本機）：`npm run dist:release` DIST_EXIT=0。
+
+0.1.49 installer 已於 2026-07-10 由 `qa-temp/build-0.1.49.command` 在 Mac 本機產出並同步到 `release-delivery/installers/`（舊 0.1.48 已被 sync 自動清除）：
+
+- `Aquariusgirl Music Room Setup 0.1.49.exe`：667,675,017 bytes，SHA-256 `7c3708ddba7abb9e81aa934575bf95af7e290b2293e77b8f89589741993cabf6`
+- `Aquariusgirl Music Room-0.1.49-arm64.dmg`：684,771,178 bytes，SHA-256 `ee8ef2aeaa88a474fd5dad9986051223c4abfae66a3c6d90c7cb4cdf49f3e27a`
+- DMG `hdiutil verify` VALID；掛載讀回 0.1.49／arm64／taglib wasm 存在；EXE PE32 NSIS；未簽章。詳見 `docs/releases/0.1.49-checksums.md`。
+- 打包版 GUI 實測（切 Mini 續播、泡泡收合、訊息貼底、清單捲動）與 Windows 真機尚未驗；本次已推送 GitHub `main`。
+
 ## 2026-07-08 0.1.48 狀態（面板文字全量登錄表：分組＋可搜尋編輯器）
 
 0.1.48 把面板文字自訂由 6 slot 升級為開放登錄表（~20 條 UI 字串），設定「文字」分頁改分組＋可搜尋編輯器；新增主舞台/播放器/Header/歌單/拖曳/視覺化/睡前定時等字串；`trackDisplay`「正在等音樂」搬到 `PlayerCore` 使其可改。角色名稱（中/英）一改全站換維持。零新套件。升版面：`package.json`／`package-lock.json`(×2)／`exportSettings.ts appVersion` → 0.1.48。

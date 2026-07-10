@@ -31,6 +31,13 @@ function resolveAutoplay(value: unknown, fallback: boolean) {
   return typeof value === "boolean" ? value : fallback;
 }
 
+// ponytail: play() 失敗要分兩種病：NotAllowedError 才是「被阻擋」；其他（多半是節點沒音源）提示重試，不再誤報瀏覽器阻擋。
+function describePlayError(error: unknown) {
+  return error instanceof DOMException && error.name === "NotAllowedError"
+    ? "系統暫時阻擋播放，請再點一次播放按鈕。"
+    : "音源載入失敗，請再點一次播放；還是不行就重新選這首歌。";
+}
+
 export function useAudioPlayer({
   tracks,
   onError,
@@ -42,6 +49,9 @@ export function useAudioPlayer({
   const audioRef = useRef<HTMLAudioElement>(null);
   const loadedTrackSourceRef = useRef("");
   const loadedTrackIdRef = useRef<string | null>(null);
+  // ponytail: 自癒保險用——ref 記最後播放位置（不觸發 re-render）；寫檔暫停期間禁止自癒重掛，避免重新鎖檔。
+  const lastPlaybackTimeRef = useRef(0);
+  const suspendedForWriteRef = useRef(false);
   const [currentTrackId, setCurrentTrackId] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -105,16 +115,35 @@ export function useAudioPlayer({
       return false;
     }
 
+    // ponytail: 自癒保險——<audio> 節點若曾被重建（JSX 樹位置回歸）會遺失 src，refs 卻仍以為已載入。
+    // 播放前偵測「有歌但節點沒音源」就重掛音源＋恢復位置；寫檔暫停期間不啟動，避免重新鎖住原始檔。
+    if (!audio.src && !suspendedForWriteRef.current) {
+      const resumeAt = lastPlaybackTimeRef.current;
+      audio.src = currentTrackSource;
+      loadedTrackSourceRef.current = currentTrackSource;
+      loadedTrackIdRef.current = currentTrackId;
+      audio.load();
+      if (resumeAt > 0) {
+        audio.addEventListener(
+          "loadedmetadata",
+          () => {
+            audio.currentTime = resumeAt;
+          },
+          { once: true },
+        );
+      }
+    }
+
     try {
       await audio.play();
       setIsPlaying(true);
       return true;
-    } catch {
+    } catch (error) {
       setIsPlaying(false);
-      onError?.("瀏覽器暫時阻擋播放，請再點一次播放按鈕。");
+      onError?.(describePlayError(error));
       return false;
     }
-  }, [currentTrackSource, onError]);
+  }, [currentTrackId, currentTrackSource, onError]);
 
   const pause = useCallback(() => {
     audioRef.current?.pause();
@@ -137,8 +166,10 @@ export function useAudioPlayer({
     audio.pause();
     audio.removeAttribute("src");
     audio.load();
+    suspendedForWriteRef.current = true;
 
     return () => {
+      suspendedForWriteRef.current = false;
       audio.src = source;
       audio.load();
       audio.addEventListener(
@@ -166,6 +197,7 @@ export function useAudioPlayer({
 
     loadedTrackSourceRef.current = "";
     loadedTrackIdRef.current = null;
+    lastPlaybackTimeRef.current = 0;
     setCurrentTrackId(null);
     setCurrentTime(0);
     setDuration(0);
@@ -208,12 +240,26 @@ export function useAudioPlayer({
   }, [currentTrackId, onError, playAudioElement, selectTrack, tracks]);
 
   const togglePlay = useCallback(() => {
+    const audio = audioRef.current;
+
+    // ponytail: 自癒保險——狀態以為在播、節點卻沒音源（節點曾被重建）時，第一下應該是「重新播放」而不是把壞狀態切成暫停。
+    if (
+      isPlaying &&
+      audio &&
+      !audio.src &&
+      currentTrackSource &&
+      !suspendedForWriteRef.current
+    ) {
+      void playAudioElement();
+      return;
+    }
+
     if (isPlaying) {
       pause();
     } else {
       play();
     }
-  }, [isPlaying, pause, play]);
+  }, [currentTrackSource, isPlaying, pause, play, playAudioElement]);
 
   const next = useCallback(
     (autoplay: unknown = isPlaying) => {
@@ -289,6 +335,7 @@ export function useAudioPlayer({
 
     const safeSeconds = Math.min(Math.max(seconds, 0), audio.duration || seconds);
     audio.currentTime = safeSeconds;
+    lastPlaybackTimeRef.current = safeSeconds;
     setCurrentTime(safeSeconds);
   }, []);
 
@@ -360,9 +407,9 @@ export function useAudioPlayer({
 
     if (repeatMode === "one" && audio) {
       audio.currentTime = 0;
-      void audio.play().catch(() => {
+      void audio.play().catch((error: unknown) => {
         setIsPlaying(false);
-        onError?.("重播時被瀏覽器阻擋，請再點一次播放。");
+        onError?.(describePlayError(error));
       });
       return;
     }
@@ -420,7 +467,9 @@ export function useAudioPlayer({
 
   const handleTimeUpdate = useCallback(
     (event: SyntheticEvent<HTMLAudioElement>) => {
-      setCurrentTime(event.currentTarget.currentTime || 0);
+      const nextTime = event.currentTarget.currentTime || 0;
+      lastPlaybackTimeRef.current = nextTime;
+      setCurrentTime(nextTime);
     },
     [],
   );
@@ -474,6 +523,7 @@ export function useAudioPlayer({
       loadedTrackSourceRef.current = currentTrackSource;
       loadedTrackIdRef.current = currentTrackId;
       audio.load();
+      lastPlaybackTimeRef.current = 0;
       setCurrentTime(0);
     }
   }, [currentTrackId, currentTrackSource]);
@@ -490,9 +540,9 @@ export function useAudioPlayer({
       return;
     }
 
-    void audio.play().catch(() => {
+    void audio.play().catch((error: unknown) => {
       setIsPlaying(false);
-      onError?.("瀏覽器暫時阻擋播放，請再點一次播放按鈕。");
+      onError?.(describePlayError(error));
     });
   }, [currentTrackSource, isPlaying, onError]);
 

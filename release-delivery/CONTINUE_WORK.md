@@ -1,8 +1,12 @@
 # 接續工作狀態
 
-最後更新：2026-07-08 CST
+最後更新：2026-07-10 CST
 
 （此為交付區副本；最新完整接續紀錄以根目錄 `CONTINUE_WORK.md` 為準。）
+
+## 2026-07-10 0.1.49 打包完成（Mini 切換播放中斷修正＋播放自癒保險＋AI 聊天視窗 UX）
+
+修正 0.1.48 回歸：`<audio>` 被 `TextOverrideContext.Provider` 多包一層、切 Mini/OBS 時 React 重建節點造成播放中斷；移回首子節點＋`useAudioPlayer` 自癒保險（音源遺失自動重掛＋恢復位置、壞狀態第一下改重新播放、寫檔暫停期間停用、錯誤訊息分流）。AI 聊天視窗：泡泡列 sticky 置頂＋首次互動收合 hover 下拉、訊息底部錨定由下往上、聊天區 500px。零新套件；沙盒 `tsc`/`electron:compile`/全部 `check:*` PASS；Mac 本機 `npm run dist:release` DIST_EXIT=0（DMG `hdiutil verify` VALID＋掛載讀回 0.1.49/arm64/taglib wasm、EXE NSIS）。SHA-256 見 `docs/releases/0.1.49-checksums.md`。打包版 GUI 實測與 Windows 真機待補；本次已推送 GitHub `main`。dev 模式 http origin 載不了 `file://` 音源為已知環境限制，dev 驗證播放用拖曳 blob。
 
 ## 2026-07-08 0.1.45–0.1.48 一批完成（AI 助手＋面板文字自訂）
 

@@ -127,6 +127,8 @@ export function AIAssistantPanel({
   const [scanFolder, setScanFolder] = useState("");
   const [showManual, setShowManual] = useState(false);
   const [showNonWritable, setShowNonWritable] = useState(false);
+  // 0.1.49 泡泡列：置頂固定；第一次點泡泡或送出訊息後收合，滑鼠 hover 下拉（純 CSS group-hover，不掛 scroll 監聽）。
+  const [quickBarCollapsed, setQuickBarCollapsed] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement | null>(null);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -498,6 +500,7 @@ export function AIAssistantPanel({
   const handleSend = async (overrideText?: string) => {
     const text = (overrideText ?? draft).trim();
     if (!text || playlistBusy) return;
+    setQuickBarCollapsed(true);
     setDraft("");
     setPlaylistError("");
     setPlaylistResult("");
@@ -559,40 +562,51 @@ export function AIAssistantPanel({
         </div>
       )}
 
+      {/* 0.1.49：聊天視窗固定加高（256px→500px）；泡泡列 sticky 置頂、首次互動後收合 hover 下拉；訊息以 mt-auto 貼底由下往上長。圓角與間距不變。 */}
       <div
         ref={chatContainerRef}
-        className={`flex min-h-32 flex-col gap-3 overflow-y-auto rounded-lg border border-white/10 bg-black/15 p-3 ${
-          fixQueue.length > 0 ? "max-h-96" : "max-h-64"
-        }`}
+        className="flex h-[31.25rem] flex-col gap-3 overflow-y-auto rounded-lg border border-white/10 bg-black/15 p-3 pt-0"
       >
-        {ai.messages.length === 0 && (
-          <div className="flex flex-col gap-3">
-            <p className="text-sm text-aquarius-mist">{aiGreeting}</p>
-            {!playlistBusy && !playlistDraft && !pendingPlaylistText && fixQueue.length === 0 && (
-              <div className="flex flex-wrap gap-2">
-                {quickPrompts
-                  .filter((item) => !item.requiresModel || ai.isModelReady)
-                  .map((item) => (
-                    <button
-                      key={item.label}
-                      type="button"
-                      onClick={() => {
-                        if (item.prefill) {
-                          setDraft(item.prompt);
-                          inputRef.current?.focus();
-                        } else {
-                          void handleSend(item.prompt);
-                        }
-                      }}
-                      disabled={playlistBusy}
-                      className="rounded-full border border-aquarius-blue/30 bg-aquarius-blue/[0.12] px-3 py-1.5 text-xs font-bold text-aquarius-blue transition hover:bg-aquarius-blue/25 disabled:cursor-not-allowed disabled:opacity-45"
-                    >
-                      {item.label}
-                    </button>
-                  ))}
-              </div>
-            )}
+        <div className="group sticky top-0 z-10 -mx-3 shrink-0 rounded-t-lg border-b border-white/10 bg-aquarius-navy/95 px-3 backdrop-blur">
+          {quickBarCollapsed && (
+            <div className="flex h-4 items-center justify-center" aria-hidden>
+              <span className="h-1 w-8 rounded-full bg-white/20 transition group-hover:bg-white/35" />
+            </div>
+          )}
+          <div
+            className={`flex flex-wrap gap-2 overflow-hidden transition-all duration-300 ${
+              quickBarCollapsed
+                ? "max-h-0 py-0 opacity-0 group-hover:max-h-28 group-hover:py-2 group-hover:opacity-100"
+                : "max-h-28 py-2"
+            }`}
+          >
+            {quickPrompts
+              .filter((item) => !item.requiresModel || ai.isModelReady)
+              .map((item) => (
+                <button
+                  key={item.label}
+                  type="button"
+                  onClick={() => {
+                    setQuickBarCollapsed(true);
+                    if (item.prefill) {
+                      setDraft(item.prompt);
+                      inputRef.current?.focus();
+                    } else {
+                      void handleSend(item.prompt);
+                    }
+                  }}
+                  disabled={playlistBusy || fixBusy || fixQueue.length > 0}
+                  className="rounded-full border border-aquarius-blue/30 bg-aquarius-blue/[0.12] px-3 py-1.5 text-xs font-bold text-aquarius-blue transition hover:bg-aquarius-blue/25 disabled:cursor-not-allowed disabled:opacity-45"
+                >
+                  {item.label}
+                </button>
+              ))}
           </div>
+        </div>
+        {/* 底部錨定 spacer：訊息少時把內容推到底，像真實聊天由下往上出現。 */}
+        <div aria-hidden className="mt-auto shrink-0" />
+        {ai.messages.length === 0 && (
+          <p className="text-sm text-aquarius-mist">{aiGreeting}</p>
         )}
         {ai.messages.map((message, index) => (
           <div

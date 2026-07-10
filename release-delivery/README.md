@@ -1,11 +1,21 @@
 # Aquariusgirl Music Room 交付說明
 
-版本：0.1.48
-發行日期：2026-07-08
-文件更新：2026-07-08
+版本：0.1.49
+發行日期：2026-07-10
+文件更新：2026-07-10
 產品名稱：Aquariusgirl Music Room / 水瓶罐子的音樂小水池
 
-## 0.1.48 狀態
+## 0.1.49 狀態
+
+0.1.49（Mini 切換播放中斷修正＋播放自癒保險＋AI 聊天視窗 UX）installer 已產出並同步到本資料夾 `installers/`（installers/ 只保留這一組最新版）：
+
+- `Aquariusgirl Music Room Setup 0.1.49.exe`：667,675,017 bytes，SHA-256 `7c3708ddba7abb9e81aa934575bf95af7e290b2293e77b8f89589741993cabf6`
+- `Aquariusgirl Music Room-0.1.49-arm64.dmg`：684,771,178 bytes，SHA-256 `ee8ef2aeaa88a474fd5dad9986051223c4abfae66a3c6d90c7cb4cdf49f3e27a`
+- DMG `hdiutil verify` VALID；掛載讀回 0.1.49／arm64／taglib wasm 存在；EXE PE32 NSIS；打包時 `dist:release` 全部 check 再次通過（DIST_EXIT=0）；未簽章。詳見 `docs/releases/0.1.49-checksums.md`。
+- 修正內容：主畫面播放中切 Mini 播放器不再中斷（0.1.48 回歸——`<audio>` 節點被重建；已移回固定位置並加自癒保險：音源遺失自動重掛＋恢復播放位置）；「瀏覽器阻擋播放」誤導訊息改為區分真實原因。AI 助手聊天視窗改版：快捷泡泡固定在聊天視窗頂端、開始對話後自動收合（滑鼠移過去展開）、訊息像真實聊天由下往上出現、聊天視窗加高至 500px。
+- 待補：打包版 GUI 實測（切 Mini 續播、泡泡收合、訊息貼底、清單捲動）、Windows 真機；本次已推送 GitHub `main`。
+
+## 0.1.48 狀態（歷史）
 
 0.1.48（面板文字全量登錄表：分組＋可搜尋編輯器）installer 已產出並同步到本資料夾 `installers/`（installers/ 只保留這一組最新版）：
 
