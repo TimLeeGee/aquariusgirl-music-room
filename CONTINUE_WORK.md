@@ -1,5 +1,25 @@
 # Aquariusgirl Music Room Continue Work
 
+## 2026-07-14 0.1.51 文件與 Wiki 同步完成：大曲庫歌單批次／手動匯入工作佇列
+
+- 完成內容：播放清單批次 O(P+N)；手動匯入採 Electron 最多 4 個、Web 最多 2 個同時工作，metadata UI／DB 最多約 100 批；具備進度、合作式取消與 clear/unmount discard。
+- 不變範圍：Mini、一般／Mini／OBS 的 `audioElement` 位置、播放流程與歌曲資訊保存鏈均不變。
+- 已驗證：`check:playlist-batch`、`check:import-work-queue`、`check:manual-import-state` PASS；10,000 deterministic 結果為 100 commits；`npm run dist:release` exit 0，主環境完整 `check:song-info`、build、Electron compile 與 `git diff --check` PASS。
+- installer：EXE 667,677,087 bytes，SHA-256 `8be258fc2e87008395956992531be699c177783167673bb487169cc4b4ece2a7`；DMG 684,795,800 bytes，SHA-256 `ff4bcc2ff3d04385c8621e31debf2585a59dbd812710ffa3a129aa37400f6f76`。DMG verify VALID、CRC32 `$6DC50645`、唯讀掛載讀回 0.1.51／arm64／TagLib wasm／AI 資產；EXE PE32 GUI、NSIS static PASS。
+- 使用者回報：0.1.51 DMG 手動測試目前未發現問題；因未列明逐項手順，匯入／取消／clear／Mini 仍沒有可逐項讀回的驗收證據。
+- 待補：Windows 真機、真實 10k 音樂檔 CPU／RSS／Profiler，以及簽章與 notarization。
+- 0.1.50／0.1.51 source 與文件已同步 GitHub `main`；installer 仍只留本機，未建立 tag、PR、GitHub Release 或上傳 installer。
+
+## 2026-07-14 0.1.50 打包完成：視覺化 idle 後停止背景更新
+
+- 根因：`useAudioAnalyser` 在暫停分支已回到 `IDLE_LEVEL` 後，仍永久配置衰減陣列、`setLevels` 並排下一個 RAF，造成 App root 持續 render／GC。
+- 最小修法：暫停時有限次衰減，最後 0.08 state 先發布再停止；已 settled 時不配置陣列、不更新 state、不排 RAF。播放／設定變動沿用既有 effect 重啟。
+- 不變範圍：audio JSX、`useAudioPlayer`、歌曲資訊／封面寫回、播放清單、track identity、IndexedDB、AI 均未修改；零新套件。
+- 驗收：`check:audio-visualizer-idle`（含 TDD RED→GREEN）、播放排序／恢復、虛擬化、metadata 保存迴圈、`npm run build`、`npm run electron:compile`、完整 `npm run dist:release` 全 PASS。
+- installer：EXE 667,674,881 bytes，SHA-256 `40a0a34263866a0fd71787ebc91818f156c50b45c571e399413bfd2c7370881b`；DMG 684,765,062 bytes，SHA-256 `7b4dbef683db40ee228d8d481c91a7da37d6956a2b51f7068fbe6c2be2191259`。DMG verify VALID，唯讀掛載讀回 0.1.50／arm64／TagLib wasm／AI 模型與 runtime；EXE PE32 NSIS。
+- 待補：Activity Monitor／React Profiler 實測、打包版 GUI 的 idle→恢復與播放中切 Mini／OBS、Windows 真機、簽章與 notarization。
+- source 與文件隨 0.1.51 一併同步 GitHub `main`；installer 仍只留本機。
+
 ## 2026-07-10 文件制度改革（文件-only，接續 docs/skills 移除）
 
 - 「一件事一個家」：版本歷史統一進根目錄 `CHANGELOG.md`（README 各版段落原文搬入）；`README.md` 瘦身為產品門面（中英「目前最新版本」只留 0.1.49 摘要）；本檔為唯一 CONTINUE_WORK（release-delivery 副本已刪）；`release-delivery/` 5 個狀態檔改寫為只描述 0.1.49 現況＋歷史指標；`QA_REPORT.md` 全文保留（append-only 驗收證據）；docs/ 舊 audit 7 份歸檔 `docs/history/`。

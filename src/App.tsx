@@ -553,7 +553,47 @@ export default function App() {
     };
   }, []);
 
-  const putTrackMetadataRef = useRef<((track: Track) => Promise<void>) | null>(null);
+  const putManyTrackMetadataRef = useRef<((tracks: Track[]) => Promise<void>) | null>(null);
+  const [manualImport, setManualImport] = useState<{
+    phase: "scanning" | "metadata" | "stopping";
+    completed: number;
+    total: number;
+  } | null>(null);
+  const manualImportRef = useRef<typeof manualImport>(null);
+  const manualImportCanceledRef = useRef(false);
+  const manualImportProgressRef = useRef({ completed: 0, total: 0 });
+  const manualImportTimerRef = useRef<number | null>(null);
+  const finishManualImport = useCallback(() => {
+    if (manualImportTimerRef.current !== null) {
+      window.clearTimeout(manualImportTimerRef.current);
+      manualImportTimerRef.current = null;
+    }
+    manualImportRef.current = null;
+    setManualImport(null);
+  }, []);
+  const flushManualImportProgress = useCallback(() => {
+    manualImportTimerRef.current = null;
+    const progress = manualImportProgressRef.current;
+    const next = { phase: "metadata" as const, ...progress };
+    manualImportRef.current = next;
+    setManualImport(next);
+  }, []);
+  const scheduleManualImportProgress = useCallback((progress: { completed: number; total: number }) => {
+    manualImportProgressRef.current = progress;
+    if (manualImportTimerRef.current === null) {
+      manualImportTimerRef.current = window.setTimeout(flushManualImportProgress, 100);
+    }
+  }, [flushManualImportProgress]);
+  const cancelManualImport = useCallback(() => {
+    manualImportCanceledRef.current = true;
+    const next = { phase: "stopping" as const, completed: 0, total: 0 };
+    manualImportRef.current = next;
+    setManualImport(next);
+    void window.aquariusgirlAPI?.cancelManualImport?.();
+  }, []);
+  useEffect(() => () => {
+    if (manualImportTimerRef.current !== null) window.clearTimeout(manualImportTimerRef.current);
+  }, []);
   const {
     tracks,
     addFiles,
@@ -571,19 +611,37 @@ export default function App() {
     onLikedTrackNamesChange: setLikedTrackNames,
     onInfo: showInfo,
     onError: showError,
-    onTrackMetadataLoaded: (track) => {
-      void putTrackMetadataRef.current?.(track);
+    onTrackMetadataBatchComplete: (metadataTracks) => {
+      void putManyTrackMetadataRef.current?.(metadataTracks);
     },
   });
 
   const playlistsState = usePlaylists(tracks);
   const libraryDb = useMusicLibraryDb(playlistsState.playlists);
   useEffect(() => {
-    putTrackMetadataRef.current = libraryDb.putTrackMetadata;
-  }, [libraryDb.putTrackMetadata]);
+    putManyTrackMetadataRef.current = libraryDb.putManyTrackMetadata;
+  }, [libraryDb.putManyTrackMetadata]);
   const addFilesToActivePlaylist = useCallback(
     (files: FileList | File[]) => {
-      const addedTracks = addFiles(files) ?? [];
+      if (manualImportRef.current && manualImportRef.current.phase !== "scanning") return [];
+      if (!manualImportRef.current) {
+        manualImportCanceledRef.current = false;
+        const scanning = { phase: "scanning" as const, completed: 0, total: 0 };
+        manualImportRef.current = scanning;
+        setManualImport(scanning);
+      }
+      const addedTracks = addFiles(files, {
+        isCanceled: () => manualImportCanceledRef.current,
+        onMetadataProgress: scheduleManualImportProgress,
+        onMetadataComplete: () => finishManualImport(),
+      }) ?? [];
+      const metadataTotal = addedTracks.filter((track) => track.localUrl.startsWith("blob:")).length;
+      if (metadataTotal === 0) finishManualImport();
+      else {
+        const next = { phase: "metadata" as const, completed: 0, total: metadataTotal };
+        manualImportRef.current = next;
+        setManualImport(next);
+      }
 
       if (addedTracks.length > 0) {
         void libraryDb.putManyTrackMetadata(addedTracks);
@@ -593,13 +651,14 @@ export default function App() {
         return addedTracks;
       }
 
-      addedTracks.forEach((track) => {
-        playlistsState.addTrackToPlaylist(playlistsState.activePlaylist.id, track.id);
-      });
+      playlistsState.addTracksToPlaylist(
+        playlistsState.activePlaylist.id,
+        addedTracks.map((track) => track.id),
+      );
       showInfo(`已加入 ${addedTracks.length} 首到「${playlistsState.activePlaylist.name}」。`);
       return addedTracks;
     },
-    [addFiles, libraryDb, playlistsState, showInfo],
+    [addFiles, finishManualImport, libraryDb, playlistsState, scheduleManualImportProgress, showInfo],
   );
   const normalPlaylists = useMemo(
     () =>
@@ -684,6 +743,24 @@ export default function App() {
     onInfo: showInfo,
     onError: showError,
   });
+  const handleNativeFilesSelected = useCallback(async () => {
+    manualImportCanceledRef.current = false;
+    const scanning = { phase: "scanning" as const, completed: 0, total: 0 };
+    manualImportRef.current = scanning;
+    setManualImport(scanning);
+    const selected = await fileSystemAccess.selectMusicFiles();
+    if (manualImportRef.current?.phase !== "metadata") finishManualImport();
+    return selected;
+  }, [fileSystemAccess.selectMusicFiles, finishManualImport]);
+  const handleNativeFolderSelected = useCallback(async () => {
+    manualImportCanceledRef.current = false;
+    const scanning = { phase: "scanning" as const, completed: 0, total: 0 };
+    manualImportRef.current = scanning;
+    setManualImport(scanning);
+    const selected = await fileSystemAccess.selectMusicFolder();
+    if (manualImportRef.current?.phase !== "metadata") finishManualImport();
+    return selected;
+  }, [fileSystemAccess.selectMusicFolder, finishManualImport]);
   const restoreMusicPaths = fileSystemAccess.restoreMusicPaths;
   const hasAppliedStoredMetadataRef = useRef(false);
 
@@ -865,6 +942,7 @@ export default function App() {
   const { isDragging, dragHandlers } = useDragAndDrop({
     onDropFiles: addFilesToActivePlaylist,
     onInfo: showInfo,
+    disabled: Boolean(manualImport),
   });
 
   useEffect(() => {
@@ -1100,10 +1178,7 @@ export default function App() {
       }
 
       const playlistName = createUniquePlaylistName(playlistsState.userPlaylists, name);
-      const playlist = playlistsState.createPlaylist(playlistName);
-      uniqueTrackIds.forEach((trackId) => {
-        playlistsState.addTrackToPlaylist(playlist.id, trackId);
-      });
+      const playlist = playlistsState.createPlaylist(playlistName, null, uniqueTrackIds);
       playlistsState.setActivePlaylistId(playlist.id);
       showInfo(`已建立播放清單「${playlistName}」，加入 ${uniqueTrackIds.length} 首。`);
       void window.aquariusgirlAPI?.appendAIPlaylistActionLog?.(
@@ -1146,9 +1221,7 @@ export default function App() {
       return { ok: false, error: `「${playlist.name}」沒有可新增的本機歌曲。` };
     }
 
-    nextTrackIds.forEach((trackId) => {
-      playlistsState.addTrackToPlaylist(playlist.id, trackId);
-    });
+    playlistsState.addTracksToPlaylist(playlist.id, nextTrackIds);
     showInfo(`已加入「${playlist.name}」，共 ${nextTrackIds.length} 首。`);
     return { ok: true, name: playlist.name, count: nextTrackIds.length };
   }, [normalPlaylists, playlistsState, showInfo, tracks]);
@@ -1525,9 +1598,12 @@ export default function App() {
 
   const handleClearTracks = useCallback(() => {
     player.stop();
+    manualImportCanceledRef.current = true;
+    void window.aquariusgirlAPI?.cancelManualImport?.();
     clearTracks();
+    finishManualImport();
     libraryDb.clearStoredTracks();
-  }, [clearTracks, libraryDb, player]);
+  }, [clearTracks, finishManualImport, libraryDb, player]);
 
   const handleExportSettings = useCallback(() => {
     const payload = createExportPayload({
@@ -1860,8 +1936,9 @@ export default function App() {
             trackCount={tracks.length}
             onFilesSelected={addFilesToActivePlaylist}
             onFolderSelected={addFilesToActivePlaylist}
-            onNativeFilesSelected={fileSystemAccess.selectMusicFiles}
-            onNativeFolderSelected={fileSystemAccess.selectMusicFolder}
+            onNativeFilesSelected={handleNativeFilesSelected}
+            onNativeFolderSelected={handleNativeFolderSelected}
+            manualImport={manualImport ? { ...manualImport, onCancel: cancelManualImport } : null}
             onClear={handleClearTracks}
             onEnterMiniMode={enterMiniMode}
             onOpenImageSettings={() => setImageSettingsOpen(true)}

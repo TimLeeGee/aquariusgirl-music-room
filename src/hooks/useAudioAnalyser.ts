@@ -34,7 +34,7 @@ export function useAudioAnalyser({
   }, [barCount]);
 
   useEffect(() => {
-    if (frameRef.current) {
+    if (frameRef.current !== null) {
       cancelAnimationFrame(frameRef.current);
       frameRef.current = null;
     }
@@ -86,6 +86,7 @@ export function useAudioAnalyser({
     const tick = () => {
       const analyser = analyserRef.current;
       if (!analyser || !enabled) {
+        frameRef.current = null;
         return;
       }
 
@@ -118,10 +119,19 @@ export function useAudioAnalyser({
         previousLevelsRef.current = [...nextLevels];
         setLevels(previousLevelsRef.current);
       } else {
-        previousLevelsRef.current = previousLevelsRef.current.map((value) =>
+        if (previousLevelsRef.current.every((value) => value === IDLE_LEVEL)) {
+          frameRef.current = null;
+          return;
+        }
+        const decayedLevels = previousLevelsRef.current.map((value) =>
           Math.max(IDLE_LEVEL, value * 0.72),
         );
+        previousLevelsRef.current = decayedLevels;
         setLevels(previousLevelsRef.current);
+        if (decayedLevels.every((value) => value === IDLE_LEVEL)) {
+          frameRef.current = null;
+          return;
+        }
       }
 
       frameRef.current = requestAnimationFrame(tick);
@@ -130,9 +140,10 @@ export function useAudioAnalyser({
     frameRef.current = requestAnimationFrame(tick);
 
     return () => {
-      if (frameRef.current) {
+      if (frameRef.current !== null) {
         cancelAnimationFrame(frameRef.current);
       }
+      frameRef.current = null;
     };
   }, [
     audioRef,

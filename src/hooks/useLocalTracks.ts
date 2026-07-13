@@ -8,6 +8,7 @@ import {
   partitionAudioFiles,
 } from "../utils/audioFiles";
 import { parseTrackName } from "../utils/parseTrackName";
+import { createTimedBatcher, runManualImportQueue, type TimedBatcher } from "../utils/manualImportQueue";
 import { readAudioMetadata } from "../utils/readAudioMetadata";
 import {
   normalizeSongInfoDraft,
@@ -20,7 +21,7 @@ type UseLocalTracksOptions = {
   onLikedTrackNamesChange: (names: string[]) => void;
   onError?: (message: string) => void;
   onInfo?: (message: string) => void;
-  onTrackMetadataLoaded?: (track: Track) => void;
+  onTrackMetadataBatchComplete?: (tracks: Track[]) => void;
 };
 
 type LocalAudioFile = File & {
@@ -30,6 +31,20 @@ type LocalAudioFile = File & {
   sourceSize?: number;
   songInfo?: SongInfoDraft;
 };
+
+type AddFilesOptions = {
+  isCanceled?: () => boolean;
+  onMetadataProgress?: (progress: { completed: number; total: number }) => void;
+  onMetadataComplete?: (result: { canceled: boolean }) => void;
+};
+
+type PendingMetadataUpdate = {
+  trackId: string;
+  createNextTrack: (track: Track) => Track;
+  discard: () => void;
+};
+
+const METADATA_BATCH_DELAY_MS = 100;
 
 function preserveStoredText(storedValue?: string, currentValue?: string) {
   return storedValue?.trim() || currentValue;
@@ -96,12 +111,14 @@ export function useLocalTracks({
   onLikedTrackNamesChange,
   onError,
   onInfo,
-  onTrackMetadataLoaded,
+  onTrackMetadataBatchComplete,
 }: UseLocalTracksOptions) {
   const [tracks, setTracks] = useState<Track[]>([]);
   const tracksRef = useRef<Track[]>([]);
   const likedTrackNamesRef = useRef(likedTrackNames);
   const storedMetadataApplyCountRef = useRef(0);
+  const metadataBatchersRef = useRef(new Set<TimedBatcher<PendingMetadataUpdate>>());
+  const metadataGenerationRef = useRef(0);
 
   const likedNameSet = useMemo(
     () => new Set(likedTrackNames),
@@ -132,6 +149,12 @@ export function useLocalTracks({
     }
   }, []);
 
+  const invalidateMetadataJobs = useCallback(() => {
+    metadataGenerationRef.current += 1;
+    metadataBatchersRef.current.forEach((batcher) => batcher.dispose());
+    metadataBatchersRef.current.clear();
+  }, []);
+
   useEffect(() => {
     tracksRef.current = tracks;
   }, [tracks]);
@@ -148,13 +171,14 @@ export function useLocalTracks({
 
   useEffect(() => {
     return () => {
+      invalidateMetadataJobs();
       tracksRef.current.forEach(revokeTrackUrls);
     };
-  }, [revokeTrackUrls]);
+  }, [invalidateMetadataJobs, revokeTrackUrls]);
 
-  const applyId3Tags = useCallback(async (trackId: string, file: File) => {
+  const readId3Tags = useCallback(async (track: Track & { file: File }) => {
     try {
-      const metadata = await readAudioMetadata(file);
+      const metadata = await readAudioMetadata(track.file);
 
       if (
         !metadata.title &&
@@ -170,78 +194,56 @@ export function useLocalTracks({
         !metadata.artworkBlob &&
         metadata.metadataLoaded
       ) {
-        const currentTrack = tracksRef.current.find((track) => track.id === trackId);
-        if (!currentTrack) return;
-        const nextTrack = { ...currentTrack, metadataLoaded: true };
-        tracksRef.current = tracksRef.current.map((track) =>
-          track.id === trackId ? nextTrack : track,
-        );
-        setTracks((currentTracks) =>
-          currentTracks.map((track) => (track.id === trackId ? nextTrack : track)),
-        );
-        onTrackMetadataLoaded?.(nextTrack);
-        return;
+        return {
+          trackId: track.id,
+          createNextTrack: (currentTrack: Track) => ({ ...currentTrack, metadataLoaded: true }),
+          discard: () => {},
+        };
       }
 
       const artworkUrl = metadata.artworkBlob
         ? URL.createObjectURL(metadata.artworkBlob)
         : undefined;
 
-      const targetTrack = tracksRef.current.find((track) => track.id === trackId);
-
-      if (!targetTrack) {
+      if (track.metadataOverride) {
         if (artworkUrl) {
           URL.revokeObjectURL(artworkUrl);
         }
-
-        return;
+        return null;
       }
 
-      if (targetTrack.metadataOverride) {
-        if (artworkUrl) {
-          URL.revokeObjectURL(artworkUrl);
-        }
-        return;
-      }
-
-      if (artworkUrl) {
-        revokeTrackArtworkUrls(targetTrack);
-      }
-
-      const createNextTrack = (track: Track): Track => ({
-        ...track,
-        title: metadata.title?.trim() || track.title,
-        artist: metadata.artist?.trim() || track.artist,
-        album: metadata.album?.trim() || track.album,
-        albumArtist: metadata.albumArtist?.trim() || track.albumArtist,
-        year: metadata.year?.trim() || track.year,
-        genre: metadata.genre?.trim() || track.genre,
-        trackNumber: metadata.trackNumber?.trim() || track.trackNumber,
-        discNumber: metadata.discNumber?.trim() || track.discNumber,
-        comment: metadata.comment?.trim() || track.comment,
-        composer: metadata.composer?.trim() || track.composer,
-        artworkUrl: artworkUrl || track.artworkUrl,
-        coverUrl: artworkUrl || track.coverUrl,
-        coverDataUrl: track.coverDataUrl,
-        coverMimeType: metadata.coverMimeType || track.coverMimeType,
-        coverHash: track.coverHash,
-        metadataLoaded: metadata.metadataLoaded,
-        metadataError: metadata.metadataError,
-        metadataOverride: false,
-      });
-      const nextTrack = createNextTrack(targetTrack);
-
-      tracksRef.current = tracksRef.current.map((track) =>
-        track.id === trackId ? nextTrack : track,
-      );
-      setTracks((currentTracks) =>
-        currentTracks.map((track) => (track.id === trackId ? createNextTrack(track) : track)),
-      );
-      onTrackMetadataLoaded?.(nextTrack);
+      return {
+        trackId: track.id,
+        createNextTrack: (currentTrack: Track) => ({
+          ...currentTrack,
+          title: metadata.title?.trim() || currentTrack.title,
+          artist: metadata.artist?.trim() || currentTrack.artist,
+          album: metadata.album?.trim() || currentTrack.album,
+          albumArtist: metadata.albumArtist?.trim() || currentTrack.albumArtist,
+          year: metadata.year?.trim() || currentTrack.year,
+          genre: metadata.genre?.trim() || currentTrack.genre,
+          trackNumber: metadata.trackNumber?.trim() || currentTrack.trackNumber,
+          discNumber: metadata.discNumber?.trim() || currentTrack.discNumber,
+          comment: metadata.comment?.trim() || currentTrack.comment,
+          composer: metadata.composer?.trim() || currentTrack.composer,
+          artworkUrl: artworkUrl || currentTrack.artworkUrl,
+          coverUrl: artworkUrl || currentTrack.coverUrl,
+          coverDataUrl: currentTrack.coverDataUrl,
+          coverMimeType: metadata.coverMimeType || currentTrack.coverMimeType,
+          coverHash: currentTrack.coverHash,
+          metadataLoaded: metadata.metadataLoaded,
+          metadataError: metadata.metadataError,
+          metadataOverride: false,
+        }),
+        discard: () => {
+          if (artworkUrl) URL.revokeObjectURL(artworkUrl);
+        },
+      };
     } catch {
       // Bad or unsupported ID3 data should never block local playback.
+      return null;
     }
-  }, [onTrackMetadataLoaded, revokeTrackArtworkUrls]);
+  }, []);
 
   const replaceTrackSongInfo = useCallback(
     (
@@ -471,7 +473,7 @@ export function useLocalTracks({
   );
 
   const addFiles = useCallback(
-    (inputFiles: FileList | File[]) => {
+    (inputFiles: FileList | File[], options: AddFilesOptions = {}) => {
       const { audioFiles, rejectedFiles } = partitionAudioFiles(inputFiles);
 
       if (audioFiles.length === 0) {
@@ -498,6 +500,9 @@ export function useLocalTracks({
         onInfo?.("這些音樂已經在歌單裡囉。");
         return [];
       }
+
+      invalidateMetadataJobs();
+      const metadataGeneration = metadataGenerationRef.current;
 
       const now = Date.now();
       const nextTracks = freshFiles.map<Track>((file, index) => {
@@ -539,12 +544,75 @@ export function useLocalTracks({
         };
       });
 
-      setTracks((currentTracks) => [...currentTracks, ...nextTracks]);
+      const tracksWithNewFiles = [...tracksRef.current, ...nextTracks];
+      tracksRef.current = tracksWithNewFiles;
+      setTracks(tracksWithNewFiles);
 
-      nextTracks.forEach((track) => {
-        if (track.file && track.localUrl.startsWith("blob:")) {
-          void applyId3Tags(track.id, track.file);
-        }
+      const metadataTracks = nextTracks.filter(
+        (track): track is Track & { file: File } =>
+          Boolean(track.file) && track.localUrl.startsWith("blob:"),
+      );
+      // ponytail: cap metadata state commits at 100 batches; only tune for earlier metadata if profiling proves it necessary.
+      const metadataBatcher = createTimedBatcher<PendingMetadataUpdate>({
+        delayMs: METADATA_BATCH_DELAY_MS,
+        minimumBatchSize: Math.ceil(metadataTracks.length / 100),
+        keyFor: (update) => update.trackId,
+        onFlush: (updates) => {
+          if (metadataGeneration !== metadataGenerationRef.current) {
+            updates.forEach((update) => update.discard());
+            return;
+          }
+
+          const updatesByTrackId = new Map(updates.map((update) => [update.trackId, update]));
+
+          const updatedTracks: Track[] = [];
+          const nextTracksAfterMetadata = tracksRef.current.map((currentTrack) => {
+            const update = updatesByTrackId.get(currentTrack.id);
+            if (!update) return currentTrack;
+            updatesByTrackId.delete(currentTrack.id);
+
+            if (currentTrack.metadataOverride) {
+              update.discard();
+              return currentTrack;
+            }
+
+            const nextTrack = update.createNextTrack(currentTrack);
+            if (nextTrack.coverUrl !== currentTrack.coverUrl || nextTrack.artworkUrl !== currentTrack.artworkUrl) {
+              revokeTrackArtworkUrls(currentTrack);
+            }
+            updatedTracks.push(nextTrack);
+            return nextTrack;
+          });
+
+          updatesByTrackId.forEach((update) => update.discard());
+          if (updatedTracks.length === 0) return;
+          tracksRef.current = nextTracksAfterMetadata;
+          setTracks(nextTracksAfterMetadata);
+          onTrackMetadataBatchComplete?.(updatedTracks);
+        },
+        onDiscard: (updates) => updates.forEach((update) => update.discard()),
+      });
+      metadataBatchersRef.current.add(metadataBatcher);
+      void runManualImportQueue({
+        items: metadataTracks,
+        limit: 2,
+        worker: (track) => readId3Tags(track),
+        isCanceled: () => Boolean(options.isCanceled?.()) || metadataGeneration !== metadataGenerationRef.current,
+        shouldDiscardResult: () => metadataGeneration !== metadataGenerationRef.current,
+        onResult: (update) => {
+          if (update) metadataBatcher.add(update);
+        },
+        onDiscardResult: (update) => update?.discard(),
+        onProgress: (progress) => {
+          if (metadataGeneration === metadataGenerationRef.current) {
+            options.onMetadataProgress?.(progress);
+          }
+        },
+      }).then(({ canceled }) => {
+        if (metadataGeneration !== metadataGenerationRef.current) return;
+        metadataBatcher.flush();
+        metadataBatchersRef.current.delete(metadataBatcher);
+        options.onMetadataComplete?.({ canceled });
       });
 
       const ignoredMessage =
@@ -552,28 +620,24 @@ export function useLocalTracks({
       onInfo?.(`已加入 ${nextTracks.length} 首音樂${ignoredMessage}。`);
       return nextTracks;
     },
-    [applyId3Tags, likedNameSet, onError, onInfo],
+    [invalidateMetadataJobs, likedNameSet, onError, onInfo, onTrackMetadataBatchComplete, readId3Tags, revokeTrackArtworkUrls],
   );
 
   const removeTrack = useCallback((trackId: string) => {
-    setTracks((currentTracks) => {
-      const trackToRemove = currentTracks.find((track) => track.id === trackId);
-
-      if (trackToRemove) {
-        revokeTrackUrls(trackToRemove);
-      }
-
-      return currentTracks.filter((track) => track.id !== trackId);
-    });
+    const trackToRemove = tracksRef.current.find((track) => track.id === trackId);
+    if (trackToRemove) revokeTrackUrls(trackToRemove);
+    const nextTracks = tracksRef.current.filter((track) => track.id !== trackId);
+    tracksRef.current = nextTracks;
+    setTracks(nextTracks);
   }, [revokeTrackUrls]);
 
   const clearTracks = useCallback(() => {
-    setTracks((currentTracks) => {
-      currentTracks.forEach(revokeTrackUrls);
-      return [];
-    });
+    invalidateMetadataJobs();
+    tracksRef.current.forEach(revokeTrackUrls);
+    tracksRef.current = [];
+    setTracks([]);
     onInfo?.("播放清單已清空，本地音樂連結也釋放囉。");
-  }, [onInfo, revokeTrackUrls]);
+  }, [invalidateMetadataJobs, onInfo, revokeTrackUrls]);
 
   const moveTrack = useCallback((fromIndex: number, toIndex: number, orderedTrackIds?: string[]) => {
     const currentTracks = orderTracksForReorder(tracksRef.current, orderedTrackIds);

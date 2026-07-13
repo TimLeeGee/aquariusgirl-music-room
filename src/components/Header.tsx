@@ -21,6 +21,12 @@ type HeaderProps = {
   onToggleMaximizeWindow?: () => void;
   onToggleFullscreenWindow?: () => void;
   onCloseWindow?: () => void;
+  manualImport?: {
+    phase: "scanning" | "metadata" | "stopping";
+    completed: number;
+    total: number;
+    onCancel: () => void;
+  } | null;
 };
 
 export function Header({
@@ -38,10 +44,18 @@ export function Header({
   onToggleMaximizeWindow,
   onToggleFullscreenWindow,
   onCloseWindow,
+  manualImport,
 }: HeaderProps) {
   const brandAssets = useBrandAssets();
   const headerTitle = useText("headerTitle");
   const headerSubtitle = useText("headerSubtitle");
+  const isImportBusy = Boolean(manualImport);
+  const importLabel =
+    manualImport?.phase === "scanning"
+      ? "掃描中…"
+      : manualImport?.phase === "stopping"
+        ? "停止中…"
+        : `讀取資訊 ${manualImport?.completed ?? 0}/${manualImport?.total ?? 0}`;
 
   return (
     <header
@@ -108,13 +122,25 @@ export function Header({
         <span className="rounded-full border border-white/10 bg-white/[0.08] px-3 py-2 text-sm text-aquarius-mist">
           {trackCount} 首本地音樂
         </span>
+        {manualImport && (
+          <span className="inline-flex items-center gap-2 rounded-full border border-aquarius-blue/[0.35] bg-aquarius-blue/[0.12] px-3 py-2 text-xs text-aquarius-mist">
+            {importLabel}
+            {manualImport.phase !== "stopping" && (
+              <button type="button" className="underline" onClick={manualImport.onCancel}>
+                取消
+              </button>
+            )}
+          </span>
+        )}
         <FilePickerButton
           onFilesSelected={onFilesSelected}
           onNativePick={onNativeFilesSelected}
+          disabled={isImportBusy}
         />
         <FolderPickerButton
           onFilesSelected={onFolderSelected}
           onNativePick={onNativeFolderSelected}
+          disabled={isImportBusy}
         />
         <IconButton
           icon={<Trash2 className="h-4 w-4" />}

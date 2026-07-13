@@ -4,9 +4,25 @@ function createRequestId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
+let activeManualImportRequestId: string | null = null;
+
+function invokeManualImport(channel: string) {
+  const requestId = createRequestId();
+  activeManualImportRequestId = requestId;
+  return ipcRenderer.invoke(channel, { requestId }).finally(() => {
+    if (activeManualImportRequestId === requestId) {
+      activeManualImportRequestId = null;
+    }
+  });
+}
+
 contextBridge.exposeInMainWorld("aquariusgirlAPI", {
-  selectMusicFiles: () => ipcRenderer.invoke("aquariusgirl:select-music-files"),
-  selectMusicFolder: () => ipcRenderer.invoke("aquariusgirl:select-music-folder"),
+  selectMusicFiles: () => invokeManualImport("aquariusgirl:select-music-files"),
+  selectMusicFolder: () => invokeManualImport("aquariusgirl:select-music-folder"),
+  cancelManualImport: () =>
+    ipcRenderer.invoke("aquariusgirl:cancel-manual-import", {
+      requestId: activeManualImportRequestId,
+    }),
   restoreMusicPaths: (paths: string[], options?: unknown) =>
     ipcRenderer.invoke("aquariusgirl:restore-music-paths", paths, options),
   showTrackInFolder: (sourcePath: string) =>

@@ -1,9 +1,35 @@
 # QA 驗收報告
 
 產品：Aquariusgirl Music Room / 水瓶罐子的音樂小水池
-版本：0.1.49
-日期：2026-07-10
+版本：0.1.51
+日期：2026-07-14
 驗收角色：PM / QA / Electron 發行工程師
+
+## 2026-07-14 0.1.51 大曲庫歌單批次／手動匯入工作佇列
+
+- 任務類型：程式修改；版本為 0.1.51。播放清單批次為 O(P+N)；手動匯入以 Electron 最多 4 個、Web 最多 2 個同時工作，metadata UI／DB 寫入最多約 100 批，並支援進度、合作式取消、clear/unmount discard。
+- PASS：`check:playlist-batch`、`check:import-work-queue`、`check:manual-import-state`。deterministic 10,000 結果為 100 commits；import check 亦守住 Electron source/runtime selected-file 限制 <=4、順序、失敗與取消；manual state check 守住 clear→idle→可再匯入與 late-event guard。
+- PASS：主環境完整 `check:song-info`、`npm run build`、`npm run electron:compile`、`git diff --check`；`npm run dist:release` exit 0，包含三項新 checks、既有 canonical checks、AI assets、build、Electron compile。
+- 不變範圍：Mini、一般／Mini／OBS 的 `audioElement` 位置、播放與歌曲資訊保存鏈不變。
+- Installer：`Aquariusgirl Music Room Setup 0.1.51.exe` 667,677,087 bytes，SHA-256 `8be258fc2e87008395956992531be699c177783167673bb487169cc4b4ece2a7`；`Aquariusgirl Music Room-0.1.51-arm64.dmg` 684,795,800 bytes，SHA-256 `ff4bcc2ff3d04385c8621e31debf2585a59dbd812710ffa3a129aa37400f6f76`。
+- PASS：DMG `hdiutil verify` VALID（overall CRC32 `$6DC50645`）；唯讀掛載讀回 CFBundleShortVersionString／CFBundleVersion 均 0.1.51、app main／llama-server 為 Mach-O arm64、app.asar 43,047,919 bytes、TagLib wasm 678,470 bytes、AI model 532,517,120 bytes、llama-server 33,472 bytes 存在；EXE 為 PE32 GUI Intel 80386、Nullsoft NSIS static PASS。
+- USER MANUAL PASS：使用者回報 0.1.51 DMG 手動測試目前未發現問題；未提供逐項手順，故不取代匯入／取消／clear／Mini 的個別驗收證據。
+- NOT VERIFIED：Windows 真機、真實 10k 音樂檔 CPU／RSS／Profiler、簽章與 notarization；DMG 個別 GUI 情境仍待逐項記錄。
+- GitHub：0.1.50／0.1.51 source 與文件已同步 `main`；installer 未加入 Git，未建立 tag、PR、GitHub Release 或上傳 installer。
+
+## 2026-07-14 0.1.50 視覺化 idle 後停止 RAF／state 更新
+
+- 任務類型：程式修改；版本由 0.1.49 升至 0.1.50。根因是 `useAudioAnalyser` 暫停分支在 levels 已到 `IDLE_LEVEL` 後仍永久配置陣列、`setLevels` 並排下一個 RAF，造成 App root 持續 render／GC。
+- TDD：先新增 `scripts/audio-visualizer-idle-check.mjs`；RED exit 1（缺少 settled idle guard），修正後 GREEN `audio-visualizer-idle-check PASS`。主代理審核發現最後 0.08 state 原本未發布即 return，再補強 check 取得第二次 RED，調整為「最後 state 先發布再停止」後 GREEN。
+- 最小修改：`src/hooks/useAudioAnalyser.ts` 在已 idle 時直接停止；尚未 idle 時有限次衰減、先發布 state，若本次到 idle 則停止排下一幀。cleanup 與失效 frame id 均清為 null；播放／設定變化由既有 effect 依賴自然重啟。
+- 不變範圍：`App.tsx`／audio JSX、`useAudioPlayer`、歌曲資訊／封面寫回、播放清單、track identity、IndexedDB、AI 與資料 schema 均未修改；零新套件、零全庫掃描或全量 DOM render。
+- PASS（Mac 本機）：`check:audio-visualizer-idle`、`check:playback-order`、`check:playback-restore`、`check:track-list-virtualization`、`check:metadata-save-loop`、`npm run build`、`npm run electron:compile`、`git diff --check`。
+- PASS（獨立唯讀 test_checker）：上述五條 source／回歸 guards、renderer／Electron no-emit typecheck 與 diff 檢查；確認一般／Mini／OBS audioElement 位置不變、analyser hook 只有一個呼叫。
+- PASS（Mac 本機）：`npm run dist:release` exit 0；完整 gate 包含 prompts、track display／identity、playlist logic、playback order／restore、virtualization、metadata save loop、visualizer idle、TagLib wasm packaging、darwin-arm64＋win32-x64 AI assets、Vite build、Electron compile。
+- Installer：`Aquariusgirl Music Room Setup 0.1.50.exe` 667,674,881 bytes，SHA-256 `40a0a34263866a0fd71787ebc91818f156c50b45c571e399413bfd2c7370881b`；`Aquariusgirl Music Room-0.1.50-arm64.dmg` 684,765,062 bytes，SHA-256 `7b4dbef683db40ee228d8d481c91a7da37d6956a2b51f7068fbe6c2be2191259`。
+- PASS：DMG `hdiutil verify` VALID（CRC32 `$F277862C`）；唯讀掛載讀回 `CFBundleShortVersionString`／`CFBundleVersion` 0.1.50、主程式與 llama-server arm64、TagLib wasm 678,470 bytes、AI 模型 532,517,120 bytes、app.asar 存在；EXE 為 PE32 GUI、Nullsoft NSIS self-extracting archive。
+- NOT VERIFIED：Activity Monitor／React Profiler 的實際 CPU／render／GC 數據；打包版 GUI 的 idle→恢復與播放中切 Normal／Mini／OBS；Windows 真機；簽章與 notarization。
+- 本次只做本機工作：未 commit、tag、push、PR、GitHub Release、上傳或任何 GitHub 同步。
 
 ## 2026-07-10 文件-only：docs/skills 移除
 

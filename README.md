@@ -6,24 +6,24 @@ English version: see [English Version](#english-version).
 
 ## 目前最新版本
 
-最新版本 `0.1.49`「Mini Switch Playback Continuity」：修正 0.1.48 切 Mini 播放中斷回歸（`<audio>` 首子節點 hotfix）＋播放自癒保險＋AI 聊天視窗 UX。SHA-256 見 `docs/releases/0.1.49-checksums.md`。
+最新版本 `0.1.51`「大曲庫歌單批次／手動匯入工作佇列」：歌單批次為 O(P+N)，手動匯入採 Electron 4／Web 2 受控併發、最多約 100 次 metadata UI／DB commits，支援進度、取消與 clear；Mini／`audioElement`／歌曲保存鏈不變。SHA-256 見 `docs/releases/0.1.51-checksums.md`。
 
 2026-07-10 文件制度改革：完整版本歷史統一改放 [`CHANGELOG.md`](CHANGELOG.md)，本節只保留最新版摘要；驗收證據見 `release-delivery/QA_REPORT.md`，專案知識庫見 `llm-wiki/`。
 
 ## 下載與檔案驗證
 
-安裝檔請至 GitHub Releases 下載；本機交付資料夾仍保留在：
+0.1.50／0.1.51 的 source 與文件已同步 GitHub `main`；installer 不進 Git，仍只位於本機：
 
 ```text
 release-delivery/installers/
 ```
 
-0.1.41 installer 已完成，交付檔位於：
+0.1.51 installer 已完成，交付檔位於：
 
-- `Aquariusgirl Music Room Setup 0.1.41.exe`
-- `Aquariusgirl Music Room-0.1.41-arm64.dmg`
+- `Aquariusgirl Music Room Setup 0.1.51.exe`
+- `Aquariusgirl Music Room-0.1.51-arm64.dmg`
 
-0.1.41 SHA-256 已寫入 `docs/releases/0.1.41-checksums.md`。完整版本歷史與詳細驗收紀錄請看 [release-delivery/VERSION.md](release-delivery/VERSION.md)。
+0.1.51 SHA-256 已寫入 `docs/releases/0.1.51-checksums.md`。完整版本歷史見 [`CHANGELOG.md`](CHANGELOG.md)，詳細驗收證據見 [release-delivery/QA_REPORT.md](release-delivery/QA_REPORT.md)。
 
 ## 交付檔案索引
 
@@ -512,24 +512,24 @@ Aquariusgirl Music Room is a local-first music player. It can run as a Vite web 
 
 ## Current Version
 
-Latest version `0.1.49` "Mini Switch Playback Continuity": fixes the 0.1.48 Mini-switch playback interruption regression (audio element first-child hotfix), adds playback self-healing, and improves the AI chat UX. Checksums: `docs/releases/0.1.49-checksums.md`.
+Latest version `0.1.51` "Large-library playlist batches and manual-import work queues": playlist batches are O(P+N); manual import uses bounded Electron 4/Web 2 concurrency with about 100 metadata UI/DB commits, progress, cancellation, and clear handling. Mini, audio-element placement, and song-save paths are unchanged. Checksums: `docs/releases/0.1.51-checksums.md`.
 
 As of 2026-07-10 the full version history lives in [`CHANGELOG.md`](CHANGELOG.md) (Chinese canonical, with archived English notes). QA evidence: `release-delivery/QA_REPORT.md`.
 
 ## Download And Checksums
 
-Download installers from GitHub Releases. Local delivery artifacts are kept in:
+The 0.1.50/0.1.51 source and documentation are synchronized to GitHub `main`. Installers are not tracked by Git and remain local at:
 
 ```text
 release-delivery/installers/
 ```
 
-0.1.41 installers are produced and kept in:
+0.1.51 installers are produced and kept in:
 
-- `Aquariusgirl Music Room Setup 0.1.41.exe`
-- `Aquariusgirl Music Room-0.1.41-arm64.dmg`
+- `Aquariusgirl Music Room Setup 0.1.51.exe`
+- `Aquariusgirl Music Room-0.1.51-arm64.dmg`
 
-0.1.41 SHA-256 values are recorded in [docs/releases/0.1.41-checksums.md](docs/releases/0.1.41-checksums.md). Full version history and detailed QA notes live in [release-delivery/VERSION.md](release-delivery/VERSION.md).
+0.1.51 SHA-256 values are recorded in [docs/releases/0.1.51-checksums.md](docs/releases/0.1.51-checksums.md). Full version history is in [`CHANGELOG.md`](CHANGELOG.md); QA evidence is in [release-delivery/QA_REPORT.md](release-delivery/QA_REPORT.md).
 
 ## Delivery File Index
 

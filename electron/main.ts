@@ -14,13 +14,14 @@ import {
   readSongInfoFromOriginalFile,
   writeSongInfoToOriginalFile,
 } from "./songInfoWriter.js";
-import { toSelectedFile } from "./selectedFile.js";
+import { toSelectedFile, toSelectedFiles } from "./selectedFile.js";
 
 const supportedExtensions = new Set([".mp3", ".wav", ".ogg", ".m4a", ".flac"]);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const localAIService = new LocalAIService();
 let mainWindow: BrowserWindow | null = null;
+const manualImportJobs = new Map<number, { requestId: string; canceled: boolean }>();
 let isMiniMode = false;
 const windowBoundsState: {
   fullBounds?: Rectangle;
@@ -171,21 +172,45 @@ function serializeBounds(bounds?: Rectangle) {
     : undefined;
 }
 
-async function collectAudioFiles(folderPath: string): Promise<string[]> {
-  const entries = await readdir(folderPath, { withFileTypes: true });
-  const files = await Promise.all(
-    entries.map(async (entry) => {
-      const entryPath = path.join(folderPath, entry.name);
-      if (entry.isDirectory()) {
-        return collectAudioFiles(entryPath);
-      }
-      return supportedExtensions.has(path.extname(entry.name).toLowerCase())
-        ? [entryPath]
-        : [];
-    }),
-  );
+async function collectAudioFiles(folderPath: string, isCanceled: () => boolean = () => false): Promise<string[]> {
+  const folders = [folderPath];
+  const files: string[] = [];
 
-  return files.flat();
+  while (folders.length > 0) {
+    if (isCanceled()) break;
+    const nextFolder = folders.shift();
+    if (!nextFolder) continue;
+    const entries = await readdir(nextFolder, { withFileTypes: true });
+
+    for (const entry of entries) {
+      const entryPath = path.join(nextFolder, entry.name);
+      if (entry.isDirectory()) {
+        folders.push(entryPath);
+      } else if (supportedExtensions.has(path.extname(entry.name).toLowerCase())) {
+        files.push(entryPath);
+      }
+    }
+  }
+
+  return files;
+}
+
+function getManualImportRequestId(payload: unknown) {
+  return payload && typeof payload === "object" && typeof (payload as { requestId?: unknown }).requestId === "string"
+    ? (payload as { requestId: string }).requestId
+    : "";
+}
+
+function startManualImportJob(sender: Electron.WebContents, payload: unknown) {
+  const existing = manualImportJobs.get(sender.id);
+  if (existing) existing.canceled = true;
+  const job = { requestId: getManualImportRequestId(payload), canceled: false };
+  manualImportJobs.set(sender.id, job);
+  return job;
+}
+
+function finishManualImportJob(sender: Electron.WebContents, job: { requestId: string; canceled: boolean }) {
+  if (manualImportJobs.get(sender.id) === job) manualImportJobs.delete(sender.id);
 }
 
 function getCustomImagesRoot() {
@@ -289,7 +314,10 @@ function showOpenDialogWithFocusRestore(
   });
 }
 
-ipcMain.handle("aquariusgirl:select-music-files", async (event) => {
+ipcMain.handle("aquariusgirl:select-music-files", async (event, payload) => {
+  if (event.sender.isDestroyed()) return [];
+  const job = startManualImportJob(event.sender, payload);
+  try {
   const result = await showOpenDialogWithFocusRestore(event.sender, {
     title: "選擇音樂檔案",
     properties: ["openFile", "multiSelections"],
@@ -305,10 +333,16 @@ ipcMain.handle("aquariusgirl:select-music-files", async (event) => {
     return [];
   }
 
-  return Promise.all(result.filePaths.map((filePath) => toSelectedFile(filePath)));
+  return toSelectedFiles(result.filePaths, undefined, () => job.canceled || event.sender.isDestroyed());
+  } finally {
+    finishManualImportJob(event.sender, job);
+  }
 });
 
-ipcMain.handle("aquariusgirl:select-music-folder", async (event) => {
+ipcMain.handle("aquariusgirl:select-music-folder", async (event, payload) => {
+  if (event.sender.isDestroyed()) return [];
+  const job = startManualImportJob(event.sender, payload);
+  try {
   const result = await showOpenDialogWithFocusRestore(event.sender, {
     title: "選擇音樂資料夾",
     properties: ["openDirectory"],
@@ -319,8 +353,19 @@ ipcMain.handle("aquariusgirl:select-music-folder", async (event) => {
   }
 
   const folderPath = result.filePaths[0];
-  const audioFiles = await collectAudioFiles(folderPath);
-  return Promise.all(audioFiles.map((filePath) => toSelectedFile(filePath, folderPath)));
+  const audioFiles = await collectAudioFiles(folderPath, () => job.canceled || event.sender.isDestroyed());
+  return toSelectedFiles(audioFiles, folderPath, () => job.canceled || event.sender.isDestroyed());
+  } finally {
+    finishManualImportJob(event.sender, job);
+  }
+});
+
+ipcMain.handle("aquariusgirl:cancel-manual-import", (event, payload) => {
+  const job = manualImportJobs.get(event.sender.id);
+  const requestId = getManualImportRequestId(payload);
+  if (!job || !requestId || job.requestId !== requestId) return { ok: false, canceled: false };
+  job.canceled = true;
+  return { ok: true, canceled: true };
 });
 
 ipcMain.handle("aquariusgirl:restore-music-paths", async (_event, sourcePaths: unknown) => {

@@ -49,6 +49,7 @@ export type AIReplyResult =
 export type AquariusgirlElectronAPI = {
   selectMusicFiles: () => Promise<ElectronSelectedFile[]>;
   selectMusicFolder: () => Promise<ElectronSelectedFile[]>;
+  cancelManualImport?: () => Promise<{ ok: boolean; canceled: boolean }>;
   restoreMusicPaths: (paths: string[], options?: { readMetadata?: boolean }) => Promise<{
     files: ElectronSelectedFile[];
     missingPaths: string[];

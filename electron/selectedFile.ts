@@ -43,3 +43,31 @@ export async function toSelectedFile(
     metadata,
   };
 }
+
+export async function toSelectedFiles(
+  filePaths: string[],
+  basePath?: string,
+  isCanceled: () => boolean = () => false,
+) {
+  const results: Array<Awaited<ReturnType<typeof toSelectedFile>> | undefined> = new Array(
+    filePaths.length,
+  );
+  let nextIndex = 0;
+
+  const readNext = async () => {
+    while (nextIndex < filePaths.length) {
+      if (isCanceled()) return;
+      const index = nextIndex;
+      nextIndex += 1;
+      try {
+        results[index] = await toSelectedFile(filePaths[index], basePath);
+      } catch {
+        // A single unreadable file must not discard completed neighbouring selections.
+      }
+    }
+  };
+
+  // ponytail: Four metadata readers balance desktop responsiveness with large-folder throughput.
+  await Promise.all(Array.from({ length: Math.min(4, filePaths.length) }, () => readNext()));
+  return results.filter((result): result is NonNullable<typeof result> => Boolean(result));
+}

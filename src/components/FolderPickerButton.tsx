@@ -12,6 +12,7 @@ type FolderPickerButtonProps = {
   onNativePick?: () => Promise<boolean>;
   children?: ReactNode;
   className?: string;
+  disabled?: boolean;
 };
 
 const directoryProps: DirectoryInputProps = {
@@ -24,6 +25,7 @@ export function FolderPickerButton({
   onNativePick,
   children = "選擇資料夾",
   className = "",
+  disabled = false,
 }: FolderPickerButtonProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -38,7 +40,9 @@ export function FolderPickerButton({
           "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aquarius-pink",
           className,
         ].join(" ")}
+        disabled={disabled}
         onClick={async () => {
+          if (disabled) return;
           if (onNativePick && (await onNativePick())) {
             return;
           }

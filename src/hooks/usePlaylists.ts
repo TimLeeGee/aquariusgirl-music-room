@@ -8,6 +8,7 @@ import type {
 import { SYSTEM_PLAYLIST_IDS, isTrackListPlaylist } from "../types/playlist";
 import type { Track } from "../types/track";
 import { evaluateSmartPlaylist } from "../utils/evaluateSmartPlaylist";
+import { appendTrackIds, createNormalPlaylist } from "../utils/playlistBatch";
 import { STORAGE_KEYS, useLocalStorage } from "./useLocalStorage";
 
 const systemPlaylistIdSet = new Set<string>(Object.values(SYSTEM_PLAYLIST_IDS));
@@ -181,16 +182,16 @@ export function usePlaylists(tracks: Track[]) {
   }, [activePlaylistId, playlists, setActivePlaylistId]);
 
   const createPlaylist = useCallback(
-    (name = "未命名播放清單", parentId: string | null = null) => {
+    (
+      name = "未命名播放清單",
+      parentId: string | null = null,
+      initialTrackIds: string[] = [],
+    ) => {
       const now = Date.now();
       const playlist: NormalPlaylist = {
+        ...createNormalPlaylist(name, initialTrackIds, now),
         id: createId("playlist"),
-        name: name.trim() || "未命名播放清單",
-        trackIds: [],
         parentId,
-        createdAt: now,
-        updatedAt: now,
-        type: "normal",
       };
       setStoredPlaylists((current) => [...current, playlist]);
       setActivePlaylistId(playlist.id);
@@ -239,19 +240,25 @@ export function usePlaylists(tracks: Track[]) {
     setActivePlaylistId(SYSTEM_PLAYLIST_IDS.all);
   }, [setActivePlaylistId, setStoredPlaylists]);
 
-  const addTrackToPlaylist = useCallback((playlistId: string, trackId: string) => {
+  const addTracksToPlaylist = useCallback((playlistId: string, trackIds: string[]) => {
+    if (trackIds.length === 0) return;
+
     setStoredPlaylists((current) =>
       current.map((playlist) =>
         playlist.id === playlistId && playlist.type === "normal"
           ? {
               ...playlist,
-              trackIds: [...playlist.trackIds, trackId],
+              trackIds: appendTrackIds(playlist.trackIds, trackIds),
               updatedAt: Date.now(),
             }
           : playlist,
       ),
     );
   }, [setStoredPlaylists]);
+
+  const addTrackToPlaylist = useCallback((playlistId: string, trackId: string) => {
+    addTracksToPlaylist(playlistId, [trackId]);
+  }, [addTracksToPlaylist]);
 
   const removeTrackFromPlaylist = useCallback((
     playlistId: string,
@@ -418,6 +425,7 @@ export function usePlaylists(tracks: Track[]) {
     setActivePlaylistId,
     createPlaylist,
     createSmartPlaylist,
+    addTracksToPlaylist,
     renamePlaylist,
     deletePlaylist,
     addTrackToPlaylist,

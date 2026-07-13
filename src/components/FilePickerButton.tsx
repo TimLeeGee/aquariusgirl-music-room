@@ -7,6 +7,7 @@ type FilePickerButtonProps = {
   onNativePick?: () => Promise<boolean>;
   children?: ReactNode;
   className?: string;
+  disabled?: boolean;
 };
 
 export function FilePickerButton({
@@ -14,6 +15,7 @@ export function FilePickerButton({
   onNativePick,
   children = "選擇音樂檔",
   className = "",
+  disabled = false,
 }: FilePickerButtonProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -28,7 +30,9 @@ export function FilePickerButton({
           "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-aquarius-blue",
           className,
         ].join(" ")}
+        disabled={disabled}
         onClick={async () => {
+          if (disabled) return;
           if (onNativePick && (await onNativePick())) {
             return;
           }
