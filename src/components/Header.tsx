@@ -156,7 +156,7 @@ export function Header({
         />
         <IconButton
           icon={<Settings className="h-4 w-4" />}
-          label="圖片設定"
+          label="外觀設定"
           onClick={onOpenImageSettings}
         />
       </div>

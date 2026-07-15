@@ -64,6 +64,14 @@ import {
 } from "./types/settings";
 import { TextOverrideContext, applyName, resolveTextOverrideSettings, setActiveCharacterNames } from "./config/textOverrides";
 import { createExportPayload, downloadJsonFile, getExportFileName } from "./utils/exportSettings";
+import {
+  CoverHueRequestGuard,
+  coverHueCache,
+  createCoverCacheKey,
+  getTrackCoverSource,
+  loadCoverHue,
+  resolveEffectiveThemeColorSettings,
+} from "./utils/coverColor";
 import { isSupportedAudioPath } from "./utils/audioFiles";
 import {
   type ImportedSettings,
@@ -182,7 +190,7 @@ function clampMiniOpacity(value: unknown) {
 
 function resolveThemeColorSettings(value: unknown): ThemeColorSettings {
   const stored = isRecord(value) ? value : {};
-  const clamped = (key: keyof ThemeColorSettings, max: number) => {
+  const clamped = (key: Exclude<keyof ThemeColorSettings, "autoCoverColorEnabled">, max: number) => {
     const candidate = stored[key];
     return typeof candidate === "number" && Number.isFinite(candidate)
       ? Math.min(max, Math.max(0, Math.round(candidate)))
@@ -190,6 +198,7 @@ function resolveThemeColorSettings(value: unknown): ThemeColorSettings {
   };
 
   return {
+    autoCoverColorEnabled: stored.autoCoverColorEnabled === true,
     primaryHue: clamped("primaryHue", 360),
     secondaryHue: clamped("secondaryHue", 360),
     accentHue: clamped("accentHue", 360),
@@ -475,6 +484,8 @@ export default function App() {
     () => resolveThemeColorSettings(rawThemeColorSettings),
     [rawThemeColorSettings],
   );
+  const [autoCoverHue, setAutoCoverHue] = useState<number | null>(null);
+  const coverHueRequestGuardRef = useRef(new CoverHueRequestGuard());
   const resolvedTextOverrideSettings = useMemo(() => {
     const resolved = resolveTextOverrideSettings(rawTextOverrideSettings);
     // 同步非 React 讀取單例（在 render 期、子元件 render 之前更新，trackDisplay 等即時拿到新名字）。
@@ -522,22 +533,6 @@ export default function App() {
     setInfoMessage("");
     setErrorMessage(message);
   }, []);
-
-  useLayoutEffect(() => {
-    const root = document.documentElement;
-    // ponytail: 原生 CSS variables 已足夠同步色相與透明度；需要多主題時再抽設定服務。
-    root.style.setProperty("--theme-primary-hue", String(resolvedThemeColorSettings.primaryHue));
-    root.style.setProperty("--theme-secondary-hue", String(resolvedThemeColorSettings.secondaryHue));
-    root.style.setProperty("--theme-accent-hue", String(resolvedThemeColorSettings.accentHue));
-    root.style.setProperty("--theme-text-hue", String(resolvedThemeColorSettings.textHue));
-    root.style.setProperty("--theme-background-hue", String(resolvedThemeColorSettings.backgroundHue));
-    root.style.setProperty("--theme-panel-hue", String(resolvedThemeColorSettings.panelHue));
-    root.style.setProperty("--theme-mini-hue", String(resolvedThemeColorSettings.miniHue));
-    root.style.setProperty("--theme-panel-opacity", String(resolvedThemeColorSettings.panelOpacity / 100));
-    root.style.setProperty("--theme-background-opacity", String(resolvedThemeColorSettings.backgroundOpacity / 100));
-    root.style.setProperty("--theme-stage-opacity", String(resolvedThemeColorSettings.stageOpacity / 100));
-    root.style.setProperty("--theme-decoration-opacity", String(resolvedThemeColorSettings.decorationOpacity / 100));
-  }, [resolvedThemeColorSettings]);
 
   useEffect(() => {
     const api = window.aquariusgirlAPI;
@@ -714,6 +709,69 @@ export default function App() {
       showInfo("已播完目前歌曲並停止。");
     },
   });
+
+  const currentCover = useMemo(() => {
+    const track = player.currentTrack;
+    const source = getTrackCoverSource(track, resolvedBrandAssets.coverPlaceholder);
+    if (!track || !source) return null;
+    return { source, key: createCoverCacheKey(track, source) };
+  }, [
+    player.currentTrack?.artworkUrl,
+    player.currentTrack?.coverDataUrl,
+    player.currentTrack?.coverHash,
+    player.currentTrack?.coverUrl,
+    player.currentTrack?.id,
+    resolvedBrandAssets.coverPlaceholder,
+  ]);
+  const effectiveThemeColorSettings = useMemo(
+    () => resolveEffectiveThemeColorSettings(resolvedThemeColorSettings, autoCoverHue),
+    [autoCoverHue, resolvedThemeColorSettings],
+  );
+
+  useEffect(() => {
+    const requestVersion = coverHueRequestGuardRef.current.next();
+    if (!resolvedThemeColorSettings.autoCoverColorEnabled || !currentCover) {
+      setAutoCoverHue(null);
+      return undefined;
+    }
+
+    const cachedHue = coverHueCache.get(currentCover.key);
+    if (cachedHue !== undefined) {
+      setAutoCoverHue(cachedHue);
+      return undefined;
+    }
+
+    let active = true;
+    void loadCoverHue(currentCover.source).then((hue) => {
+      if (!active || !coverHueRequestGuardRef.current.isCurrent(requestVersion)) return;
+      if (hue === null) {
+        setAutoCoverHue(null);
+        return;
+      }
+      coverHueCache.set(currentCover.key, hue);
+      setAutoCoverHue(hue);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [currentCover, resolvedThemeColorSettings.autoCoverColorEnabled]);
+
+  useLayoutEffect(() => {
+    const root = document.documentElement;
+    // ponytail: 原生 CSS variables 已足夠同步色相與透明度；需要多主題時再抽設定服務。
+    root.style.setProperty("--theme-primary-hue", String(effectiveThemeColorSettings.primaryHue));
+    root.style.setProperty("--theme-secondary-hue", String(effectiveThemeColorSettings.secondaryHue));
+    root.style.setProperty("--theme-accent-hue", String(effectiveThemeColorSettings.accentHue));
+    root.style.setProperty("--theme-text-hue", String(effectiveThemeColorSettings.textHue));
+    root.style.setProperty("--theme-background-hue", String(effectiveThemeColorSettings.backgroundHue));
+    root.style.setProperty("--theme-panel-hue", String(effectiveThemeColorSettings.panelHue));
+    root.style.setProperty("--theme-mini-hue", String(effectiveThemeColorSettings.miniHue));
+    root.style.setProperty("--theme-panel-opacity", String(effectiveThemeColorSettings.panelOpacity / 100));
+    root.style.setProperty("--theme-background-opacity", String(effectiveThemeColorSettings.backgroundOpacity / 100));
+    root.style.setProperty("--theme-stage-opacity", String(effectiveThemeColorSettings.stageOpacity / 100));
+    root.style.setProperty("--theme-decoration-opacity", String(effectiveThemeColorSettings.decorationOpacity / 100));
+  }, [effectiveThemeColorSettings]);
 
   const sleepTimer = useSleepTimer({
     pause: player.pause,

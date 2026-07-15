@@ -6,24 +6,24 @@ English version: see [English Version](#english-version).
 
 ## 目前最新版本
 
-最新版本 `0.1.51`「大曲庫歌單批次／手動匯入工作佇列」：歌單批次為 O(P+N)，手動匯入採 Electron 4／Web 2 受控併發、最多約 100 次 metadata UI／DB commits，支援進度、取消與 clear；Mini／`audioElement`／歌曲保存鏈不變。SHA-256 見 `docs/releases/0.1.51-checksums.md`。
+最新版本 `0.1.52`「依封面自動換色」：外觀設定的色彩分頁新增預設關閉、可保存的 Switch；只分析目前歌曲的真實封面，暫時同步主色與底部／桌面 Mini 背景，無封面或關閉時回到手動色。封面 hue 不覆寫手動設定，切歌使用 450ms 漸變、64 筆快取與 stale-result 防護。SHA-256 見 `docs/releases/0.1.52-checksums.md`。
 
 2026-07-10 文件制度改革：完整版本歷史統一改放 [`CHANGELOG.md`](CHANGELOG.md)，本節只保留最新版摘要；驗收證據見 `release-delivery/QA_REPORT.md`，專案知識庫見 `llm-wiki/`。
 
 ## 下載與檔案驗證
 
-0.1.50／0.1.51 的 source 與文件已同步 GitHub `main`；installer 不進 Git，仍只位於本機：
+0.1.52 的 source、文件與 checksum 已同步 GitHub `main`。使用者回報 EXE／DMG 的新增功能簡單測試正常，但未提供逐項手順；installer 不進 Git，仍只位於本機：
 
 ```text
 release-delivery/installers/
 ```
 
-0.1.51 installer 已完成，交付檔位於：
+0.1.52 installer 已完成，交付檔位於：
 
-- `Aquariusgirl Music Room Setup 0.1.51.exe`
-- `Aquariusgirl Music Room-0.1.51-arm64.dmg`
+- `Aquariusgirl Music Room Setup 0.1.52.exe`
+- `Aquariusgirl Music Room-0.1.52-arm64.dmg`
 
-0.1.51 SHA-256 已寫入 `docs/releases/0.1.51-checksums.md`。完整版本歷史見 [`CHANGELOG.md`](CHANGELOG.md)，詳細驗收證據見 [release-delivery/QA_REPORT.md](release-delivery/QA_REPORT.md)。
+0.1.52 SHA-256 已寫入 `docs/releases/0.1.52-checksums.md`。完整版本歷史見 [`CHANGELOG.md`](CHANGELOG.md)，詳細驗收證據見 [release-delivery/QA_REPORT.md](release-delivery/QA_REPORT.md)。
 
 ## 交付檔案索引
 
@@ -50,6 +50,7 @@ release-delivery/installers/
 - 拖曳音樂檔加入歌單
 - HTMLAudioElement 播放、暫停、切歌、音量、靜音、進度拖曳
 - ID3v2 metadata 與專輯封面讀取，失敗時 fallback 檔名解析
+- 可選的依封面自動換色：只分析目前歌曲，暫時同步主色與底部／桌面 Mini，不覆寫手動色
 - 歌曲資訊編輯、單曲封面更換，以及桌面版 MP3/FLAC/M4A 原始檔標籤寫回
 - 睡前定時停止，支援 15/30/60 分鐘、自訂分鐘、播完本首
 - Web Audio API 音樂頻譜，可關閉
@@ -512,24 +513,24 @@ Aquariusgirl Music Room is a local-first music player. It can run as a Vite web 
 
 ## Current Version
 
-Latest version `0.1.51` "Large-library playlist batches and manual-import work queues": playlist batches are O(P+N); manual import uses bounded Electron 4/Web 2 concurrency with about 100 metadata UI/DB commits, progress, cancellation, and clear handling. Mini, audio-element placement, and song-save paths are unchanged. Checksums: `docs/releases/0.1.51-checksums.md`.
+Latest version `0.1.52` "Automatic cover colors": Appearance > Colors now includes a persisted, default-off switch that analyzes only the current track's real artwork and temporarily synchronizes the primary and Mini hues. Missing artwork or disabling the switch restores saved manual colors; cover hues never overwrite them. Transitions, a 64-entry cache, and stale-result protection keep switching smooth. Checksums: `docs/releases/0.1.52-checksums.md`.
 
 As of 2026-07-10 the full version history lives in [`CHANGELOG.md`](CHANGELOG.md) (Chinese canonical, with archived English notes). QA evidence: `release-delivery/QA_REPORT.md`.
 
 ## Download And Checksums
 
-The 0.1.50/0.1.51 source and documentation are synchronized to GitHub `main`. Installers are not tracked by Git and remain local at:
+Version 0.1.52 source, documentation, and checksums are synchronized to GitHub `main`. The user reported that a simple EXE/DMG smoke test of the new feature passed, without a step-by-step test record. Installers are not tracked by Git and remain local at:
 
 ```text
 release-delivery/installers/
 ```
 
-0.1.51 installers are produced and kept in:
+0.1.52 installers are produced and kept in:
 
-- `Aquariusgirl Music Room Setup 0.1.51.exe`
-- `Aquariusgirl Music Room-0.1.51-arm64.dmg`
+- `Aquariusgirl Music Room Setup 0.1.52.exe`
+- `Aquariusgirl Music Room-0.1.52-arm64.dmg`
 
-0.1.51 SHA-256 values are recorded in [docs/releases/0.1.51-checksums.md](docs/releases/0.1.51-checksums.md). Full version history is in [`CHANGELOG.md`](CHANGELOG.md); QA evidence is in [release-delivery/QA_REPORT.md](release-delivery/QA_REPORT.md).
+0.1.52 SHA-256 values are recorded in [docs/releases/0.1.52-checksums.md](docs/releases/0.1.52-checksums.md). Full version history is in [`CHANGELOG.md`](CHANGELOG.md); QA evidence is in [release-delivery/QA_REPORT.md](release-delivery/QA_REPORT.md).
 
 ## Delivery File Index
 
@@ -556,6 +557,7 @@ This project is released under the [MIT License](LICENSE).
 - Drag music files into the player.
 - Play, pause, seek, mute, adjust volume, and switch tracks with `HTMLAudioElement`.
 - Read ID3v2 metadata and album artwork, with filename fallback.
+- Optional automatic cover colors for the current track, with saved manual colors preserved as fallback.
 - Edit song info, change per-track cover art, and write desktop MP3/FLAC/M4A tags back to original files.
 - Sleep timer: 15, 30, 60 minutes, custom minutes, or stop after the current track.
 - Web Audio API visualizer.

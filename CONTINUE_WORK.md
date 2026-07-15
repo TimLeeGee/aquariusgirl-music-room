@@ -1,5 +1,21 @@
 # Aquariusgirl Music Room Continue Work
 
+## 2026-07-16 0.1.52 使用者 Smoke Test 與 GitHub 同步
+
+- 使用者回報 EXE、DMG 的「依封面自動換色」簡單測試正常；未提供 OS 版本與逐項手順，因此不擴張為 Windows 完整回歸、真實內嵌封面、快速三首切歌或 10k profiler 證據。
+- 0.1.52 source、checks、版本與文件、Wiki、checksum 已同步 GitHub `main`；installer、GGUF、`qa-temp` 與日誌未加入 Git，未建立 tag、PR 或 GitHub Release。
+- 發布前重新通過 `check:cover-colors`、`check:theme-colors`、`npm run build`、`npm run electron:compile`、`git diff --check`，並由 `release_guardian` 複核提交範圍。
+
+## 2026-07-15 0.1.52 本機打包完成：依封面自動換色
+
+- 完成內容：外觀設定「色彩」新增預設關閉且可保存的「依封面自動換色」；只分析目前歌曲真實封面，以 transient effective hue 同步主色與底部／桌面 Mini，無封面、失敗、關閉或無目前歌曲時回手動色。
+- 資料保護：封面 hue 不寫回 `themeColorSettings`；匯出／匯入／全部復原仍保存手動色與 `autoCoverColorEnabled`。48×48 Canvas 量化忽略黑白透明灰，64-entry LRU＋request version 防快速切歌 stale result；不掃曲庫、不碰播放進度。
+- PASS：`check:cover-colors`、`check:theme-colors`、播放恢復、metadata save loop、visualizer idle、Mini opacity、`npm run build`、`npm run electron:compile`、`git diff --check`；完整 `npm run dist:release` exit 0。
+- packaged GUI（隔離 profile／qa-temp）：Header「外觀設定」、Switch 預設與重啟保存、無封面播放回手動 195/232、紅色封面 harness effective primary/mini=0、播放結束仍保留、關閉後動畫回 195/232、底部 Mini 與桌面 Mini 同步紅色、Mini opacity=92。
+- installer：EXE 667,678,858 bytes，SHA-256 `3e4a6d5d3ee7a1b4e6e25bb770518f5e34be9d8ba525230d74c1cc01f1aa3b54`；DMG 684,805,233 bytes，SHA-256 `97c92ee773a3eb27dfaeb5b49f518c9436ee8c9b2e052d9ecc048d953ca5fb4d`。DMG verify VALID、CRC32 `$3F6DEC31`、唯讀掛載讀回 0.1.52／arm64／TagLib wasm／AI 資產；EXE PE32 NSIS static PASS。
+- 待補：真實檔案內嵌封面、三首快速連續 packaged UI 切歌、Windows 真機、真實 10k CPU／RSS／Profiler、簽章與 notarization。TDD worker 因隔離 PATH 無 Node/npm，未取得歷史 RED；主環境所有 GREEN 與 release gates 已實跑。
+- 本次只做本機工作；未 commit、tag、push、PR、GitHub Release、上傳或任何 GitHub 同步。
+
 ## 2026-07-14 0.1.51 文件與 Wiki 同步完成：大曲庫歌單批次／手動匯入工作佇列
 
 - 完成內容：播放清單批次 O(P+N)；手動匯入採 Electron 最多 4 個、Web 最多 2 個同時工作，metadata UI／DB 最多約 100 批；具備進度、合作式取消與 clear/unmount discard。

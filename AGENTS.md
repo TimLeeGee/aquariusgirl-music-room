@@ -4,7 +4,8 @@
 
 ## 快速接手
 
-- Aquariusgirl Music Room 是 React + TypeScript + Vite + Electron 的本地音樂播放器，目前版本是 `0.1.51`。
+- Aquariusgirl Music Room 是 React + TypeScript + Vite + Electron 的本地音樂播放器，目前版本是 `0.1.52`。
+- 0.1.52 最新功能是「依封面自動換色」：`ThemeColorSettings.autoCoverColorEnabled` 預設 false；`src/utils/coverColor.ts` 只按需分析目前歌曲真實封面（48×48 Canvas、64-entry LRU、request version stale guard），effective hue 只暫時覆蓋 primary／mini，不可呼叫 `setThemeColorSettings` 寫回封面色。無封面／失敗／關閉／無目前歌曲回 saved 手動色；placeholder 明確排除。`@property` 讓 primary／mini hue 450ms 漸變；文字與 opacity 不變。`check:cover-colors`／`check:theme-colors` 已納入 dist；artifact 見 `docs/releases/0.1.52-checksums.md`。packaged macOS 隔離 harness 已驗 Switch 保存、無封面 fallback、紅色 cover effective hue、底部／桌面 Mini 與 opacity；使用者另回報 EXE／DMG 的新增功能簡單測試正常，但未列逐項手順。真實內嵌封面、快速三首 UI 切歌、Windows 完整回歸與真實 10k profiler 待補。0.1.52 source／文件／checksum 已同步 GitHub `main`；installer 仍只留本機，未建立 tag 或 GitHub Release。
 - 2026-07-10 文件-only：`docs/skills/` 已移除（兩份技能快照停在 0.1.32、內容過期且與本檔／`llm-wiki/` 重複）。開發規範以本檔＋`llm-wiki/` 為準，GitHub 發布流程以全域 `github-update-flow` 技能＋`llm-wiki/08-GitHub發布守門員.md` 為準；歷史可從 git 取回。
 - 2026-07-10 文件制度改革：版本歷史統一進根目錄 `CHANGELOG.md`；`README.md` 瘦身為產品門面；`CONTINUE_WORK.md` 只留根目錄一份（release-delivery 副本已刪）；`release-delivery/` 狀態檔只寫現況；`QA_REPORT.md` 維持 append-only 驗收證據；docs/ 舊 audit 歸檔 `docs/history/`。發布時依「驗收守則」的新文件規則，不要再把同一段貼九份。
 - 0.1.51 最新功能是大曲庫歌單批次／手動匯入工作佇列：playlist batch 為 O(P+N)，Electron 最多 4、Web 最多 2 個工作同時進行，metadata UI／DB 最多約 100 批（10,000 deterministic 結果 100 commits）；進度、合作式取消與 clear/unmount discard 均已守住。Mini、一般／Mini／OBS 的 `{audioElement}` 位置、播放與歌曲資訊保存鏈不變。三項新 checks 已納入 dist，artifact 證據見 `docs/releases/0.1.51-checksums.md`；使用者回報 DMG 手動測試目前未發現問題，但未列明逐項手順，Windows 真機與真實 10k profiler 仍待補。0.1.50／0.1.51 source 與文件已同步 GitHub `main`；installer 仍只留本機，未建立 tag 或 GitHub Release。

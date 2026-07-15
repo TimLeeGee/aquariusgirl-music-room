@@ -1,9 +1,30 @@
 # QA 驗收報告
 
 產品：Aquariusgirl Music Room / 水瓶罐子的音樂小水池
-版本：0.1.51
-日期：2026-07-14
+版本：0.1.52
+日期：2026-07-16
 驗收角色：PM / QA / Electron 發行工程師
+
+## 2026-07-16 0.1.52 使用者 EXE／DMG Smoke Test
+
+- 使用者回報：「簡單測試了 EXE、DMG，目前新增的功能正常。」
+- 證據範圍只代表兩個 installer 的「依封面自動換色」一般 smoke test 未發現問題；未提供 OS 版本、測試歌曲、真實內嵌封面、快速切歌、Mini、匯入／匯出或其他逐項手順，不擴張為完整 Windows／macOS 回歸。
+- 使用者已明確授權將 0.1.52 source、checks、文件、Wiki 與 checksum 上傳 GitHub；installer、GGUF、`qa-temp` 與日誌仍不加入 Git，不建立 tag 或 GitHub Release。
+
+## 2026-07-15 0.1.52 依封面自動換色
+
+- 任務類型：程式修改；版本由 0.1.51 升至 0.1.52。新增預設關閉、可保存的 `autoCoverColorEnabled`，只在目前歌曲有真實封面時以 transient effective hue 同步 primary／mini；禁止把封面 hue 寫回手動 `themeColorSettings`。
+- 最小實作：48×48 Canvas 色相桶量化，忽略透明、近黑、近白與低飽和灰；64-entry LRU success cache；request version＋effect cleanup 防 A→B→C 過期 Promise；placeholder 由資料層與 `resolvedBrandAssets.coverPlaceholder` 雙重排除。無封面／分析失敗／關閉／無目前歌曲回手動色；新封面 pending 時保留前色。
+- UI／動畫：Header 輔助名稱「外觀設定」；色彩分頁最上方為指定文案 native checkbox Switch，原七組滑桿保留。registered `--theme-primary-hue`／`--theme-mini-hue` 以 450ms transition 插值，reduced motion 為 1ms；文字色與 opacity 不動。
+- TDD 誠實限制：code_surgeon worker 的 PATH 無 `node`／`npm`，未取得實際歷史 RED；主環境後續實際執行所有新增與回歸 checks 取得 GREEN。不得把此輪宣稱為完整 RED→GREEN 證據。
+- PASS（主環境）：`check:cover-colors`、`check:theme-colors`、`check:playback-restore`、`check:metadata-save-loop`、`check:audio-visualizer-idle`、`node scripts/mini-opacity-check.mjs`、`npm run build`（1657 modules）、`npm run electron:compile`、`git diff --check`。
+- PASS（獨立唯讀 test_checker）：靜態確認預設 false／舊設定相容、手動色不被寫回、目前歌曲限定、48×48 Canvas、64-entry LRU、stale guard、pending 保色、fallback、UI／動畫、audio／metadata／DB 不變；其 worker 同樣因 PATH 無 node/npm 未重跑命令。主代理依建議補 placeholder 硬防線、effective-color 純函式與逆序 Promise 測試後再全數重跑 PASS。
+- PASS（完整 release gate）：`npm run dist:release` exit 0；prompts、theme／cover colors、track display／identity、playlist logic／batch、import queue／manual state、playback order／restore、virtualization、metadata save loop、visualizer idle、TagLib wasm、darwin-arm64＋win32-x64 AI assets、Vite build、Electron compile 全通過；DMG／EXE 建立並同步，release 暫存清除。
+- Installer：`Aquariusgirl Music Room Setup 0.1.52.exe` 667,678,858 bytes，SHA-256 `3e4a6d5d3ee7a1b4e6e25bb770518f5e34be9d8ba525230d74c1cc01f1aa3b54`；`Aquariusgirl Music Room-0.1.52-arm64.dmg` 684,805,233 bytes，SHA-256 `97c92ee773a3eb27dfaeb5b49f518c9436ee8c9b2e052d9ecc048d953ca5fb4d`。
+- PASS（artifact）：DMG `hdiutil verify` VALID、overall CRC32 `$3F6DEC31`；唯讀掛載讀回 CFBundleShortVersionString／CFBundleVersion 0.1.52、main Mach-O arm64、TagLib wasm、AI model 與 darwin-arm64 llama-server；EXE 為 PE32 GUI Intel 80386、Nullsoft NSIS。
+- PASS（packaged macOS GUI，唯讀 DMG＋隔離 `qa-temp/0.1.52-gui-user-data`）：Header「外觀設定」、色彩分頁 Switch 精確文案與七 slider、預設 off、切 on 後退出重啟仍 on；無封面暫存 WAV 實際播放時 effective primary/mini=195/232（手動 fallback）；隔離 IndexedDB 紅色 cover harness 播放時 saved 仍 195/232、effective primary/mini=0，播放結束但仍選中保持 0；關閉 Switch 時先讀到 transition 中間值，完成後回 195/232；底部 Mini 列與桌面 Mini 視窗均紅色，Mini opacity control 仍 92。
+- NOT VERIFIED：真實 MP3／FLAC／M4A 內嵌封面解析後取色；三首真實歌曲 packaged UI 快速連續切換；Windows 真機；真實 10k 音樂檔 CPU／RSS／Profiler；簽章與 notarization。
+- 本次只做本機工作：未 commit、tag、push、PR、GitHub Release、上傳程式碼／日誌／checksum／installer 或任何 GitHub 同步。
 
 ## 2026-07-14 0.1.51 大曲庫歌單批次／手動匯入工作佇列
 

@@ -1,3 +1,15 @@
+@property --theme-primary-hue {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 195;
+}
+
+@property --theme-mini-hue {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 232;
+}
+
 :root {
   --theme-primary-hue: 195;
   --theme-secondary-hue: 321;
@@ -10,6 +22,7 @@
   --theme-background-opacity: 0.7;
   --theme-stage-opacity: 0.88;
   --theme-decoration-opacity: 0.8;
+  transition: --theme-primary-hue 450ms ease, --theme-mini-hue 450ms ease;
   --color-aquarius-blue-hsl: var(--theme-primary-hue) 100% 69%;
   --color-night-violet-hsl: calc(var(--theme-background-hue) + 26) 57% 24%;
   --color-soft-pink-hsl: var(--theme-secondary-hue) 100% 78%;
@@ -38,4 +51,10 @@
   --text-primary: hsl(var(--text-primary-hsl) / 0.96);
   --text-secondary: hsl(var(--color-mist-gray-hsl));
   --accent: hsl(var(--color-aquarius-blue-hsl));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    transition-duration: 1ms;
+  }
 }

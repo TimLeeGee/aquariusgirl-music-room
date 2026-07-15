@@ -254,6 +254,29 @@ export function ImageSettingsDialog({
           <>
             <div id="appearance-settings-content" className="flex-1 overflow-y-auto p-5 sm:p-6">
               <div className="mx-auto grid w-full max-w-3xl gap-3">
+                <label className="flex items-center justify-between gap-4 rounded-lg border border-aquarius-blue/[0.3] bg-aquarius-blue/[0.08] p-4">
+                  <span className="min-w-0">
+                    <span className="block font-black text-white">依封面自動換色</span>
+                    <span className="mt-1 block text-xs leading-5 text-aquarius-mist">
+                      播放歌曲時，自動擷取封面主色，同步播放器主色與 MINI 背景。沒有封面時使用下方手動設定的顏色。
+                    </span>
+                  </span>
+                  <span className="relative inline-flex shrink-0 items-center">
+                    <input
+                      type="checkbox"
+                      checked={colorSettings.autoCoverColorEnabled}
+                      aria-label="依封面自動換色"
+                      className="peer sr-only"
+                      onChange={(event) =>
+                        onColorSettingsChange({
+                          ...colorSettings,
+                          autoCoverColorEnabled: event.currentTarget.checked,
+                        })
+                      }
+                    />
+                    <span className="h-7 w-12 rounded-full bg-white/[0.16] transition peer-checked:bg-aquarius-blue peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-aquarius-blue after:absolute after:left-1 after:top-1 after:h-5 after:w-5 after:rounded-full after:bg-white after:transition peer-checked:after:translate-x-5" />
+                  </span>
+                </label>
                 {colorOptions.map((option) => {
                   const hue = colorSettings[option.key];
                   return (

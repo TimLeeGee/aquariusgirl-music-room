@@ -6,7 +6,7 @@
 
 0.1.49 的 source、release 文件與 checksum 已於 2026-07-10 推送 GitHub `main`（`f972261`），並以 `origin/main` 讀回確認版本、根目錄文件、`release-delivery` Markdown、checksum 與核心 source。2026-07-10 文件制度改革已推送 `main`（`1af9e47`，遠端讀回 CHANGELOG.md／docs/skills 404／VERSION.md 現況版確認）：版本歷史統一進根目錄 `CHANGELOG.md`，release-delivery 剩 6 份 Markdown（CONTINUE_WORK 副本已刪）且只寫現況。DMG/EXE 仍只在本機交付資料夾，未 commit；它未簽章、未 notarize，且打包 GUI 與 Windows 真機驗證仍待補。
 
-0.1.50／0.1.51 的 source、release 文件與 checksum 已依使用者明確授權同步 GitHub `main`，並在推送後讀回 `origin/main` 確認；installer、GGUF、`qa-temp` 與日誌未加入 Git。使用者回報 0.1.51 DMG 手動測試目前未發現問題，但沒有逐項手順；Windows 真機、真實 10k profiler、簽章與 notarization 仍未驗證。本次未建立 tag、PR、GitHub Release，也未上傳 installer。
+0.1.50／0.1.51 的 source、release 文件與 checksum 已依當時授權同步 GitHub `main`。使用者於 2026-07-16 回報 0.1.52 EXE／DMG 的新增功能簡單 smoke test 正常，並明確授權上傳；0.1.52 source、文件與 checksum 已同步 GitHub `main`。installer、GGUF、`qa-temp` 與日誌仍不加入 Git；未建立 tag、PR、GitHub Release，也未上傳 installer。
 
 ## 發布流程
 
@@ -39,4 +39,4 @@
 - `release-delivery/README.md`
 - `release-delivery/VERSION.md`
 - `release-delivery/INSTALLER_STATUS.md`
-- `docs/releases/0.1.51-checksums.md`
+- `docs/releases/0.1.52-checksums.md`

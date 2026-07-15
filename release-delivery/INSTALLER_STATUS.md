@@ -1,22 +1,24 @@
 # Installer 狀態
 
-版本：0.1.51
-日期：2026-07-14
+版本：0.1.52
+日期：2026-07-16
 
 ## 已完成
 
-- `npm run dist:release`：exit 0，含三項新 checks、既有 canonical checks、AI assets、build 與 Electron compile。
+- `npm run dist:release`：exit 0，含 `check:cover-colors`、`check:theme-colors`、既有 canonical checks、AI assets、build 與 Electron compile。
 - `release-delivery/installers/` 已由既有 sync 流程放入最新版 DMG／EXE，installer 不進 Git；release 暫存已清。
-- DMG：684,795,800 bytes；SHA-256 `ff4bcc2ff3d04385c8621e31debf2585a59dbd812710ffa3a129aa37400f6f76`；`hdiutil verify` VALID、overall CRC32 `$6DC50645`。
-- DMG 唯讀掛載讀回：CFBundleShortVersionString／CFBundleVersion 均為 0.1.51；app main 與 llama-server 為 Mach-O arm64；app.asar 43,047,919 bytes、TagLib wasm 678,470 bytes、AI model 532,517,120 bytes、llama-server 33,472 bytes 存在。
-- EXE：667,677,087 bytes；SHA-256 `8be258fc2e87008395956992531be699c177783167673bb487169cc4b4ece2a7`；PE32 GUI Intel 80386、Nullsoft NSIS static PASS。
+- DMG：684,805,233 bytes；SHA-256 `97c92ee773a3eb27dfaeb5b49f518c9436ee8c9b2e052d9ecc048d953ca5fb4d`；`hdiutil verify` VALID、overall CRC32 `$3F6DEC31`。
+- DMG 唯讀掛載讀回：CFBundleShortVersionString／CFBundleVersion 均為 0.1.52；app main 為 Mach-O arm64；TagLib wasm、AI model 與 darwin-arm64 llama-server 存在。
+- EXE：667,678,858 bytes；SHA-256 `3e4a6d5d3ee7a1b4e6e25bb770518f5e34be9d8ba525230d74c1cc01f1aa3b54`；PE32 GUI Intel 80386、Nullsoft NSIS static PASS。
+- packaged macOS 隔離 harness：Switch 預設／重啟保存、無封面 fallback、紅色封面 primary／底部 Mini／桌面 Mini 同步、關閉恢復手動色與 Mini opacity 92 均 PASS。
+- 使用者回報 EXE／DMG 的新增功能簡單 smoke test 正常；未提供 OS 版本與逐項手順。
 
 ## 尚未完成
 
-- 打包版 GUI 真實滑鼠匯入、取消、clear 與 Mini。
-- Windows 真機、真實 10k 音樂檔 CPU／RSS／Profiler。
+- 真實檔案內嵌封面、三首快速連續 packaged UI 切歌。
+- Windows 完整回歸、真實 10k 音樂檔 CPU／RSS／Profiler。
 - macOS Developer ID／notarization、Windows code signing。
 
-本次 installer 僅在本機交付，未加入 Git、未上傳 GitHub。
+installer 僅在本機交付，未加入 Git、未上傳 GitHub；source、文件與 checksum 已同步 GitHub `main`。
 
-English pointer: local packaging and static artifact verification passed; GUI workflows, real Windows QA, real-library profiling, and signing remain open.
+English pointer: packaging, artifact verification, the isolated macOS harness, and a user-reported simple EXE/DMG feature smoke test passed; embedded artwork, rapid switching, full Windows regression, real-library profiling, and signing remain open.

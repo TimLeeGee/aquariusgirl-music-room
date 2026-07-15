@@ -1,15 +1,15 @@
 # 安裝與解除安裝
 
-版本：0.1.51
-文件更新：2026-07-14
+版本：0.1.52
+文件更新：2026-07-16
 
 ## Windows 安裝
 
-1. 執行 `Aquariusgirl Music Room Setup 0.1.51.exe`。
+1. 執行 `Aquariusgirl Music Room Setup 0.1.52.exe`。
 2. 選擇安裝位置並完成安裝。
 3. 從桌面捷徑或開始選單開啟 App。
 
-目前未做 Windows code signing，SmartScreen 可能提示；Windows 真機仍待驗證。
+目前未做 Windows code signing，SmartScreen 可能提示。使用者回報 EXE 的新增功能簡單測試正常；未記錄完整安裝／解除安裝與 Windows 回歸手順。
 
 ## Windows 解除安裝
 
@@ -18,7 +18,7 @@
 
 ## macOS 安裝
 
-1. 開啟 `Aquariusgirl Music Room-0.1.51-arm64.dmg`。
+1. 開啟 `Aquariusgirl Music Room-0.1.52-arm64.dmg`。
 2. 將 App 拖曳到 Applications。
 3. 從 Applications 開啟。
 
@@ -31,4 +31,4 @@
 
 解除安裝不會刪除使用者原始音樂檔。若要清除播放清單與設定，需另外移除對應的 Electron userData。
 
-English pointer: use the 0.1.51 installer names above; uninstalling the app does not remove original music files.
+English pointer: use the 0.1.52 installer names above; uninstalling the app does not remove original music files.

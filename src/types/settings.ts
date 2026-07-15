@@ -35,6 +35,7 @@ export type AudioVisualizerSettings = {
 };
 
 export type ThemeColorSettings = {
+  autoCoverColorEnabled: boolean;
   primaryHue: number;
   secondaryHue: number;
   accentHue: number;
@@ -71,6 +72,7 @@ export const defaultAudioVisualizerSettings: AudioVisualizerSettings = {
 };
 
 export const defaultThemeColorSettings: ThemeColorSettings = {
+  autoCoverColorEnabled: false,
   primaryHue: 195,
   secondaryHue: 321,
   accentHue: 44,
